@@ -1,0 +1,390 @@
+﻿using SharpDX;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DeadRisingArcTool.FileFormats.Geometry
+{
+    // sizeof = 0xA0
+    public struct rModelHeader
+    {
+        public const int kSizeOf = 0xA0;
+        public const int kMagic = 0x00444F4D;
+
+        public const int kVersion = 0x70;
+        public const int kSubVersion = 1;
+
+        /* 0x00 */ public int Magic;                // 'DOM'
+        /* 0x04 */ public byte Version;             // 0x70
+        /* 0x05 */ public byte SubVersion;          // 1
+        /* 0x06 */ public short JointCount;
+        /* 0x08 */ public short PrimitiveCount;
+        /* 0x0A */ public short MaterialCount;
+        /* 0x0C */ public int VerticeCount;
+        /* 0x10 */ public int IndiceCount;
+        /* 0x14 */ public int PolygonCount;
+        /* 0x18 */ public int VertexData1Size;
+        /* 0x1C */ public int VertexData2Size;
+        /* 0x20 */ public int NumberOfTextures;
+        /* 0x24 */ // padding
+        /* 0x28 */ public int JointDataOffset;
+        /* 0x2C */ // padding
+        /* 0x30 */ public int TextureFilesOffset;
+        /* 0x34 */ // padding
+        /* 0x38 */ public int PrimitiveDataOffset;
+        /* 0x3C */ // padding
+        /* 0x40 */ public int VertexData1Offset;
+        /* 0x44 */ // padding
+        /* 0x48 */ public int VertexData2Offset;
+        /* 0x4C */ // padding
+        /* 0x50 */ public int IndiceDataOffset;
+        /* 0x54 */ // padding
+        /* 0x58 */
+        /* 0x5C */
+        /* 0x60 */ // vec3 bounding box sphere position?
+        /* 0x6C */ // float bounding box sphere radius?
+        /* 0x70 */ public Vector3 BoundingBoxMin;
+        /* 0x7C */ // padding
+        /* 0x80 */ public Vector3 BoundingBoxMax;
+        /* 0x8C */ // padding
+        /* 0x90 */
+        /* 0x94 */ // used by something in code
+        /* 0x98 */
+        /* 0x9C */
+        /* 0x9D */ // padding
+    }
+
+    // sizeof = 0x18
+    public struct Joint
+    {
+        /* 0x00 */ public byte Index;
+        /* 0x01 */ public byte ParentIndex;
+        /* 0x02 */ public byte[] Padding;   // 6 bytes of padding to align floats
+        /* 0x08 */ public float Length;
+        /* 0x0C */ public Vector3 Offset;
+    }
+
+    // sizeof = 0x40
+    public struct JointTranslation
+    {
+        /* 0x00 */ public Vector4[] Translation;
+    }
+
+    // sizeof = 0x40
+    public struct JointData3
+    {
+        /* 0x00 */ public Vector4[] Unknown;
+    }
+
+    // sizeof = 0xD0
+    public struct Material
+    {
+        /* 0x00 */ public byte Flags;
+        /* 0x01 */ public byte Unk1;
+        /* 0x02 */ public byte Unk2;
+        /* 0x03 */ public byte Unk3;
+	    /* 0x04 */ public int Unk4;
+	    /* 0x08 */ public int Unk9;
+        /* 0x0C */ public int Unk5;
+        /* 0x10 */ public int Unk6;
+        /* 0x14 */ public int Unk7;
+        /* 0x18 */ public int Unk8;
+        /* 0x1C */ // padding
+	    /* 0x20 */ public int TextureIndex1;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x24 */ // padding, 0x20 set to 64bit texture object address at runtime
+	    /* 0x28 */ public int TextureIndex2;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x2C */ // padding
+	    /* 0x30 */ public int TextureIndex3;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x34 */ // padding
+	    /* 0x38 */ public int TextureIndex4;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x3C */ // padding
+	    /* 0x40 */ public int TextureIndex5;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x44 */ // padding
+	    /* 0x48 */ public int TextureIndex6;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x4C */ // padding
+	    /* 0x50 */ public int TextureIndex7;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x54 */ // padding
+	    /* 0x58 */ public int TextureIndex8;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x5C */ // padding
+	    /* 0x60 */ public int TextureIndex9;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x64 */ // padding
+	
+	    // a bunch of floats
+    }
+
+    // sizeof = 0x50
+    public struct Primitive
+    {
+        /* 0x00 */ public short Unk1; // joint number mb?
+	    /* 0x02 */ public short	MaterialIndex;
+	    /* 0x04 */ public byte Enabled;
+	    /* 0x05 */ public byte Unk3; // LOD?
+	    /* 0x06 */ public byte Unk11;
+        /* 0x07 */ public byte Unk12;
+	    /* 0x08 */ public byte VertexStride1;
+	    /* 0x09 */ public byte VertexStride2;
+        /* 0x0A */ public byte Unk13;
+	    /* 0x0B */ // padding
+        /* 0x0C */ public int VertexCount1;
+        /* 0x10 */ public int StartingVertex1; // vertex data 1
+	    /* 0x14 */ public int Unk16;
+	    /* 0x18 */ public int Unk5;	
+	    /* 0x1C */ public int IndexCount;               // Passed to CDeviceContext::DrawIndexed
+	    /* 0x20 */ public int StartingIndexLocation;    // Passed to CDeviceContext::DrawIndexed
+	    /* 0x24 */ public int Unk8;
+	    /* 0x28 */ // padding to align vectors
+	    /* 0x30 */ public Vector4 Unk9;
+	    /* 0x40 */ public Vector4 Unk10;
+    }
+
+    public class rModel
+    {
+        public rModelHeader header;
+
+        // Joint data is broken into 3 parts per joint.
+        public Joint[] joints;
+        public JointTranslation[] jointTranslations;
+        public JointData3[] jointData3;
+
+        // List of texture files names.
+        public string[] textureFileNames;
+
+        // List of materials.
+        public Material[] materials;
+
+        // List of primitives.
+        public Primitive[] primitives;
+
+        // Vertex and index buffers.
+        public short[] indiceBuffer;
+        public byte[] vertexData1;
+        public byte[] vertexData2;
+
+        public static rModel FromBuffer(byte[] buffer)
+        {
+            // Make sure the buffer is large enough to hold the header structure.
+            if (buffer.Length < rModelHeader.kSizeOf)
+                return null;
+
+            // Create a new model object to populate with data.
+            rModel model = new rModel();
+
+            // Create a new memory stream and binary reader for the buffer.
+            MemoryStream ms = new MemoryStream(buffer);
+            BinaryReader reader = new BinaryReader(ms);
+
+            // Parse the header.
+            model.header.Magic = reader.ReadInt32();
+            model.header.Version = reader.ReadByte();
+            model.header.SubVersion = reader.ReadByte();
+            model.header.JointCount = reader.ReadInt16();
+            model.header.PrimitiveCount = reader.ReadInt16();
+            model.header.MaterialCount = reader.ReadInt16();
+            model.header.VerticeCount = reader.ReadInt32();
+            model.header.IndiceCount = reader.ReadInt32();
+            model.header.PolygonCount = reader.ReadInt32();
+            model.header.VertexData1Size = reader.ReadInt32();
+            model.header.VertexData2Size = reader.ReadInt32();
+            model.header.NumberOfTextures = reader.ReadInt32();
+            reader.BaseStream.Position += 4;
+            model.header.JointDataOffset = reader.ReadInt32();
+            reader.BaseStream.Position += 4;
+            model.header.TextureFilesOffset = reader.ReadInt32();
+            reader.BaseStream.Position += 4;
+            model.header.PrimitiveDataOffset = reader.ReadInt32();
+            reader.BaseStream.Position += 4;
+            model.header.VertexData1Offset = reader.ReadInt32();
+            reader.BaseStream.Position += 4;
+            model.header.VertexData2Offset = reader.ReadInt32();
+            reader.BaseStream.Position += 4;
+            model.header.IndiceDataOffset = reader.ReadInt32();
+            reader.BaseStream.Position = 0x70;
+            model.header.BoundingBoxMin = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            reader.BaseStream.Position += 4;
+            model.header.BoundingBoxMax = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            reader.BaseStream.Position = rModelHeader.kSizeOf;
+
+            // Verify the header magic is correct.
+            if (model.header.Magic != rModelHeader.kMagic)
+            {
+                // Header has invalid magic value.
+                return null;
+            }
+
+            // Check the version and sub version are supported.
+            if (model.header.Version != rModelHeader.kVersion || model.header.SubVersion != rModelHeader.kSubVersion)
+            {
+                // Header has invalid version/subversion numbers.
+                return null;
+            }
+
+            // Check if there are any joints in the model.
+            if (model.header.JointCount > 0)
+            {
+                // Seek to the joint data offset.
+                reader.BaseStream.Position = model.header.JointDataOffset;
+
+                // Allocate and read all of the joint meta data.
+                model.joints = new Joint[model.header.JointCount];
+                for (int i = 0; i < model.header.JointCount; i++)
+                {
+                    // Read the joint data.
+                    model.joints[i] = new Joint();
+                    model.joints[i].Index = reader.ReadByte();
+                    model.joints[i].ParentIndex = reader.ReadByte();
+                    reader.BaseStream.Position += 6;
+                    model.joints[i].Length = reader.ReadSingle();
+                    model.joints[i].Offset = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                }
+
+                // Allocate and read all of the joint translations.
+                model.jointTranslations = new JointTranslation[model.header.JointCount];
+                for (int i = 0; i < model.header.JointCount; i++)
+                {
+                    // Read the joint translation.
+                    model.jointTranslations[i] = new JointTranslation();
+                    model.jointTranslations[i].Translation = new Vector4[4];
+                    for (int x = 0; x < 4; x++)
+                        model.jointTranslations[i].Translation[x] = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                }
+
+                // Allocate and read all of the joint data 3.
+                model.jointData3 = new JointData3[model.header.JointCount];
+                for (int i = 0; i < model.header.JointCount; i++)
+                {
+                    // Read data.
+                    model.jointData3[i] = new JointData3();
+                    model.jointData3[i].Unknown = new Vector4[4];
+                    for (int x = 0; x < 4; x++)
+                        model.jointData3[i].Unknown[x] = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                }
+            }
+
+            // Seek to the texture files offset (must do this even if there are no textures, materials immediately follow this).
+            reader.BaseStream.Position = model.header.TextureFilesOffset;
+
+            // Check if there are texture files names to read.
+            if (model.header.NumberOfTextures > 0)
+            {
+                // Loop and read all the texture files names.
+                model.textureFileNames = new string[model.header.NumberOfTextures];
+                for (int i = 0; i < model.header.NumberOfTextures; i++)
+                {
+                    // Read the texture string.
+                    model.textureFileNames[i] = new string(reader.ReadChars(64)).Trim(new char[] { '\0' });
+                }
+            }
+
+            // Check if there are materials to read.
+            if (model.header.MaterialCount > 0)
+            {
+                // Allocate and read the material data.
+                model.materials = new Material[model.header.MaterialCount];
+                for (int i = 0; i < model.header.MaterialCount; i++)
+                {
+                    // Read the material data.
+                    model.materials[i] = new Material();
+                    model.materials[i].Flags = reader.ReadByte();
+                    model.materials[i].Unk1 = reader.ReadByte();
+                    model.materials[i].Unk2 = reader.ReadByte();
+                    model.materials[i].Unk3 = reader.ReadByte();
+                    model.materials[i].Unk4 = reader.ReadInt32();
+                    model.materials[i].Unk9 = reader.ReadInt32();
+                    model.materials[i].Unk5 = reader.ReadInt32();
+                    model.materials[i].Unk6 = reader.ReadInt32();
+                    model.materials[i].Unk7 = reader.ReadInt32();
+                    model.materials[i].Unk8 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex1 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex2 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex3 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex4 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex5 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex6 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex7 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex8 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+                    model.materials[i].TextureIndex9 = reader.ReadInt32();
+                    reader.BaseStream.Position += 4;
+
+                    reader.BaseStream.Position += 0x68;
+                }
+            }
+
+            // Seek to the primitive data offset.
+            reader.BaseStream.Position = model.header.PrimitiveDataOffset;
+
+            // Allocate and read the primitive data.
+            model.primitives = new Primitive[model.header.PrimitiveCount];
+            for (int i = 0; i < model.header.PrimitiveCount; i++)
+            {
+                // Read the primitive data.
+                model.primitives[i] = new Primitive();
+                model.primitives[i].Unk1 = reader.ReadInt16();
+                model.primitives[i].MaterialIndex = reader.ReadInt16();
+                model.primitives[i].Enabled = reader.ReadByte();
+                model.primitives[i].Unk3 = reader.ReadByte();
+                model.primitives[i].Unk11 = reader.ReadByte();
+                model.primitives[i].Unk12 = reader.ReadByte();
+                model.primitives[i].VertexStride1 = reader.ReadByte();
+                model.primitives[i].VertexStride2 = reader.ReadByte();
+                model.primitives[i].Unk13 = reader.ReadByte();
+                reader.BaseStream.Position += 1;
+                model.primitives[i].VertexCount1 = reader.ReadInt32();
+                model.primitives[i].StartingVertex1 = reader.ReadInt32();
+                model.primitives[i].Unk16 = reader.ReadInt32();
+                model.primitives[i].Unk5 = reader.ReadInt32();
+                model.primitives[i].IndexCount = reader.ReadInt32();
+                model.primitives[i].StartingIndexLocation = reader.ReadInt32();
+                model.primitives[i].Unk8 = reader.ReadInt32();
+                reader.BaseStream.Position += 8;
+                model.primitives[i].Unk9 = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                model.primitives[i].Unk10 = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            }
+
+            // Check if there is vertex stream 1 data.
+            if (model.header.VertexData1Size > 0)
+            {
+                // Seek to and read the vertex stream 1 data.
+                reader.BaseStream.Position = model.header.VertexData1Offset;
+                model.vertexData1 = reader.ReadBytes(model.header.VertexData1Size);
+            }
+
+            // Check if there is vertex stream 2 data.
+            if (model.header.VertexData2Size > 0)
+            {
+                // Seek to and read the vertex stream 2 data.
+                reader.BaseStream.Position = model.header.VertexData2Offset;
+                model.vertexData2 = reader.ReadBytes(model.header.VertexData2Size);
+            }
+
+            // Seek to the indice buffer offset.
+            reader.BaseStream.Position = model.header.IndiceDataOffset;
+
+            // Allocate and read the indice data.
+            model.indiceBuffer = new short[model.header.IndiceCount - 1];
+            for (int i = 0; i < model.header.IndiceCount - 1; i++)
+            {
+                // Read the index data.
+                model.indiceBuffer[i] = reader.ReadInt16();
+            }
+
+            // Close the binary reader and memory stream.
+            reader.Close();
+            ms.Close();
+
+            // Return the model object.
+            return model;
+        }
+    }
+}
