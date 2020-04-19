@@ -50,6 +50,10 @@
             this.lblOffset = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.sortByToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.fileNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.arcFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.resourceTypeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.treeViewContextMenu.SuspendLayout();
             this.FileInfoBox.SuspendLayout();
@@ -120,9 +124,10 @@
             // treeViewContextMenu
             // 
             this.treeViewContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.extractToolStripMenuItem});
+            this.extractToolStripMenuItem,
+            this.sortByToolStripMenuItem});
             this.treeViewContextMenu.Name = "treeViewContextMenu";
-            this.treeViewContextMenu.Size = new System.Drawing.Size(110, 26);
+            this.treeViewContextMenu.Size = new System.Drawing.Size(181, 70);
             // 
             // extractToolStripMenuItem
             // 
@@ -255,6 +260,37 @@
             this.splitContainer1.SplitterDistance = 297;
             this.splitContainer1.TabIndex = 3;
             // 
+            // sortByToolStripMenuItem
+            // 
+            this.sortByToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileNameToolStripMenuItem,
+            this.arcFileToolStripMenuItem,
+            this.resourceTypeToolStripMenuItem});
+            this.sortByToolStripMenuItem.Name = "sortByToolStripMenuItem";
+            this.sortByToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.sortByToolStripMenuItem.Text = "Sort By";
+            // 
+            // fileNameToolStripMenuItem
+            // 
+            this.fileNameToolStripMenuItem.Name = "fileNameToolStripMenuItem";
+            this.fileNameToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.fileNameToolStripMenuItem.Text = "File Name";
+            this.fileNameToolStripMenuItem.Click += new System.EventHandler(this.fileNameToolStripMenuItem_Click);
+            // 
+            // arcFileToolStripMenuItem
+            // 
+            this.arcFileToolStripMenuItem.Name = "arcFileToolStripMenuItem";
+            this.arcFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.arcFileToolStripMenuItem.Text = "Arc File";
+            this.arcFileToolStripMenuItem.Click += new System.EventHandler(this.arcFileToolStripMenuItem_Click);
+            // 
+            // resourceTypeToolStripMenuItem
+            // 
+            this.resourceTypeToolStripMenuItem.Name = "resourceTypeToolStripMenuItem";
+            this.resourceTypeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.resourceTypeToolStripMenuItem.Text = "Resource Type";
+            this.resourceTypeToolStripMenuItem.Click += new System.EventHandler(this.resourceTypeToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -304,6 +340,10 @@
         private System.Windows.Forms.ContextMenuStrip treeViewContextMenu;
         private System.Windows.Forms.ToolStripMenuItem extractToolStripMenuItem;
         private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.ToolStripMenuItem sortByToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem fileNameToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem arcFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem resourceTypeToolStripMenuItem;
     }
 }
 

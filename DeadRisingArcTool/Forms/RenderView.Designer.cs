@@ -38,7 +38,7 @@
             this.Name = "RenderView";
             this.Text = "RenderView";
             this.Load += new System.EventHandler(this.RenderView_Load);
-            this.MouseDown += RenderView_MouseDown;
+            this.FormClosing += RenderView_FormClosing;
             this.ResumeLayout(false);
 
         }

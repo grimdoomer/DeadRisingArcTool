@@ -33,8 +33,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Ionic.Zlib">
-      <HintPath>..\..\..\Open Source\DotNetZip\sourceCode\sourceCode\Zlib\bin\Debug\Ionic.Zlib.dll</HintPath>
+    <Reference Include="FastColoredTextBox, Version=2.16.24.0, Culture=neutral, PublicKeyToken=fb8aa12b994ef61b, processorArchitecture=MSIL">
+      <HintPath>..\packages\FCTB.2.16.24\lib\FastColoredTextBox.dll</HintPath>
+    </Reference>
+    <Reference Include="Ionic.Zlib, Version=1.9.1.5, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Ionic.Zlib.1.9.1.5\lib\Ionic.Zlib.dll</HintPath>
     </Reference>
     <Reference Include="SharpDX, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpDX.4.2.0\lib\net45\SharpDX.dll</HintPath>
@@ -73,20 +76,34 @@
     <Compile Include="Controls\BitmapViewer.Designer.cs">
       <DependentUpon>BitmapViewer.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\GameResourceEditorAttribute.cs" />
+    <Compile Include="Controls\GameResourceEditorControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Controls\ModelViewer.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Controls\ModelViewer.Designer.cs">
       <DependentUpon>ModelViewer.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\TextEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TextEditor.Designer.cs">
+      <DependentUpon>TextEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="FileFormats\Archive\ArcFile.cs" />
     <Compile Include="FileFormats\Archive\ArcFileCollection.cs" />
     <Compile Include="FileFormats\Bitmaps\DDS.cs" />
+    <Compile Include="FileFormats\Bitmaps\Swizzle.cs" />
+    <Compile Include="FileFormats\GameResource.cs" />
+    <Compile Include="FileFormats\GameResourceParserAttribute.cs" />
     <Compile Include="FileFormats\Geometry\rModel.cs" />
     <Compile Include="FileFormats\Bitmaps\Color.cs" />
     <Compile Include="FileFormats\Bitmaps\DXTDecoder.cs" />
     <Compile Include="FileFormats\Bitmaps\rTexture.cs" />
-    <Compile Include="FileFormats\Geometry\ShaderIncludeResolver.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\ShaderIncludeResolver.cs" />
+    <Compile Include="FileFormats\Misc\XmlFile.cs" />
     <Compile Include="Forms\LoadingDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -112,6 +129,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\ModelViewer.resx">
       <DependentUpon>ModelViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TextEditor.resx">
+      <DependentUpon>TextEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\LoadingDialog.resx">
       <DependentUpon>LoadingDialog.cs</DependentUpon>
@@ -165,6 +185,7 @@
     <Content Include="FileFormats\Geometry\Shaders\XfMaterial.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="FileFormats\Geometry\Shaders\XfMaterialStandard.fx" />
     <Content Include="FileFormats\Geometry\Shaders\XfMaterialZPass.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -172,7 +193,12 @@
     <Content Include="IDA\ObjectTypes.txt" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Mutation\Mutation\IO\IO.csproj">
+      <Project>{13a4ce71-96c0-4553-b899-af6c524fd3c9}</Project>
+      <Name>IO</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

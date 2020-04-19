@@ -21,8 +21,12 @@
 //-----------------------------------------------------------------------------
 struct ZPassVS_INPUT
 {
-	float4		position:				POSITION;
-	float2		texCoordBase:			TEXCOORD0;
+	float3		position:		POSITION;
+	float3      normal:			NORMAL;
+	float3      tangent:		TANGENT;
+	float2		texCoord0:		TEXCOORD0;
+	float2		texCoord1:		TEXCOORD1;
+
 	float4		boneWeights0:	BLENDWEIGHT0;
 	int4		boneIndices0:	BLENDINDICES0;
 };
@@ -57,13 +61,15 @@ ZPassVS_OUTPUT XfZPassVS(ZPassVS_INPUT I)
 
 	wmat = getWorldMatrix4wtFromTex(I.boneWeights0, I.boneIndices0);
 
-	float3	wp = mul(wmat, float4(decodePosition(I.position.xyz), 1));
-	//float3	wp = decodePosition(I.position.xyz);
+	//float3	wp = mul(wmat, float4(decodePosition(I.position.xyz), 1));
+	float3	wp = decodePosition(I.position.xyz);
+
+	//float3 wp = I.position;
 
 	O.position = mul(float4(wp, 1), gXfViewProj);
 
-	O.wPosition = O.position;
-	O.texCoordBase = I.texCoordBase;
+	//O.wPosition = O.position;
+	O.texCoordBase = I.texCoord0;
 
 	return O;
 }
@@ -73,18 +79,20 @@ ZPassVS_OUTPUT XfZPassVS(ZPassVS_INPUT I)
 //-----------------------------------------------------------------------------
 float4 XfZPassPS(ZPassVS_OUTPUT I, uniform const bool _alpha, uniform const float _threshold) : SV_Target
 {
-	const bool alpha = FPARAM_0;
-	const float threshold = FPARAM_1;
+	//const bool alpha = FPARAM_0;
+	//const float threshold = FPARAM_1;
 
-	if (alpha) {
-		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
-		float v = albedo.w - threshold;
-		clip(v);
-	}
+	//if (alpha) {
+	//	float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
+	//	float v = albedo.w - threshold;
+	//	clip(v);
+	//}
 
-	//float z = 1.0f - (I.wPosition.z / I.wPosition.w);	//qloc
-	float z = (I.wPosition.z / I.wPosition.w);	//qloc	
-	return float4(z, 0, 0, 1);	
+	////float z = 1.0f - (I.wPosition.z / I.wPosition.w);	//qloc
+	//float z = (I.wPosition.z / I.wPosition.w);	//qloc	
+	//return float4(z, 0, 0, 1);	
+
+	return XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
 }
 
 //=============================================================================

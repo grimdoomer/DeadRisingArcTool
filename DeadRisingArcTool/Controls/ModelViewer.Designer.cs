@@ -37,17 +37,17 @@
             this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox1.Location = new System.Drawing.Point(3, 46);
+            this.textBox1.Location = new System.Drawing.Point(3, 32);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
             this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.textBox1.Size = new System.Drawing.Size(509, 547);
+            this.textBox1.Size = new System.Drawing.Size(509, 561);
             this.textBox1.TabIndex = 0;
             // 
             // btnRender
             // 
-            this.btnRender.Location = new System.Drawing.Point(3, 17);
+            this.btnRender.Location = new System.Drawing.Point(3, 3);
             this.btnRender.Name = "btnRender";
             this.btnRender.Size = new System.Drawing.Size(75, 23);
             this.btnRender.TabIndex = 1;
@@ -63,7 +63,6 @@
             this.Controls.Add(this.textBox1);
             this.Name = "ModelViewer";
             this.Size = new System.Drawing.Size(515, 596);
-            this.Load += new System.EventHandler(this.ModelViewer_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

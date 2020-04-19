@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using IO;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -128,8 +129,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x09 */ public byte VertexStride2;
         /* 0x0A */ public byte Unk13;
 	    /* 0x0B */ // padding
-        /* 0x0C */ public int VertexCount1;
-        /* 0x10 */ public int StartingVertex1; // vertex data 1
+        /* 0x0C */ public int VertexCount;
+        /* 0x10 */ public int StartingVertex; // vertex data 1
 	    /* 0x14 */ public int Unk16;
 	    /* 0x18 */ public int Unk5;	
 	    /* 0x1C */ public int IndexCount;               // Passed to CDeviceContext::DrawIndexed
@@ -140,7 +141,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x40 */ public Vector4 Unk10;
     }
 
-    public class rModel
+    [GameResourceParser(ResourceType.rModel)]
+    public class rModel : GameResource
     {
         public rModelHeader header;
 
@@ -163,18 +165,24 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         public byte[] vertexData1;
         public byte[] vertexData2;
 
-        public static rModel FromBuffer(byte[] buffer)
+        protected rModel(string fileName, ResourceType fileType, bool isBigEndian)
+            : base(fileName, fileType, isBigEndian)
+        {
+
+        }
+
+        public static rModel FromGameResource(byte[] buffer, string fileName, ResourceType fileType, bool isBigEndian)
         {
             // Make sure the buffer is large enough to hold the header structure.
             if (buffer.Length < rModelHeader.kSizeOf)
                 return null;
 
             // Create a new model object to populate with data.
-            rModel model = new rModel();
+            rModel model = new rModel(fileName, fileType, isBigEndian);
 
             // Create a new memory stream and binary reader for the buffer.
             MemoryStream ms = new MemoryStream(buffer);
-            BinaryReader reader = new BinaryReader(ms);
+            EndianReader reader = new EndianReader(isBigEndian == true ? Endianness.Big : Endianness.Little, ms);
 
             // Parse the header.
             model.header.Magic = reader.ReadInt32();
@@ -340,8 +348,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 model.primitives[i].VertexStride2 = reader.ReadByte();
                 model.primitives[i].Unk13 = reader.ReadByte();
                 reader.BaseStream.Position += 1;
-                model.primitives[i].VertexCount1 = reader.ReadInt32();
-                model.primitives[i].StartingVertex1 = reader.ReadInt32();
+                model.primitives[i].VertexCount = reader.ReadInt32();
+                model.primitives[i].StartingVertex = reader.ReadInt32();
                 model.primitives[i].Unk16 = reader.ReadInt32();
                 model.primitives[i].Unk5 = reader.ReadInt32();
                 model.primitives[i].IndexCount = reader.ReadInt32();

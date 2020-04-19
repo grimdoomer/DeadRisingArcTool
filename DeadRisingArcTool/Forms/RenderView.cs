@@ -109,7 +109,11 @@ namespace DeadRisingArcTool.Forms
         SharpDX.Direct3D11.Device device = null;
         SwapChain swapChain = null;
         Texture2D backBuffer = null;
+        Texture2D depthStencil = null;
         RenderTargetView renderView = null;
+        DepthStencilView depthStencilView = null;
+        DepthStencilState depthStencilState = null;
+        RasterizerState rasterState = null;
 
         // Camera helper.
         Camera camera = null;
@@ -124,7 +128,8 @@ namespace DeadRisingArcTool.Forms
 
         // Vertex and index buffers for rendering.
         InputLayout vertexDecl = null;
-        SharpDX.Direct3D11.Buffer vertexBuffer = null;
+        SharpDX.Direct3D11.Buffer primaryVertexBuffer = null;
+        SharpDX.Direct3D11.Buffer secondaryVertexBuffer = null;
         SharpDX.Direct3D11.Buffer indexBuffer = null;
 
         // Shader constant buffer.
@@ -132,8 +137,12 @@ namespace DeadRisingArcTool.Forms
         SharpDX.Direct3D11.Buffer shaderConstantBuffer = null;
 
         // Texture array used for materials.
+        DataStream[] textureStreams = null;
         Texture2D[] textures = null;
         ShaderResourceView[] shaderResources = null;
+
+        // Indicates if we should quit the render loop.
+        bool isClosing = false;
 
         public RenderView(ArcFile arcFile, rModel model)
         {
@@ -154,7 +163,7 @@ namespace DeadRisingArcTool.Forms
             InitializeModelData();
 
             // Show the form and enter the render loop.
-            while (true)
+            while (this.isClosing == false)
             {
                 // Render the next frame and process the windows message queue.
                 Render();
@@ -162,18 +171,10 @@ namespace DeadRisingArcTool.Forms
             }
         }
 
-        private void RenderView_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
+        private void RenderView_FormClosing(object sender, System.Windows.Forms.FormClosingEventArgs e)
         {
-            //// Safety check to make sure the camera has been initialized.
-            //if (this.camera == null)
-            //    return;
-
-            //// Handle camera rotation.
-            //if (e.Button == MouseButtons.Left)
-            //{
-            //    // Adjust camera position.
-            //    camera.change(e.X, e.Y);
-            //}
+            // Flag that we are closing so the render loop can kill itself.
+            this.isClosing = true;
         }
 
         private void InitializeD3D()
@@ -202,12 +203,38 @@ namespace DeadRisingArcTool.Forms
             this.backBuffer = Texture2D.FromSwapChain<Texture2D>(this.swapChain, 0);
             this.renderView = new RenderTargetView(this.device, this.backBuffer);
 
-            // Setup the shader macros used for compiling the shaders.
-            ShaderMacro[] macros = new ShaderMacro[]
-                {
-                    new ShaderMacro("PLATFORM_WIN", 1),
-                    new ShaderMacro("FUNC_SKIN", "SKIN_4WT")
-                };
+            // Create a texture for the dpeth stencil.
+            Texture2DDescription depthStencilDesc = new Texture2DDescription();
+            depthStencilDesc.Width = this.ClientSize.Width;
+            depthStencilDesc.Height = this.ClientSize.Height;
+            depthStencilDesc.MipLevels = 1;
+            depthStencilDesc.ArraySize = 1;
+            depthStencilDesc.Format = Format.D24_UNorm_S8_UInt;
+            depthStencilDesc.SampleDescription.Count = 4;
+            depthStencilDesc.SampleDescription.Quality = 0;
+            depthStencilDesc.Usage = ResourceUsage.Default;
+            depthStencilDesc.BindFlags = BindFlags.DepthStencil;
+            this.depthStencil = new Texture2D(this.device, depthStencilDesc);
+
+            // Create the depth stencil view.
+            this.depthStencilView = new DepthStencilView(this.device, this.depthStencil);
+            this.device.ImmediateContext.OutputMerger.SetRenderTargets(this.depthStencilView, this.renderView);
+
+            // Setup the depth stencil state.
+            DepthStencilStateDescription stateDesc = new DepthStencilStateDescription();
+            stateDesc.IsDepthEnabled = true;
+            stateDesc.DepthWriteMask = DepthWriteMask.All;
+            stateDesc.DepthComparison = Comparison.LessEqual;
+            this.depthStencilState = new DepthStencilState(this.device, stateDesc);
+
+            // Setup the rasterizer state.
+            RasterizerStateDescription rasterStateDesc = new RasterizerStateDescription();
+            rasterStateDesc.FillMode = FillMode.Solid;
+            rasterStateDesc.CullMode = CullMode.Back;
+            this.rasterState = new RasterizerState(this.device, rasterStateDesc);
+
+            // Set the viewport.
+            this.device.ImmediateContext.Rasterizer.SetViewport(0, 0, (float)this.ClientSize.Width, (float)this.ClientSize.Height, 0.0f, 1.0f);
 
 #if REAL_CODE
             // Compile out vertex and pixel shaders.
@@ -251,19 +278,24 @@ namespace DeadRisingArcTool.Forms
             // Setup the vertex declaration.
             this.vertexDecl = new InputLayout(this.device, this.vertexByteCode.Data, new InputElement[]
                 {
-                new InputElement("POSITION", 0, Format.R16G16B16A16_SNorm, 0, 0),
-                new InputElement("TEXCOORD", 0, Format.R16G16_SNorm, 24, 0),
-                new InputElement("BLENDWEIGHT", 0, Format.R8G8B8A8_UNorm, 12, 0),
-                new InputElement("BLENDINDICES", 0, Format.R8G8B8A8_UInt, 8, 0)
+                    new InputElement("POSITION", 0, Format.R16G16B16A16_SNorm, 0, 0),
+                    new InputElement("NORMAL", 0, Format.R16G16B16A16_SNorm, 16, 0),
+                    new InputElement("TANGENT", 0, Format.R16G16B16A16_SNorm, 0, 1),
+                    new InputElement("TEXCOORD", 0, Format.R16G16_SNorm, 24, 0),
+                    new InputElement("TEXCOORD", 1, Format.R16G16_SNorm, 8, 1),
+                    new InputElement("BLENDWEIGHT", 0, Format.R8G8B8A8_UNorm, 12, 0),
+                    new InputElement("BLENDINDICES", 0, Format.R8G8B8A8_UInt, 8, 0),
                 });
 
             // Create the vertex and index buffer from the model data streams.
-            this.vertexBuffer = SharpDX.Direct3D11.Buffer.Create<byte>(this.device, BindFlags.VertexBuffer, this.model.vertexData1);
+            this.primaryVertexBuffer = SharpDX.Direct3D11.Buffer.Create<byte>(this.device, BindFlags.VertexBuffer, this.model.vertexData1);
+            this.secondaryVertexBuffer = SharpDX.Direct3D11.Buffer.Create<byte>(this.device, BindFlags.VertexBuffer, this.model.vertexData2);
             this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<short>(this.device, BindFlags.IndexBuffer, this.model.indiceBuffer);
 
             // Set the bounding box parameters to the vertex shader constant buffer.
-            this.shaderConsts.gXfQuantPosScale = this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
-            this.shaderConsts.gXfQuantPosOffset = this.model.header.BoundingBoxMin;
+            this.shaderConsts.gXfQuantPosScale = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
+            this.shaderConsts.gXfQuantPosOffset = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMin;
+            this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
 
 #else
 
@@ -283,7 +315,7 @@ namespace DeadRisingArcTool.Forms
                 };
 
             // Create the vertex buffer.
-            this.vertexBuffer = SharpDX.Direct3D11.Buffer.Create<MyVertex>(this.device, BindFlags.VertexBuffer, vertices);
+            this.primaryVertexBuffer = SharpDX.Direct3D11.Buffer.Create<MyVertex>(this.device, BindFlags.VertexBuffer, vertices);
 
 #endif
 
@@ -291,6 +323,7 @@ namespace DeadRisingArcTool.Forms
             this.shaderConstantBuffer = SharpDX.Direct3D11.Buffer.Create(this.device, BindFlags.ConstantBuffer, this.shaderConsts.ToBufferData());
 
             // Allocate the texture list, first texture is reserved.
+            this.textureStreams = new DataStream[this.model.header.NumberOfTextures + 1];
             this.textures = new Texture2D[this.model.header.NumberOfTextures + 1];
             this.shaderResources = new ShaderResourceView[this.model.header.NumberOfTextures + 1];
 
@@ -302,7 +335,13 @@ namespace DeadRisingArcTool.Forms
                     continue;
 
                 // Decompress and parse the current texture.
-                rTexture texture = rTexture.FromBuffer(this.arcFile.DecompressFileEntry(this.model.textureFileNames[i - 1]));
+                string textureFileName = this.model.textureFileNames[i - 1];
+                byte[] decompressedData = this.arcFile.DecompressFileEntry(textureFileName);
+                rTexture texture = rTexture.FromGameResource(decompressedData, textureFileName, FileFormats.ResourceType.rTexture, this.arcFile.Endian == IO.Endianness.Big);
+
+                // TODO: This currently will not work for cube maps.
+                // Create the data stream which will pin the pixel buffer to an IntPtr we can use for sub resource mapping.
+                this.textureStreams[i] = DataStream.Create(texture.mipMapPixelBuffers[0][0], true, false);
 
                 // Setup common texture description properties.
                 Texture2DDescription desc = new Texture2DDescription();
@@ -314,10 +353,9 @@ namespace DeadRisingArcTool.Forms
                 desc.BindFlags = BindFlags.ShaderResource;
                 desc.SampleDescription.Count = 1;
 
-                // Setup the texture description based on the bitmap type.
+                // Set the number of textures in the resource based on the resource type.
                 if (texture.header.TextureType == TextureType.Type_2D)
                 {
-                    // TODO: Initialize texture description.
                     desc.ArraySize = 1;
                 }
                 else if (texture.header.TextureType == TextureType.Type_CubeMap)
@@ -329,8 +367,38 @@ namespace DeadRisingArcTool.Forms
                     desc.ArraySize = 1;
                 }
 
+                //// Get the pinned address of the pixel data for the following loop.
+                ////IntPtr pPixelData = this.textureStreams[i].
+
+                //// Seek to the beginning of the data stream for this texture.
+                //// Note: We let this class handle all the pointer math.
+                //this.textureStreams[i].Seek(0, System.IO.SeekOrigin.Begin);
+
+                //// Allocate and setup sub resources array for each mip map for each face.
+                //DataBox[] subResources = new DataBox[desc.ArraySize * texture.header.MipMapCount];
+                //for (int x = 0; x < desc.ArraySize; x++)
+                //{
+                //    // Loop for the number of mip maps for this face.
+                //    for (int y = 0; y < texture.header.MipMapCount; y++)
+                //    {
+                //        int bytesPerRow = 0;
+                //        int numberOfBlocks = 0;
+
+                //        // Get the pitch values for the current mip level.
+                //        rTexture.CalculateMipMapPitch(texture.header.Width, texture.header.Height, y, texture.header.Format, out bytesPerRow, out numberOfBlocks);
+
+                //        // Setup the current sub resource.
+                //        int index = (x * texture.header.MipMapCount) + y;
+                //        subResources[index] = new DataBox(this.textureStreams[i].PositionPointer, bytesPerRow, numberOfBlocks);
+
+                //        // Seek to the next mip.
+                //        this.textureStreams[i].Seek(bytesPerRow * numberOfBlocks, System.IO.SeekOrigin.Current);
+                //    }
+                //}
+
                 // Create the texture using the description and resource data we setup.
                 this.textures[i] = new Texture2D(this.device, desc);
+                //this.device.ImmediateContext.UpdateSubresource(subResources[0], this.textures[i]);
                 this.device.ImmediateContext.UpdateSubresource(texture.mipMapPixelBuffers[0][0], this.textures[i]);
 
                 // Create the shader resource that will use this texture.
@@ -347,12 +415,21 @@ namespace DeadRisingArcTool.Forms
                 this.camera.move();
             }
 
+            // Clear the backbuffer.
+            this.device.ImmediateContext.ClearRenderTargetView(this.renderView, SharpDX.Color.CornflowerBlue);
+            this.device.ImmediateContext.ClearDepthStencilView(this.depthStencilView, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1.0f, 0);
+
+            // Set depth stencil and rasterizer states.
+            this.device.ImmediateContext.OutputMerger.SetDepthStencilState(this.depthStencilState, 0);
+            this.device.ImmediateContext.Rasterizer.State = this.rasterState;
+
             // Set the shaders.
             this.device.ImmediateContext.VertexShader.Set(this.vertexShader);
             this.device.ImmediateContext.PixelShader.Set(this.pixelShader);
 
             // Set the shader samplers.
             this.device.ImmediateContext.VertexShader.SetSampler(0, this.shaderSampler);
+            this.device.ImmediateContext.PixelShader.SetSampler(0, this.shaderSampler);
 
             // Set the viewport.
             this.device.ImmediateContext.Rasterizer.SetViewport(0, 0, this.ClientSize.Width, this.ClientSize.Height, 0.0f, 1.0f);
@@ -363,7 +440,9 @@ namespace DeadRisingArcTool.Forms
             // Set the vertex and index buffers.
             this.device.ImmediateContext.InputAssembler.InputLayout = this.vertexDecl;
 #if REAL_CODE
-            this.device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, this.model.primitives[0].VertexStride1, 0));
+            this.device.ImmediateContext.InputAssembler.SetVertexBuffers(0, 
+                new VertexBufferBinding(this.primaryVertexBuffer, this.model.primitives[0].VertexStride1, 0),
+                new VertexBufferBinding(this.secondaryVertexBuffer, this.model.primitives[0].VertexStride2, 0));
             this.device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, Format.R16_UInt, 0);
 
             // Set the primitive type.
@@ -373,7 +452,7 @@ namespace DeadRisingArcTool.Forms
             this.shaderConsts.gXfViewProj = Matrix.Transpose(this.worldGround * this.camera.ViewMatrix * this.projectionMatrix);
             this.shaderConsts.gXfMatrixMapFactor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 #else
-            this.device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 28, 0));
+            this.device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.primaryVertexBuffer, 28, 0));
 
             // Set the primitive type.
             this.device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
@@ -382,9 +461,6 @@ namespace DeadRisingArcTool.Forms
             this.shaderConsts.WVP = Matrix.Transpose(this.worldGround * this.camera.ViewMatrix * this.projectionMatrix);
             this.shaderConsts.World = Matrix.Transpose(this.worldGround);
 #endif
-
-            // Clear the backbuffer.
-            this.device.ImmediateContext.ClearRenderTargetView(this.renderView, SharpDX.Color.CornflowerBlue);
 
 #if REAL_CODE
             // Loop through all of the primitives for the model.
@@ -398,7 +474,7 @@ namespace DeadRisingArcTool.Forms
                 Material material = this.model.materials[this.model.primitives[i].MaterialIndex];
 
                 // Set the texture being used by the material.
-                this.device.ImmediateContext.VertexShader.SetShaderResources(0, this.shaderResources[material.TextureIndex1]);
+                this.device.ImmediateContext.PixelShader.SetShaderResources(0, this.shaderResources[material.TextureIndex1]);
 
                 // Update the shader constants buffer with the new data.
                 this.device.ImmediateContext.UpdateSubresource(this.shaderConsts.ToBufferData(), this.shaderConstantBuffer);

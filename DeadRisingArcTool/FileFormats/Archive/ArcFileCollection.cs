@@ -62,7 +62,11 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// <summary>
         /// Build the tree view based on arc file name
         /// </summary>
-        ArcFile
+        ArcFile,
+        /// <summary>
+        /// Build the tree view based on the resource type of the arc files
+        /// </summary>
+        ResourceType
     }
 
     public class ArcFileCollection
@@ -74,7 +78,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
         public ArcFile[] ArcFiles { get { return this.arcFiles.ToArray(); } }
 
         // Dictionary of arc file datums to file names.
-        private Dictionary<int, string> arcFileNameDictionary = new Dictionary<int, string>();
+        private Dictionary<DatumIndex, string> arcFileNameDictionary = new Dictionary<DatumIndex, string>();
 
         /// <summary>
         /// Root directory the arc files were loaded from.
@@ -97,7 +101,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
             for (int i = 0; i < this.arcFiles[arcIndex].FileEntries.Length; i++)
             {
                 // Create a datum for the file entry and add it to the dictionary.
-                this.arcFileNameDictionary.Add(DatumIndex.DatumFromIndices((short)arcIndex, (short)i), this.arcFiles[arcIndex].FileEntries[i].FileName);
+                this.arcFileNameDictionary.Add(new DatumIndex((short)arcIndex, (short)i), this.arcFiles[arcIndex].FileEntries[i].FileName);
             }
         }
 
@@ -115,8 +119,10 @@ namespace DeadRisingArcTool.FileFormats.Archive
             // Check the order type and handle accordingly.
             if (order == TreeNodeOrder.FolderPath)
                 return BuildTreeNodeByFolderPath();
-            else
+            else if (order == TreeNodeOrder.ArcFile)
                 return BuildTreeNodeByArcFile();
+            else
+                return BuildTreeNodeByFileType();
         }
 
         private TreeNodeCollection BuildTreeNodeByFolderPath()
@@ -125,40 +131,12 @@ namespace DeadRisingArcTool.FileFormats.Archive
             TreeNode root = new TreeNode();
 
             // Loop through all of the file names in the arc file name dictionary and add each one to the tree node collection.
-            foreach (int datum in this.arcFileNameDictionary.Keys)
+            foreach (DatumIndex datum in this.arcFileNameDictionary.Keys)
             {
-                // Split the file name.
-                string[] pieces = this.arcFileNameDictionary[datum].Split(new string[] { "\\" }, StringSplitOptions.None);
-
-                // Loop through all the pieces and add each one to the tree node collection.
-                TreeNode previousNode = root;
-                for (int i = 0; i < pieces.Length; i++)
-                {
-                    // Check if the previous node has an existing node for the current folder.
-                    TreeNode[] nodesFound = previousNode.Nodes.Find(pieces[i], false);
-                    if (nodesFound.Length > 0)
-                    {
-                        // Set the new previous node and continue.
-                        previousNode = nodesFound[0];
-                    }
-                    else
-                    {
-                        // Create a new tree node.
-                        TreeNode newNode = new TreeNode(pieces[i]);
-                        newNode.Name = pieces[i];
-
-                        // Check if we need to set the tag property.
-                        if (i == pieces.Length - 1)
-                        {
-                            // Set the tag to the datum of the file entry.
-                            newNode.Tag = datum;
-                        }
-
-                        // Add the node to the parent node's collection.
-                        previousNode.Nodes.Add(newNode);
-                        previousNode = newNode;
-                    }
-                }
+                // Add the file path as tree nodes
+                string fileName = this.arcFiles[datum.ArcIndex].FileEntries[datum.FileIndex].FileName + "." + 
+                    this.arcFiles[datum.ArcIndex].FileEntries[datum.FileIndex].FileType.ToString();
+                AddFilePathAsTreeNodes(root, fileName, datum);
             }
 
             // Return the tree node collection.
@@ -181,43 +159,90 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 // Loop through all the files in the arc file and add them to the arc node.
                 for (int x = 0; x < this.arcFiles[i].FileEntries.Length; x++)
                 {
-                    // Split the file name.
-                    string[] pieces = this.arcFiles[i].FileEntries[x].FileName.Split(new string[] { "\\" }, StringSplitOptions.None);
-
-                    // Loop through all of the pieces and add each one to the tree node.
-                    TreeNode previousNode = arcNode;
-                    for (int z = 0; z < pieces.Length; z++)
-                    {
-                        // Check if the previous node has an existing node for the current folder.
-                        TreeNode[] nodesFound = previousNode.Nodes.Find(pieces[z], false);
-                        if (nodesFound.Length > 0)
-                        {
-                            // Set the new previous node and continue.
-                            previousNode = nodesFound[0];
-                        }
-                        else
-                        {
-                            // Create a new tree node.
-                            TreeNode newNode = new TreeNode(pieces[z]);
-                            newNode.Name = pieces[z];
-
-                            // Check if we need to set the tag property.
-                            if (z == pieces.Length - 1)
-                            {
-                                // Set the tag to the datum of the file entry.
-                                newNode.Tag = DatumIndex.DatumFromIndices((short)i, (short)x);
-                            }
-
-                            // Add the node to the parent node's collection.
-                            previousNode.Nodes.Add(newNode);
-                            previousNode = newNode;
-                        }
-                    }
+                    // Add the file path as tree nodes
+                    string fileName = this.arcFiles[i].FileEntries[x].FileName + "." + this.arcFiles[i].FileEntries[x].FileType.ToString();
+                    AddFilePathAsTreeNodes(arcNode, fileName, new DatumIndex((short)i, (short)x));
                 }
             }
 
             // Return the tree node collection.
             return root.Nodes;
+        }
+
+        private TreeNodeCollection BuildTreeNodeByFileType()
+        {
+            // Root tree node collection we will add to.
+            TreeNode root = new TreeNode();
+
+            // Loop through all of the arc files in the collection.
+            for (int i = 0; i < this.arcFiles.Count; i++)
+            {
+                // Loop through all the files in the current arc.
+                for (int x = 0; x < this.arcFiles[i].FileEntries.Length; x++)
+                {
+                    TreeNode previousNode = null;
+
+                    // Check if the root node already has a tree node for this resource type.
+                    TreeNode[] nodesFound = root.Nodes.Find(this.arcFiles[i].FileEntries[x].FileType.ToString(), false);
+                    if (nodesFound.Length > 0)
+                    {
+                        // Set the previous node to the resource type node.
+                        previousNode = nodesFound[0];
+                    }
+                    else
+                    {
+                        // Create a new tree node for this resource type.
+                        previousNode = new TreeNode(this.arcFiles[i].FileEntries[x].FileType.ToString());
+                        previousNode.Name = this.arcFiles[i].FileEntries[x].FileType.ToString();
+
+                        // Add the node to the root node.
+                        root.Nodes.Add(previousNode);
+                    }
+
+                    // Add the file path as tree nodes to the resource type node.
+                    string fileName = this.arcFiles[i].FileEntries[x].FileName + "." + this.arcFiles[i].FileEntries[x].FileType.ToString();
+                    AddFilePathAsTreeNodes(previousNode, fileName, new DatumIndex((short)i, (short)x));
+                }
+            }
+
+            // Return the tree node collection.
+            return root.Nodes;
+        }
+
+        private void AddFilePathAsTreeNodes(TreeNode root, string filePath, object tag)
+        {
+            // Split the file name.
+            string[] pieces = filePath.Split(new string[] { "\\" }, StringSplitOptions.None);
+
+            // Loop through all of the pieces and add each one to the tree node.
+            TreeNode previousNode = root;
+            for (int z = 0; z < pieces.Length; z++)
+            {
+                // Check if the previous node has an existing node for the current folder.
+                TreeNode[] nodesFound = previousNode.Nodes.Find(pieces[z], false);
+                if (nodesFound.Length > 0)
+                {
+                    // Set the new previous node and continue.
+                    previousNode = nodesFound[0];
+                }
+                else
+                {
+                    // Create a new tree node.
+                    TreeNode newNode = new TreeNode(pieces[z]);
+                    newNode.Name = pieces[z];
+
+                    // Check if we need to set the tag property.
+                    if (z == pieces.Length - 1)
+                    {
+                        // Set the tag to the datum of the file entry.
+                        newNode.Tag = tag;
+                    }
+
+                    // Add the node to the parent node's collection.
+                    previousNode.Nodes.Add(newNode);
+                    previousNode = newNode;
+                }
+            }
         }
 
         #endregion

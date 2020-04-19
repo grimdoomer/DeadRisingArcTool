@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeadRisingArcTool.FileFormats.Geometry
+namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
     public class ShaderIncludeResolver : Include
     {

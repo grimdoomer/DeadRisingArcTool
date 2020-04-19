@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IO;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -18,6 +19,9 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         Format_DXT5,            // 77
         Format_R8G8_SNORM,      // 51
         Format_B8G8R8A8_UNORM,  // 87
+
+        // Xbox 360 formats
+        Format_A4R4G4B4,        // 0x1828014f
     }
 
     public enum TextureType : int
@@ -33,18 +37,19 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         public const int kMagic = 0x00584554;
         public const int kVersion = 0x56;
 
-        public int Magic;
-        public byte Version;
-        public TextureType TextureType;
-        public byte Flags;
-        public byte MipMapCount;
-        public int Width;
-        public int Height;
-        public int Depth;
-        public TextureFormat Format;
+        /* 0x00 */ public int Magic;
+        /* 0x04 */ public byte Version;
+        /* 0x05 */ public TextureType TextureType;
+        /* 0x06 */ public byte Flags;
+        /* 0x07 */ public byte MipMapCount;
+        /* 0x08 */ public int Width;
+        /* 0x0C */ public int Height;
+        /* 0x10 */ public int Depth;
+        /* 0x14 */ public TextureFormat Format;
     }
 
-    public class rTexture
+    [GameResourceParser(ResourceType.rTexture)]
+    public class rTexture : GameResource
     {
         // Image header data.
         public rTextureHeader header;
@@ -54,6 +59,12 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
 
         // Array of pixel buffers for each mip map level.
         public byte[][][] mipMapPixelBuffers;
+
+        public rTexture(string fileName, ResourceType fileType, bool isBigEndian)
+            : base(fileName, fileType, isBigEndian)
+        {
+
+        }
 
         public Bitmap GetBitmap(int lod)
         {
@@ -84,6 +95,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                             case TextureFormat.Format_DXT1:
                                 {
                                     // DXT1: 32bpp BGRA format.
+                                    //pixelData = Swizzle.ConvertToLinearTexture(this.mipMapPixelBuffers[0][lod], width, height, this.header.Format);
                                     pixelData = DXTDecoder.DecodeDXT1(height, width, this.mipMapPixelBuffers[0][lod]);
                                     break;
                                 }
@@ -95,8 +107,16 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                                 }
                             case TextureFormat.Format_DXT5:
                                 {
+                                    // Check if the pixel data is swizzled.
+                                    //if (IsFormatSwizzled(texture.header.Format) == true)
+                                    {
+                                        // Deswizzle the pixel data.
+                                        //texture.mipMapPixelBuffers[0][i] = Swizzle.SwizzleData(texture.mipMapPixelBuffers[0][i], texture.header.Width, texture.header.Height, 32,
+                                    }
+
                                     // DXT5: 32bpp BGRA format.
-                                    pixelData = DXTDecoder.DecodeDXT45(height, width, this.mipMapPixelBuffers[0][lod]);
+                                    //pixelData = Swizzle.ConvertToLinearTexture(this.mipMapPixelBuffers[0][lod], width, height, this.header.Format);
+                                    pixelData = DXTDecoder.DecodeDXT45Texture(width, height, this.mipMapPixelBuffers[0][lod], false);
                                     break;
                                 }
                             case TextureFormat.Format_R8G8_SNORM:
@@ -234,18 +254,18 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             return bitmap;
         }
 
-        public static rTexture FromBuffer(byte[] buffer)
+        public static rTexture FromGameResource(byte[] buffer, string fileName, ResourceType fileType, bool isBigEndian)
         {
             // Make sure the buffer is large enough to contain the texture header.
             if (buffer.Length < rTextureHeader.kSizeOf)
                 return null;
 
             // Create a new texture object to populate with data.
-            rTexture texture = new rTexture();
+            rTexture texture = new rTexture(fileName, fileType, isBigEndian);
 
             // Create a new memory stream and binary reader for the buffer.
             MemoryStream ms = new MemoryStream(buffer);
-            BinaryReader reader = new BinaryReader(ms);
+            EndianReader reader = new EndianReader(isBigEndian == true ? Endianness.Big : Endianness.Little, ms);
 
             // Parse the header.
             texture.header = new rTextureHeader();
@@ -420,13 +440,38 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         {
             switch (fourcc)
             {
+                case 0x1a200152:
                 case 0x31545844: return TextureFormat.Format_DXT1;
                 case 0x32545844: return TextureFormat.Format_DXT2;
+                case 0x1A200154:
+                //case 0x1a20017b: DXT5A
                 case 0x35545844: return TextureFormat.Format_DXT5;
                 case 60: return TextureFormat.Format_R8G8_SNORM;
+                case 0x18280186:
                 case 21: return TextureFormat.Format_B8G8R8A8_UNORM;
+
+                case 0x1828014f: return TextureFormat.Format_A4R4G4B4;
                 default: return TextureFormat.Format_Unsupported;
             }
+        }
+
+        public static bool IsXboxFormat(int fourcc)
+        {
+            switch (fourcc)
+            {
+                case 0x1A200154:
+                case 0x18280186:
+                case 0x1828014f:
+                    return true;
+            }
+
+            // Format is not xbox.
+            return false;
+        }
+
+        public static bool IsFormatSwizzled(int fourcc)
+        {
+            return IsXboxFormat(fourcc);
         }
 
         public static SharpDX.DXGI.Format DXGIFromTextureFormat(TextureFormat format)

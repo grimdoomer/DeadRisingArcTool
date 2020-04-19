@@ -11,19 +11,23 @@ using DeadRisingArcTool.FileFormats.Bitmaps;
 
 namespace DeadRisingArcTool.Controls
 {
-    public partial class BitmapViewer : UserControl
+    [GameResourceEditor(FileFormats.ResourceType.rTexture)]
+    public partial class BitmapViewer : GameResourceEditorControl
     {
+        /// <summary>
+        /// Private accessor that casts the game resource to a <see cref="rTexture"/>
+        /// </summary>
+        private rTexture Bitmap { get { return (rTexture)this.GameResource; } }
+
         // Suspends certain UI operations until the form is fully initialized.
         private bool isLoading = false;
 
-        private rTexture bitmap = null;
         /// <summary>
-        /// Gets or sets the rTexture bitmap currently being displayed.
+        /// Preferred size of the picture box based on the size of the bitmap viewer control.
         /// </summary>
-        public rTexture Bitmap
+        private Size PreferredImageSize
         {
-            get { return this.bitmap; }
-            set { this.bitmap = value; ReloadBitmap(); }
+            get { return new Size(this.Size.Width - 8, this.Size.Height - this.pictureBox1.Location.Y - 3); }
         }
 
         public BitmapViewer()
@@ -31,23 +35,12 @@ namespace DeadRisingArcTool.Controls
             InitializeComponent();
         }
 
-        public BitmapViewer(rTexture bitmap)
+        protected override void OnGameResourceUpdated()
         {
-            // Initialize fields.
-            this.bitmap = bitmap;
+            // Make sure the arc file and game resource are valid.
+            if (this.ArcFile == null || this.GameResource == null)
+                return;
 
-            InitializeComponent();
-        }
-
-        private void BitmapViewer_Load(object sender, EventArgs e)
-        {
-            // If the control was created with a bitmap image set, reload the UI.
-            if (this.bitmap != null)
-                ReloadBitmap();
-        }
-
-        private void ReloadBitmap()
-        {
             // Flag that we are reloading the UI.
             this.isLoading = true;
 
@@ -71,21 +64,34 @@ namespace DeadRisingArcTool.Controls
             this.comboBox1.SelectedIndex = 0;
 
             // Load the first mip map image into the preview box.
-            this.pictureBox1.Image = this.Bitmap.GetBitmap(0);
-            if (this.pictureBox1.Image != null)
-                this.pictureBox1.Size = this.pictureBox1.Image.Size;
+            Bitmap bitmap = this.Bitmap.GetBitmap(0);
+            this.pictureBox1.BackgroundImage = bitmap;
+
+            // If the image is larger than the picture box then scale it.
+            if (bitmap.Width > this.PreferredImageSize.Width || bitmap.Height > this.PreferredImageSize.Height)
+            {
+                // Set the picture box to the preferred size and scale the image to fit.
+                this.pictureBox1.Size = this.PreferredImageSize;
+                this.pictureBox1.BackgroundImageLayout = ImageLayout.Stretch;
+            }
+            else
+            {
+                // Set the picture box to be the same size as the image.
+                this.pictureBox1.Size = bitmap.Size;
+                this.pictureBox1.BackgroundImageLayout = ImageLayout.None;
+            }
 
             // Check if we need to set the background color.
-            if ((this.bitmap.header.Flags & 4) != 0)
+            if ((this.Bitmap.header.Flags & 4) != 0)
             {
                 // Convert the background color to integers.
-                int b = 255 * (int)this.bitmap.BackgroundColor[0];
-                int g = 255 * (int)this.bitmap.BackgroundColor[1];
-                int r = 255 * (int)this.bitmap.BackgroundColor[2];
-                int a = 255 * (int)this.bitmap.BackgroundColor[3];
+                int b = 255 * (int)this.Bitmap.BackgroundColor[0];
+                int g = 255 * (int)this.Bitmap.BackgroundColor[1];
+                int r = 255 * (int)this.Bitmap.BackgroundColor[2];
+                int a = 255 * (int)this.Bitmap.BackgroundColor[3];
 
                 // Set the background color to the inverse of the values?
-                //this.pictureBox1.BackColor = System.Drawing.Color.FromArgb(255 - a, 255 - r, 255 - g, 255 - b);
+                this.pictureBox1.BackColor = System.Drawing.Color.FromArgb(255 - a, 255 - r, 255 - g, 255 - b);
             }
             else
             {
@@ -104,7 +110,13 @@ namespace DeadRisingArcTool.Controls
                 return;
 
             // Set the preview image to the selected mip map level.
-            this.pictureBox1.Image = this.Bitmap.GetBitmap(this.comboBox1.SelectedIndex);
+            this.pictureBox1.BackgroundImage = this.Bitmap.GetBitmap(this.comboBox1.SelectedIndex);
+
+            // If the image is larger than the picture box then scale it.
+            if (this.pictureBox1.Size.Width < this.pictureBox1.BackgroundImage.Width || this.pictureBox1.Height < this.pictureBox1.BackgroundImage.Height)
+                this.pictureBox1.BackgroundImageLayout = ImageLayout.Stretch;
+            else
+                this.pictureBox1.BackgroundImageLayout = ImageLayout.None;
         }
     }
 }

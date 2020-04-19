@@ -46,9 +46,165 @@ SamplerState XfSamplerAlbedoMap
 	MaxAnisotropy = 3;
 };
 
+SamplerState XfSamplerAlbedoMap2
+{
+	//Texture				= (XfAlbedoMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	MaxLOD = 0;
+	Filter = ANISOTROPIC;
+	MipLODBias = 0.0f;
+	MaxAnisotropy = 3;
+};
+
+SamplerState XfSamplerNormalMap
+{
+	//Texture				= (XfNormalMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	MaxLOD = 0;
+	Filter = ANISOTROPIC;
+	MipLODBias = 0.0f;
+	MaxAnisotropy = 3;
+};
+
+SamplerState XfSamplerMaskMap
+{
+	//Texture				= (XfMaskMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerLightMap
+{
+	//Texture				= (XfLightMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerLightMap2
+{
+	//Texture				= (XfLightMap2);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerShadowMap
+{
+	//Texture				= (XfShadowMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerShadowMap2
+{
+	//Texture				= (XfShadowMap2);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerAdditionalMap
+{
+	//Texture				= (XfAdditionalMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerDetailMap
+{
+	//Texture				= (XfAdditionalMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerEnvironmentMap
+{
+	//Texture				= (XfEnvironmentMap);
+	AddressU = Clamp;
+	AddressV = Clamp;
+	AddressW = Clamp;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerScreenMap
+{
+	//Texture				= (XfScreenMap);
+	AddressU = Clamp;
+	AddressV = Clamp;
+	AddressW = Clamp;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_POINT;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
 SamplerState XfSamplerMatrixMap
 {
 	//Texture				= (XfMatrixMap);
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+	BorderColor = float4(0, 0, 0, 0);
+	Filter = MIN_MAG_MIP_POINT;
+	MaxAnisotropy = 1;
+	MaxLOD = 0;
+	MipLODBias = 0.0f;
+};
+
+SamplerState XfSamplerPrevMatrixMap
+{
+	//Texture				= (XfPrevMatrixMap);
 	AddressU = Wrap;
 	AddressV = Wrap;
 	AddressW = Wrap;

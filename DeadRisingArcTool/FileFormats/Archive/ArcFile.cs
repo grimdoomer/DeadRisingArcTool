@@ -1,6 +1,8 @@
 ﻿using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats.Geometry;
 using DeadRisingArcTool.Utilities;
+using IO;
+using IO.Endian;
 using Ionic.Zlib;
 using System;
 using System.Collections.Generic;
@@ -10,46 +12,47 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeadRisingArcTool
+namespace DeadRisingArcTool.FileFormats.Archive
 {
-    public enum ResourceType
-    {
-        Invalid,
-        Texture,
-        Model,
-    }
-
     public struct ArcFileHeader
     {
         public const int kSizeOf = 8;
         public const int kHeaderMagic = 0x00435241;
         public const int kVersion = 4;
 
-        public int Magic;
-        public short Version;
-        public short NumberOfFiles;
+        /* 0x00 */ public int Magic;
+        /* 0x04 */ public short Version;
+        /* 0x06 */ public short NumberOfFiles;
     }
 
-    public struct ArcFileEntry
+    public class ArcFileEntry
     {
-        public string FileName { get; set; }
-        public int FileType { get; set; }
-        public int CompressedSize { get; set; }
-        public int DecompressedSize { get; set;  }
-        public int DataOffset { get; set; }
+        public const int kSizeOf = 80;
+
+        /* 0x00 */ public string FileName { get; set; }
+        /* 0x40 */ public ResourceType FileType { get; set; }
+        /* 0x44 */ public int CompressedSize { get; set; }
+        /* 0x48 */ public int DecompressedSize { get; set;  }
+        /* 0x4C */ public int DataOffset { get; set; }
     }
 
     public class ArcFile
     {
         // File streams for read/write access.
         private FileStream fileStream = null;
-        private BinaryReader reader = null;
-        private BinaryWriter writer = null;
+        private Endianness endian = Endianness.Little;
+        private EndianReader reader = null;
+        private EndianWriter writer = null;
 
         /// <summary>
         /// Full file path of the arc file.
         /// </summary>
         public string FileName { get; private set;  }
+
+        /// <summary>
+        /// Endiannes of the arc file.
+        /// </summary>
+        public Endianness Endian { get { return this.endian; } }
 
         private List<ArcFileEntry> fileEntries = new List<ArcFileEntry>();
         /// <summary>
@@ -63,6 +66,11 @@ namespace DeadRisingArcTool
             this.FileName = fileName;
         }
 
+        /// <summary>
+        /// Opens the arc file for reading and writing
+        /// </summary>
+        /// <param name="forWrite">True if the file should be opened for writing, otherwise it will be read-only</param>
+        /// <returns>True if the file was successfully opened, false otherwise</returns>
         private bool OpenArcFile(bool forWrite)
         {
             // Determine if we are opening for R or RW access.
@@ -72,11 +80,11 @@ namespace DeadRisingArcTool
             {
                 // Open the file for reading.
                 this.fileStream = new FileStream(this.FileName, FileMode.Open, fileAccess, FileShare.Read);
-                this.reader = new BinaryReader(this.fileStream);
+                this.reader = new EndianReader(this.endian, this.fileStream);
 
                 // If we want write access then open it for writing as well.
                 if (forWrite == true)
-                    this.writer = new BinaryWriter(this.fileStream);
+                    this.writer = new EndianWriter(this.endian, this.fileStream);
             }
             catch (Exception e)
             {
@@ -88,6 +96,9 @@ namespace DeadRisingArcTool
             return true;
         }
 
+        /// <summary>
+        /// Closes all file streams on the arc file
+        /// </summary>
         private void CloseArcFile()
         {
             // Close all streams.
@@ -126,8 +137,23 @@ namespace DeadRisingArcTool
             // Verify the header magic.
             if (header.Magic != ArcFileHeader.kHeaderMagic)
             {
-                // Arc file header has invalid magic.
-                goto Cleanup;
+                // Check if the magic is in big endian.
+                if (EndianUtilities.ByteFlip32(header.Magic) == ArcFileHeader.kHeaderMagic)
+                {
+                    // Set the endianness for future IO operations.
+                    this.endian = Endianness.Big;
+                    this.reader.Endian = Endianness.Big;
+
+                    // Correct the header values we already read.
+                    header.Magic = EndianUtilities.ByteFlip32(header.Magic);
+                    header.Version = EndianUtilities.ByteFlip16(header.Version);
+                    header.NumberOfFiles = EndianUtilities.ByteFlip16(header.NumberOfFiles);
+                }
+                else
+                {
+                    // Arc file header has invalid magic.
+                    goto Cleanup;
+                }
             }
 
             // Verify the file version.
@@ -148,10 +174,16 @@ namespace DeadRisingArcTool
 
                 // Advance to the end of the file name and read the rest of the file entry structure.
                 this.reader.BaseStream.Position = offset + 64;
-                fileEntry.FileType = this.reader.ReadInt32();
+                int fileType = this.reader.ReadInt32();
                 fileEntry.CompressedSize = this.reader.ReadInt32();
                 fileEntry.DecompressedSize = this.reader.ReadInt32();
                 fileEntry.DataOffset = this.reader.ReadInt32();
+
+                // Check if the type of file is known.
+                if (GameResource.KnownResourceTypes.ContainsKey(fileType) == true)
+                    fileEntry.FileType = GameResource.KnownResourceTypes[fileType];
+                else
+                    fileEntry.FileType = ResourceType.Unknown;
 
                 // Add the file entry to the list of files.
                 this.fileEntries.Add(fileEntry);
@@ -208,6 +240,12 @@ namespace DeadRisingArcTool
             return decompressedData;
         }
 
+        /// <summary>
+        /// Decompresses the specified file to file
+        /// </summary>
+        /// <param name="fileIndex">Index of the file to decompress</param>
+        /// <param name="outputFileName">File path to save the decompressed data to</param>
+        /// <returns>True if the data was successfully decompressed and written to file, false otherwise</returns>
         public bool ExtractFile(int fileIndex, string outputFileName)
         {
             // Open the arc file for reading.
@@ -232,22 +270,123 @@ namespace DeadRisingArcTool
             return true;
         }
 
-        #region Utilities
-
-        public static ResourceType DetermineResouceTypeFromBuffer(byte[] buffer)
+        /// <summary>
+        /// Extracts all files to the specified directory while maintaining file hierarchy
+        /// </summary>
+        /// <param name="outputFolder">Output folder to saves files to</param>
+        /// <returns>True if the files were successfully extracted, false otherwise</returns>
+        public bool ExtractAllFiles(string outputFolder)
         {
-            // Get the magic ID from the file buffer.
-            int magic = BitConverter.ToInt32(buffer, 0);
-
-            // Check the magic and determine the resource type.
-            switch (magic)
+            // Open the arc file for reading.
+            if (OpenArcFile(false) == false)
             {
-                case rTextureHeader.kMagic: return ResourceType.Texture;
-                case rModelHeader.kMagic: return ResourceType.Model;
-                default: return ResourceType.Invalid;
+                // Failed to open the arc file.
+                return false;
             }
+
+            // Loop through all of the files and extract each one.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Format the folder name and check if it already exists.
+                string fileName = this.FileEntries[i].FileName;
+                string fileFolderPath = outputFolder + "\\" + fileName.Substring(0, fileName.LastIndexOf("\\"));
+                if (Directory.Exists(fileFolderPath) == false)
+                {
+                    // Create the directory now.
+                    Directory.CreateDirectory(fileFolderPath);
+                }
+
+                // Seek to the start of the file's compressed data.
+                this.reader.BaseStream.Position = this.fileEntries[i].DataOffset;
+
+                // Read the compressed data.
+                byte[] compressedData = this.reader.ReadBytes(this.fileEntries[i].CompressedSize);
+
+                // Decompress and write to file.
+                byte[] decompressedData = ZlibStream.UncompressBuffer(compressedData);
+                File.WriteAllBytes(string.Format("{0}\\{1}.{2}", fileFolderPath, fileName.Substring(fileName.LastIndexOf("\\") + 1), 
+                    this.fileEntries[i].FileType.ToString()), decompressedData);
+            }
+
+            // Close the arc file and return.
+            CloseArcFile();
+            return true;
         }
 
-        #endregion
+        /// <summary>
+        /// Replaces the contents of <paramref name="fileIndex"/> with the file contents of <paramref name="newFilePath"/>
+        /// </summary>
+        /// <param name="fileIndex">Index of the file to replace</param>
+        /// <param name="newFilePath">File path of the new file contants</param>
+        /// <returns>True if the data was successfully compressed and written to the arc file, false otherwise</returns>
+        public bool InjectFile(int fileIndex, string newFilePath)
+        {
+            // Open the arc file for writing.
+            if (OpenArcFile(true) == false)
+            {
+                // Failed to open the arc file.
+                return false;
+            }
+
+            // Read the contents of the new file.
+            byte[] decompressedData = File.ReadAllBytes(newFilePath);
+
+            // Compress the data.
+            byte[] compressedData = ZlibStream.CompressBuffer(decompressedData);
+
+            // Seek to the end of the this file's data.
+            this.reader.BaseStream.Position = this.fileEntries[fileIndex].DataOffset + this.fileEntries[fileIndex].CompressedSize;
+
+            // Read all the remaining data in the file.
+            byte[] remainingData = this.reader.ReadBytes((int)(this.reader.BaseStream.Length - this.reader.BaseStream.Position));
+
+            // Seek to the start of the old file's data.
+            this.writer.BaseStream.Position = this.fileEntries[fileIndex].DataOffset;
+
+            // Calculate the offset shift amount and write the new compressed data buffer.
+            int offsetShift = compressedData.Length - this.fileEntries[fileIndex].CompressedSize;
+            this.writer.Write(compressedData);
+
+            // Align the remaining data to a 2 byte boundary.
+            if (this.writer.BaseStream.Position % 2 != 0)
+            {
+                // Write 1 byte of padding, I don't think this matters but w/e...
+                this.writer.Write(0xCD);
+                offsetShift += 1;
+            }
+
+            // Write the remaining file data.
+            this.writer.Write(remainingData);
+
+            // Loop and update any file entries that need to accommodate for the file size change.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Check if this file's offset needs to be updated or if it is the file we just replaced.
+                if (this.fileEntries[i].DataOffset > this.fileEntries[fileIndex].DataOffset)
+                {
+                    // Update this file entries data offset.
+                    this.fileEntries[i].DataOffset += offsetShift;
+
+                    // Write the new offset to file.
+                    this.writer.BaseStream.Position = ArcFileHeader.kSizeOf + (ArcFileEntry.kSizeOf * i) + 64;
+                    this.writer.Write(this.fileEntries[i].DataOffset);
+                }
+                else if (i == fileIndex)
+                {
+                    // Update the data sizes for this file entry.
+                    this.fileEntries[i].CompressedSize = compressedData.Length;
+                    this.fileEntries[i].DecompressedSize = decompressedData.Length;
+
+                    // Write the new data sizes to file.
+                    this.writer.BaseStream.Position = ArcFileHeader.kSizeOf + (ArcFileEntry.kSizeOf * i) + 64 + 4;
+                    this.writer.Write(this.fileEntries[i].CompressedSize);
+                    this.writer.Write(this.fileEntries[i].DecompressedSize);
+                }
+            }
+
+            // Close the arc file and return.
+            CloseArcFile();
+            return true;
+        }
     }
 }

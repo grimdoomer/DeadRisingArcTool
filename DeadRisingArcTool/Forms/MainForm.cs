@@ -1,7 +1,9 @@
 ﻿using DeadRisingArcTool.Controls;
+using DeadRisingArcTool.FileFormats;
 using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats.Geometry;
+using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.Forms;
 using System;
 using System.Collections.Generic;
@@ -11,6 +13,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -19,6 +22,22 @@ namespace DeadRisingArcTool
 {
     public partial class MainForm : Form
     {
+        public enum TreeViewMenuState
+        {
+            /// <summary>
+            /// No tree view context menu options are available.
+            /// </summary>
+            None,
+            /// <summary>
+            /// Tree view context menu options that are universal are enabled.
+            /// </summary>
+            AnyFile,
+            /// <summary>
+            /// Tree view context menu options that are file-only are enabled.
+            /// </summary>
+            PerFile
+        }
+
         // Background worker for async operations.
         BackgroundWorker asyncWorker = null;
 
@@ -29,40 +48,45 @@ namespace DeadRisingArcTool
         ArcFileCollection arcFileCollection = null;
 
         // Specialized editors.
-        BitmapViewer bitmapViewer = new BitmapViewer();
-        ModelViewer modelViewer = new ModelViewer();
+        List<GameResourceEditorControl> resourceEditors = new List<GameResourceEditorControl>();
+        int activeResourceEditor = -1;
 
         public MainForm()
         {
             InitializeComponent();
+
+            // Set the tag properties of the tree view context menu options.
+            this.extractToolStripMenuItem.Tag = TreeViewMenuState.PerFile;
+            this.sortByToolStripMenuItem.Tag = TreeViewMenuState.AnyFile;
+            this.fileNameToolStripMenuItem.Tag = TreeViewMenuState.AnyFile;
+            this.arcFileToolStripMenuItem.Tag = TreeViewMenuState.AnyFile;
+            this.resourceTypeToolStripMenuItem.Tag = TreeViewMenuState.AnyFile;
+
+            // Disable all the tree view context menu items.
+            SetTreeViewMenuState(TreeViewMenuState.None);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            // Set the default editor position.
-            Point defaultPosition = new Point(this.FileInfoBox.Location.X, this.FileInfoBox.Location.Y + this.FileInfoBox.Size.Height + 20);
+            // Get a list of all editor controls that have the GameResourceEditor attribute.
+            Type[] resourceEditorTypes = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.GetCustomAttribute(typeof(GameResourceEditorAttribute)) != null).ToArray();
 
-            // Set the default anchor points.
-            AnchorStyles anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom;
+            // Loop through all the resource editor types and create each one.
+            for (int i = 0; i < resourceEditorTypes.Length; i++)
+            {
+                // Create a new instance of the game resource editor.
+                GameResourceEditorControl editorControl = (GameResourceEditorControl)Activator.CreateInstance(resourceEditorTypes[i]);
 
-            // Setup the bitmap viewer.
-            this.bitmapViewer.Visible = false;
-            this.bitmapViewer.Location = defaultPosition;
-            this.bitmapViewer.Anchor = anchor;
-            //this.bitmapViewer.Size = new Size(this.FileInfoBox.Width, this.bitmapViewer.Height);
+                // Setup the editor control.
+                editorControl.Visible = false;
+                editorControl.Location = new Point(this.FileInfoBox.Location.X - 3, this.FileInfoBox.Location.Y + this.FileInfoBox.Size.Height + 5);
+                editorControl.Size = new Size(this.splitContainer1.Panel2.Width - 15, this.splitContainer1.Panel2.Height - editorControl.Location.Y);
+                editorControl.Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom;
 
-            // Setup the model viewer.
-            this.modelViewer.Visible = false;
-            this.modelViewer.Location = defaultPosition;
-            this.modelViewer.Anchor = anchor;
-            this.modelViewer.Size = new Size(this.splitContainer1.Panel2.Width, this.splitContainer1.Panel2.Height - defaultPosition.Y);
-
-            // Add all of the specialized editors to the editor panel.
-            this.splitContainer1.Panel2.Controls.AddRange(new Control[]
-                {
-                    this.bitmapViewer,
-                    this.modelViewer
-                });
+                // Add the editor to the editor panel and the resource editor list.
+                this.splitContainer1.Panel2.Controls.Add(editorControl);
+                this.resourceEditors.Add(editorControl);
+            }
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -243,11 +267,10 @@ namespace DeadRisingArcTool
 
         #endregion
 
+        #region TreeView
+
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            // Set all the viewer controls invisible.
-            SetViewControlsInvisible();
-
             // Check if the selected node is valid and has a the tag property set.
             if (e.Node == null || e.Node.Tag == null)
             {
@@ -258,13 +281,17 @@ namespace DeadRisingArcTool
                 this.lblOffset.Text = "";
                 this.lblFileType.Text = "";
 
+                // Loop through all of the resource editors and hide all of them.
+                for (int i = 0; i < this.resourceEditors.Count; i++)
+                    this.resourceEditors[i].Visible = false;
+
                 // Do options for this node.
-                this.treeViewContextMenu.Enabled = false;
+                SetTreeViewMenuState(TreeViewMenuState.AnyFile);
                 return;
             }
 
             // Get the datum index for the arc file entry.
-            DatumIndex datum = (DatumIndex)((int)e.Node.Tag);
+            DatumIndex datum = (DatumIndex)e.Node.Tag;
             ArcFileEntry fileEntry = this.arcFileCollection.ArcFiles[datum.ArcIndex].FileEntries[datum.FileIndex];
 
             // Update the properties view.
@@ -272,65 +299,90 @@ namespace DeadRisingArcTool
             this.lblCompressedSize.Text = fileEntry.CompressedSize.ToString();
             this.lblDecompressedSize.Text = fileEntry.DecompressedSize.ToString();
             this.lblOffset.Text = fileEntry.DataOffset.ToString();
-            this.lblFileType.Text = fileEntry.FileType.ToString("X");
+            this.lblFileType.Text = fileEntry.FileType.ToString();
 
-            // Decompress the file entry so we can load specialied editors for it.
-            byte[] decompressedData = this.arcFileCollection.ArcFiles[datum.ArcIndex].DecompressFileEntry(datum.FileIndex);
-            if (decompressedData != null)
+            // Check if there is a resource parser for this game resource.
+            if (GameResource.ResourceParsers.ContainsKey(fileEntry.FileType) == true)
             {
-                // Determine the resource type from the decompressed data.
-                ResourceType resourceType = ArcFile.DetermineResouceTypeFromBuffer(decompressedData);
-
-                // Load specialized editors for the resource type.
-                switch (resourceType)
+                // Decompress the file entry so we can load specialied editors for it.
+                byte[] decompressedData = this.arcFileCollection.ArcFiles[datum.ArcIndex].DecompressFileEntry(datum.FileIndex);
+                if (decompressedData != null)
                 {
-                    case ResourceType.Texture:
+                    // Parse the game resource using the parser type.
+                    GameResource resource = GameResource.FromGameResource(decompressedData, fileEntry.FileName, fileEntry.FileType, 
+                        this.arcFileCollection.ArcFiles[datum.ArcIndex].Endian == IO.Endianness.Big);
+                    if (resource != null)
+                    {
+                        // Loop through all of the resource editors and see if we have one that supports this resource type.
+                        for (int i = 0; i < this.resourceEditors.Count; i++)
                         {
-                            // Parse the texture and check it is valid.
-                            rTexture texture = rTexture.FromBuffer(decompressedData);
-                            if (texture == null)
+                            // Check if this editor supports this resource type.
+                            if (this.resourceEditors[i].CanEditResource(fileEntry.FileType) == true)
                             {
-                                // Failed to load texture data.
-                                break;
-                            }
+                                // Update the resource being edited and make the editor visible.
+                                this.resourceEditors[i].UpdateResource(this.arcFileCollection.ArcFiles[datum.ArcIndex], resource);
+                                this.resourceEditors[i].Visible = true;
 
-                            // Update the bitmap viewer with the new image to display and make it visible.
-                            this.bitmapViewer.Bitmap = texture;
-                            this.bitmapViewer.Visible = true;
-                            break;
-                        }
-                    case ResourceType.Model:
-                        {
-                            // Parse the model and check it is valid.
-                            rModel model = rModel.FromBuffer(decompressedData);
-                            if (model == null)
+                                // Set this as the active resource editor.
+                                this.activeResourceEditor = i;
+                            }
+                            else
                             {
-                                // Failed to load the model data.
-                                break;
+                                // Clear any old game resources and make sure the editor is invisible.
+                                this.resourceEditors[i].UpdateResource(null, null);
+                                this.resourceEditors[i].Visible = false;
                             }
-
-                            // Update the model viewer with the model and make it visible.
-                            this.modelViewer.arcFile = this.arcFileCollection.ArcFiles[datum.ArcIndex];
-                            this.modelViewer.Model = model;
-                            this.modelViewer.Visible = true;
-                            break;
                         }
-                    case ResourceType.Invalid:
-                        {
-                            break;
-                        }
+                    }
                 }
             }
 
             // Enable context menu options.
-            this.treeViewContextMenu.Enabled = true;
+            SetTreeViewMenuState(TreeViewMenuState.PerFile);
         }
 
-        private void SetViewControlsInvisible()
+        private void SetTreeViewMenuState(TreeViewMenuState state)
         {
-            // Set all the viewer controls to be invisible.
-            this.bitmapViewer.Visible = false;
-            this.modelViewer.Visible = false;
+            // Get a list of buttons from the tree view context menu.
+            ToolStripItem[] menuItems = GetTreeViewContextMenuItems(this.treeViewContextMenu.Items);
+
+            // Loop through and enable/disable them based on their Tag property.
+            for (int i = 0; i < menuItems.Length; i++)
+            {
+                // Check if the tag property is valid.
+                if (menuItems[i].Tag != null && menuItems[i].Tag.GetType() == typeof(TreeViewMenuState))
+                {
+                    // Enable or disable the menu item based on the menu state.
+                    if (state == TreeViewMenuState.None)
+                        menuItems[i].Enabled = false;
+                    else if (state == (TreeViewMenuState)menuItems[i].Tag)
+                        menuItems[i].Enabled = true;
+                    else if (state == TreeViewMenuState.PerFile && (TreeViewMenuState)menuItems[i].Tag == TreeViewMenuState.AnyFile)
+                        menuItems[i].Enabled = true;
+                    else
+                        menuItems[i].Enabled = false;
+                }
+            }
+        }
+
+        private ToolStripMenuItem[] GetTreeViewContextMenuItems(ToolStripItemCollection rootCollection)
+        {
+            // Create a list to hold all of the tree view context menu items.
+            List<ToolStripMenuItem> menuItems = new List<ToolStripMenuItem>();
+
+            // Add all of the items in the root collection to the list.
+            foreach (ToolStripMenuItem item in rootCollection)
+            {
+                // Add the item to the collection.
+                menuItems.Add(item);
+
+                // If the menu item has child items recursively add them as well.
+                if (item.HasDropDownItems)
+                    menuItems.AddRange(GetTreeViewContextMenuItems(item.DropDownItems));
+            }
+
+            // Return the collection of menu items found.
+            return menuItems.ToArray();
         }
 
         private void extractToolStripMenuItem_Click(object sender, EventArgs e)
@@ -342,7 +394,7 @@ namespace DeadRisingArcTool
             }
 
             // Get the datum index for the arc file entry.
-            DatumIndex datum = (DatumIndex)((int)this.treeView1.SelectedNode.Tag);
+            DatumIndex datum = (DatumIndex)this.treeView1.SelectedNode.Tag;
 
             // Prompt the user where to save the file.
             SaveFileDialog sfd = new SaveFileDialog();
@@ -360,5 +412,76 @@ namespace DeadRisingArcTool
                 MessageBox.Show("Done!");
             }
         }
+
+        private void fileNameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // If we are already checked then there is nothing to do.
+            if (this.fileNameToolStripMenuItem.Checked == true)
+                return;
+
+            // Update the checked state of the sort buttons.
+            this.fileNameToolStripMenuItem.Checked = true;
+            this.arcFileToolStripMenuItem.Checked = false;
+            this.resourceTypeToolStripMenuItem.Checked = false;
+
+            // Resort the tree view.
+            SetTreeViewSortOrder(TreeNodeOrder.FolderPath);
+        }
+
+        private void arcFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // If we are already checked then there is nothing to do.
+            if (this.arcFileToolStripMenuItem.Checked == true)
+                return;
+
+            // Update the checked state of the sort buttons.
+            this.fileNameToolStripMenuItem.Checked = false;
+            this.arcFileToolStripMenuItem.Checked = true;
+            this.resourceTypeToolStripMenuItem.Checked = false;
+
+            // Resort the tree view.
+            SetTreeViewSortOrder(TreeNodeOrder.ArcFile);
+        }
+
+        private void resourceTypeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // If we are already checked then there is nothing to do.
+            if (this.resourceTypeToolStripMenuItem.Checked == true)
+                return;
+
+            // Update the checked state of the sort buttons.
+            this.fileNameToolStripMenuItem.Checked = false;
+            this.arcFileToolStripMenuItem.Checked = false;
+            this.resourceTypeToolStripMenuItem.Checked = true;
+
+            // Resort the tree view.
+            SetTreeViewSortOrder(TreeNodeOrder.ResourceType);
+        }
+
+        private void SetTreeViewSortOrder(TreeNodeOrder order)
+        {
+            // Set the main form to be disabled while we populate the tree view.
+            this.Enabled = false;
+            this.treeView1.SuspendLayout();
+
+            // If there is game resource node selected save its datum index.
+            //DatumIndex selectedNode = (DatumIndex)(this.treeView1.SelectedNode != null ? this.treeView1.SelectedNode.Tag : null);
+
+            // Clear all the old nodes out of the tree view.
+            this.treeView1.Nodes.Clear();
+
+            // Build the tree node graph from the arc file collection.
+            TreeNodeCollection treeNodes = this.arcFileCollection.BuildTreeNodeArray(order);
+            this.treeView1.Nodes.AddRange(treeNodes.Cast<TreeNode>().ToArray());
+
+            // Sort the tree view.
+            this.treeView1.Sort();
+
+            // Resume the layout and enable the form.
+            this.treeView1.ResumeLayout();
+            this.Enabled = true;
+        }
+
+        #endregion
     }
 }

@@ -29,12 +29,20 @@ namespace DeadRisingArcTool.Graphics
         float camYaw = 0.0f;
         float camPitch = 0.0f;
 
-        private Vector3 defaultForward = new Vector3(0.0f, 0.0f, 1.0f);
-        private Vector3 defaultUp = new Vector3(0.0f, 1.0f, 0.0f);
-        private Vector3 defaultRight = new Vector3(1.0f, 0.0f, 0.0f);
+        // Constant directional vectors:
+        private static readonly Vector3 DefaultUp = new Vector3(0.0f, 1.0f, 0.0f);
+        private static readonly Vector3 DefaultDown = new Vector3(0.0f, -1.0f, 0.0f);
+        private static readonly Vector3 DefaultForward = new Vector3(0.0f, 0.0f, 1.0f);
+        private static readonly Vector3 DefaultBackward = new Vector3(0.0f, 0.0f, -1.0f);
+        private static readonly Vector3 DefaultRight = new Vector3(1.0f, 0.0f, 0.0f);
+        private static readonly Vector3 DefaultLeft = new Vector3(-1.0f, 0.0f, 0.0f);
 
-        private Vector3 camForward = new Vector3(0.0f, 0.0f, 1.0f);
-        private Vector3 camRight = new Vector3(1.0f, 0.0f, 0.0f);
+        // Directional vectors based on the camera's current position and rotation.
+
+        private Vector3 camForward = DefaultForward;
+        private Vector3 camBackward = DefaultBackward;
+        private Vector3 camRight = DefaultRight;
+        private Vector3 camLeft = DefaultLeft;
 
         private Vector3 position;
         public Vector3 Position { get { return this.position; } set { this.position = value; } }
@@ -91,26 +99,26 @@ namespace DeadRisingArcTool.Graphics
                 {
                     case "W":
                         //this.moveBackForward += this.speed;
-                        this.position.Z += this.speed;
+                        this.position += this.camForward * this.speed;
                         break;
                     case "S":
                         //this.moveBackForward -= this.speed;
-                        this.position.Z -= this.speed;
+                        this.position += this.camBackward * this.speed;
                         break;
                     case "A":
-                        this.position.X -= this.speed;
+                        this.position += this.camLeft * this.speed;
                         //this.moveLeftRight -= this.speed;
                         break;
                     case "D":
-                        this.position += this.speed;
+                        this.position += this.camRight * this.speed;
                         //this.moveLeftRight += this.speed;
                         break;
                     case "Z":
-                        this.position.Y += this.speed;
+                        this.position += DefaultUp * this.speed;
                         //this.position.Z -= this.speed;
                         break;
                     case "X":
-                        this.position.Y -= this.speed;
+                        this.position += DefaultDown * this.speed;
                         //this.position.Z += this.speed;
                         break;
                     case "Equals":
@@ -124,7 +132,6 @@ namespace DeadRisingArcTool.Graphics
                         if (speed < 0) { speed = 0.01f; }
                         break;
                 }
-                ComputePosition();
             }
 
             this.mouse.Poll();
@@ -136,20 +143,22 @@ namespace DeadRisingArcTool.Graphics
                 change(mouseState.X, mouseState.Y);
             }
 
+            ComputePosition();
+
         }
         public void change(int x, int y)
         {
 
-            int tempx = oldx - x;
-            int tempy = oldy - y;
+            //int tempx = oldx - x;
+            //int tempy = oldy - y;
 
-            this.camYaw += tempx * 0.001f;
-            this.camPitch += tempy * 0.001f;
+            this.camYaw += x * 0.001f;
+            this.camPitch += y * 0.001f;
 
 
-            ComputePosition();
-            oldx = x;
-            oldy = y;
+            //ComputePosition();
+            //oldx = x;
+            //oldy = y;
         }
 
         public void Dispose()
@@ -160,19 +169,16 @@ namespace DeadRisingArcTool.Graphics
         {
             // Update the direction we are looking in.
             Matrix camRotation = Matrix.RotationYawPitchRoll(camYaw, camPitch, 0.0f);
-            this.lookAt = Vector3.TransformCoordinate(this.defaultForward, camRotation) + this.position;
+            this.lookAt = Vector3.TransformCoordinate(DefaultForward, camRotation) + this.position;
 
-            //
-            this.camRight = Vector3.TransformCoordinate(this.defaultRight, camRotation);
-            this.camForward = Vector3.TransformCoordinate(this.defaultForward, camRotation);
-            this.upVector = Vector3.TransformCoordinate(this.defaultUp, camRotation);// Vector3.Cross(this.camForward, this.camRight);
+            // Calculate up direction based on the current rotation.
+            this.upVector = Vector3.TransformCoordinate(DefaultUp, camRotation);
 
-            // Update our position.
-            //this.position += this.moveLeftRight * this.camRight;
-            //this.position += this.moveBackForward * this.camForward;
-
-            this.moveLeftRight = 0.0f;
-            this.moveBackForward = 0.0f;
+            // Update directional vectors based on our new rotation.
+            this.camForward = Vector3.TransformCoordinate(DefaultForward, camRotation);
+            this.camBackward = Vector3.TransformCoordinate(DefaultBackward, camRotation);
+            this.camRight = Vector3.TransformCoordinate(DefaultRight, camRotation);
+            this.camLeft = Vector3.TransformCoordinate(DefaultLeft, camRotation);
         }
 
 

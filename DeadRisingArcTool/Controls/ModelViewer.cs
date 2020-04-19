@@ -9,49 +9,32 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeadRisingArcTool.FileFormats.Geometry;
 using DeadRisingArcTool.Forms;
+using DeadRisingArcTool.FileFormats.Archive;
+using DeadRisingArcTool.FileFormats;
 
 namespace DeadRisingArcTool.Controls
 {
-    public partial class ModelViewer : UserControl
+    [GameResourceEditor(ResourceType.rModel)]
+    public partial class ModelViewer : GameResourceEditorControl
     {
-        // Suspends certain UI operations until the form is fully initialized.
-        private bool isLoading = false;
-
-        // Arc file the model was loaded from, used for loading additional data.
-        public ArcFile arcFile = null;
-
-        private rModel model = null;
-        /// <summary>
-        /// Gets or sets the rModel current being displayed.
-        /// </summary>
-        public rModel Model
-        {
-            get { return this.model; }
-            set { this.model = value; ReloadModel(); }
-        }
-
         public ModelViewer()
         {
             InitializeComponent();
         }
 
-        public ModelViewer(rModel model)
+        protected override void OnGameResourceUpdated()
         {
-            // Initialize fields.
-            this.model = model;
+            // Make sure the arc file and game resource are valid.
+            if (this.ArcFile == null || this.GameResource == null)
+            {
+                // Clear the textbox contents and return.
+                this.textBox1.Text = "";
+                return;
+            }
 
-            InitializeComponent();
-        }
+            // Cast the game resource to a rModel object.
+            rModel model = (rModel)this.GameResource;
 
-        private void ModelViewer_Load(object sender, EventArgs e)
-        {
-            // If the control was created with a model object, reload the UI.
-            if (this.arcFile != null && this.model != null)
-                ReloadModel();
-        }
-
-        private void ReloadModel()
-        {
             // Print all the model information out to the textbox.
             string headerInfo = "*** Header\n";
             headerInfo += "\tJoint count: " + model.header.JointCount.ToString() + "\n";
@@ -95,8 +78,8 @@ namespace DeadRisingArcTool.Controls
                 prim += "\tVertex stride 1: " + model.primitives[i].VertexStride1.ToString() + "\n";
                 prim += "\tVertex stride 2: " + model.primitives[i].VertexStride2.ToString() + "\n";
                 prim += "\tUnk13: " + model.primitives[i].Unk13.ToString() + "\n";
-                prim += "\tVertex count 1: " + model.primitives[i].VertexCount1.ToString() + "\n";
-                prim += "\tStartin vertex 1: " + model.primitives[i].StartingVertex1.ToString() + "\n";
+                prim += "\tVertex count 1: " + model.primitives[i].VertexCount.ToString() + "\n";
+                prim += "\tStartin vertex 1: " + model.primitives[i].StartingVertex.ToString() + "\n";
                 prim += "\tUnk16: " + model.primitives[i].Unk16.ToString() + "\n";
                 prim += "\tUnk5: " + model.primitives[i].Unk5.ToString() + "\n";
                 prim += "\tVertex count 2: " + model.primitives[i].StartingIndexLocation.ToString() + "\n";
@@ -112,7 +95,7 @@ namespace DeadRisingArcTool.Controls
         private void btnRender_Click(object sender, EventArgs e)
         {
             // Display a new render window.
-            RenderView renderer = new RenderView(this.arcFile, this.model);
+            RenderView renderer = new RenderView(this.ArcFile, (rModel)this.GameResource);
             renderer.Show();
         }
     }
