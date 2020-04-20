@@ -193,7 +193,7 @@ namespace DeadRisingArcTool.Forms
             SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, desc, out this.device, out this.swapChain);
 
             // Setup the projection matrix.
-            this.projectionMatrix = Matrix.PerspectiveFovLH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 1000.0f);
+            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 10000.0f);
             this.worldGround = Matrix.Identity;
 
             // Ignore all window events.
@@ -231,14 +231,14 @@ namespace DeadRisingArcTool.Forms
             stateDesc.IsStencilEnabled = false;
             stateDesc.StencilReadMask = 0xFF;
             stateDesc.StencilWriteMask = 0xFF;
-            //stateDesc.FrontFace.FailOperation = StencilOperation.Keep;
-            //stateDesc.FrontFace.DepthFailOperation = StencilOperation.Keep;
-            //stateDesc.FrontFace.PassOperation = StencilOperation.;
-            //stateDesc.FrontFace.Comparison = Comparison.LessEqual;
-            //stateDesc.BackFace.FailOperation = StencilOperation.Keep;
-            //stateDesc.BackFace.DepthFailOperation = StencilOperation.Keep;
-            //stateDesc.BackFace.PassOperation = StencilOperation.Keep;
-            //stateDesc.BackFace.Comparison = Comparison.LessEqual;
+            stateDesc.FrontFace.FailOperation = StencilOperation.Increment;
+            stateDesc.FrontFace.DepthFailOperation = StencilOperation.Increment;
+            stateDesc.FrontFace.PassOperation = StencilOperation.Decrement;
+            stateDesc.FrontFace.Comparison = Comparison.LessEqual;
+            stateDesc.BackFace.FailOperation = StencilOperation.Increment;
+            stateDesc.BackFace.DepthFailOperation = StencilOperation.Increment;
+            stateDesc.BackFace.PassOperation = StencilOperation.Decrement;
+            stateDesc.BackFace.Comparison = Comparison.LessEqual;
             this.depthStencilState = new DepthStencilState(this.device, stateDesc);
 
             // Setup the rasterizer state.
@@ -377,28 +377,30 @@ namespace DeadRisingArcTool.Forms
                 string textureFileName = this.model.textureFileNames[i - 1];
                 byte[] decompressedData = this.arcFile.DecompressFileEntry(textureFileName);
                 rTexture texture = rTexture.FromGameResource(decompressedData, textureFileName, FileFormats.ResourceType.rTexture, this.arcFile.Endian == IO.Endianness.Big);
+                if (texture != null)
+                {
+                    // TODO: This currently will not work for cube maps.
+                    // Create the data stream which will pin the pixel buffer to an IntPtr we can use for sub resource mapping.
+                    this.textureStreams[i] = texture.PixelDataStream;
 
-                // TODO: This currently will not work for cube maps.
-                // Create the data stream which will pin the pixel buffer to an IntPtr we can use for sub resource mapping.
-                this.textureStreams[i] = texture.PixelDataStream;
+                    // Setup common texture description properties.
+                    Texture2DDescription desc = new Texture2DDescription();
+                    desc.Width = texture.header.Width;
+                    desc.Height = texture.header.Height;
+                    desc.MipLevels = texture.header.MipMapCount;
+                    desc.Format = rTexture.DXGIFromTextureFormat(texture.header.Format);
+                    desc.Usage = ResourceUsage.Default;
+                    desc.BindFlags = BindFlags.ShaderResource;
+                    desc.SampleDescription.Count = 1;
+                    desc.ArraySize = texture.FaceCount;
 
-                // Setup common texture description properties.
-                Texture2DDescription desc = new Texture2DDescription();
-                desc.Width = texture.header.Width;
-                desc.Height = texture.header.Height;
-                desc.MipLevels = texture.header.MipMapCount;
-                desc.Format = rTexture.DXGIFromTextureFormat(texture.header.Format);
-                desc.Usage = ResourceUsage.Default;
-                desc.BindFlags = BindFlags.ShaderResource;
-                desc.SampleDescription.Count = 1;
-                desc.ArraySize = texture.FaceCount;
+                    // Create the texture using the description and resource data we setup.
+                    this.textures[i] = new Texture2D(this.device, desc);
+                    this.device.ImmediateContext.UpdateSubresource(texture.SubResources[0], this.textures[i]);
 
-                // Create the texture using the description and resource data we setup.
-                this.textures[i] = new Texture2D(this.device, desc);
-                this.device.ImmediateContext.UpdateSubresource(texture.SubResources[0], this.textures[i]);
-
-                // Create the shader resource that will use this texture.
-                this.shaderResources[i] = new ShaderResourceView(this.device, this.textures[i]);
+                    // Create the shader resource that will use this texture.
+                    this.shaderResources[i] = new ShaderResourceView(this.device, this.textures[i]);
+                }
             }
         }
 

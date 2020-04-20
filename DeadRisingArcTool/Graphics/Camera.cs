@@ -34,8 +34,8 @@ namespace DeadRisingArcTool.Graphics
         private static readonly Vector3 DefaultDown = new Vector3(0.0f, -1.0f, 0.0f);
         private static readonly Vector3 DefaultForward = new Vector3(0.0f, 0.0f, 1.0f);
         private static readonly Vector3 DefaultBackward = new Vector3(0.0f, 0.0f, -1.0f);
-        private static readonly Vector3 DefaultRight = new Vector3(1.0f, 0.0f, 0.0f);
-        private static readonly Vector3 DefaultLeft = new Vector3(-1.0f, 0.0f, 0.0f);
+        private static readonly Vector3 DefaultRight = new Vector3(-1.0f, 0.0f, 0.0f);
+        private static readonly Vector3 DefaultLeft = new Vector3(1.0f, 0.0f, 0.0f);
 
         // Directional vectors based on the camera's current position and rotation.
 
@@ -55,7 +55,7 @@ namespace DeadRisingArcTool.Graphics
         {
             get
             {
-                return Matrix.LookAtLH(this.Position, this.LookAt, this.UpVector);
+                return Matrix.LookAtRH(this.Position, this.LookAt, this.UpVector);
             }
         }
 
@@ -152,7 +152,7 @@ namespace DeadRisingArcTool.Graphics
             //int tempx = oldx - x;
             //int tempy = oldy - y;
 
-            this.camYaw += x * 0.001f;
+            this.camYaw += -x * 0.001f;     // Flip x direction for RH coordinate system
             this.camPitch += y * 0.001f;
 
 
