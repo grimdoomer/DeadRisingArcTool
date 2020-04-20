@@ -184,7 +184,7 @@ namespace DeadRisingArcTool.Forms
             desc.BufferCount = 1;
             desc.ModeDescription = new ModeDescription(this.ClientSize.Width, this.ClientSize.Height, new Rational(60, 1), Format.R8G8B8A8_UNorm);
             desc.OutputHandle = this.Handle;
-            desc.SampleDescription = new SampleDescription(4, 0);
+            desc.SampleDescription = new SampleDescription(1, 0);
             desc.SwapEffect = SwapEffect.Discard;
             desc.Usage = Usage.RenderTargetOutput;
             desc.IsWindowed = true;
@@ -193,8 +193,8 @@ namespace DeadRisingArcTool.Forms
             SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, desc, out this.device, out this.swapChain);
 
             // Setup the projection matrix.
-            this.projectionMatrix = Matrix.PerspectiveFovLH(Camera.DegreesToRadian(90.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 1000.0f);
-            this.worldGround = Matrix.Identity; // Matrix.Scaling(500.0f, 10.0f, 500.0f) * Matrix.Translation(0.0f, 10.0f, 0.0f);
+            this.projectionMatrix = Matrix.PerspectiveFovLH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 1000.0f);
+            this.worldGround = Matrix.Identity;
 
             // Ignore all window events.
             // TODO:
@@ -209,15 +209,18 @@ namespace DeadRisingArcTool.Forms
             depthStencilDesc.Height = this.ClientSize.Height;
             depthStencilDesc.MipLevels = 1;
             depthStencilDesc.ArraySize = 1;
-            depthStencilDesc.Format = Format.D24_UNorm_S8_UInt;
-            depthStencilDesc.SampleDescription.Count = 4;
+            depthStencilDesc.Format = Format.D32_Float;
+            depthStencilDesc.SampleDescription.Count = 1;
             depthStencilDesc.SampleDescription.Quality = 0;
             depthStencilDesc.Usage = ResourceUsage.Default;
             depthStencilDesc.BindFlags = BindFlags.DepthStencil;
             this.depthStencil = new Texture2D(this.device, depthStencilDesc);
 
             // Create the depth stencil view.
-            this.depthStencilView = new DepthStencilView(this.device, this.depthStencil);
+            DepthStencilViewDescription depthStencilViewDesc = new DepthStencilViewDescription();
+            depthStencilViewDesc.Dimension = DepthStencilViewDimension.Texture2D;
+            depthStencilViewDesc.Format = Format.D32_Float;
+            this.depthStencilView = new DepthStencilView(this.device, this.depthStencil, depthStencilViewDesc);
             this.device.ImmediateContext.OutputMerger.SetRenderTargets(this.depthStencilView, this.renderView);
 
             // Setup the depth stencil state.
@@ -225,12 +228,24 @@ namespace DeadRisingArcTool.Forms
             stateDesc.IsDepthEnabled = true;
             stateDesc.DepthWriteMask = DepthWriteMask.All;
             stateDesc.DepthComparison = Comparison.LessEqual;
+            stateDesc.IsStencilEnabled = false;
+            stateDesc.StencilReadMask = 0xFF;
+            stateDesc.StencilWriteMask = 0xFF;
+            //stateDesc.FrontFace.FailOperation = StencilOperation.Keep;
+            //stateDesc.FrontFace.DepthFailOperation = StencilOperation.Keep;
+            //stateDesc.FrontFace.PassOperation = StencilOperation.;
+            //stateDesc.FrontFace.Comparison = Comparison.LessEqual;
+            //stateDesc.BackFace.FailOperation = StencilOperation.Keep;
+            //stateDesc.BackFace.DepthFailOperation = StencilOperation.Keep;
+            //stateDesc.BackFace.PassOperation = StencilOperation.Keep;
+            //stateDesc.BackFace.Comparison = Comparison.LessEqual;
             this.depthStencilState = new DepthStencilState(this.device, stateDesc);
 
             // Setup the rasterizer state.
             RasterizerStateDescription rasterStateDesc = new RasterizerStateDescription();
             rasterStateDesc.FillMode = FillMode.Solid;
-            rasterStateDesc.CullMode = CullMode.Back;
+            rasterStateDesc.CullMode = CullMode.Front;
+            rasterStateDesc.IsDepthClipEnabled = true;
             this.rasterState = new RasterizerState(this.device, rasterStateDesc);
 
             // Set the viewport.
@@ -293,9 +308,19 @@ namespace DeadRisingArcTool.Forms
             this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<short>(this.device, BindFlags.IndexBuffer, this.model.indiceBuffer);
 
             // Set the bounding box parameters to the vertex shader constant buffer.
-            this.shaderConsts.gXfQuantPosScale = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
-            this.shaderConsts.gXfQuantPosOffset = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMin;
-            this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
+            bool test = true;
+            if (test == true)
+            {
+                this.shaderConsts.gXfQuantPosScale = this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
+                this.shaderConsts.gXfQuantPosOffset = this.model.header.BoundingBoxMin;
+                this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
+            }
+            else
+            {
+                this.shaderConsts.gXfQuantPosScale = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
+                this.shaderConsts.gXfQuantPosOffset = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMin;
+                this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
+            }
 
 #else
 
@@ -309,9 +334,23 @@ namespace DeadRisingArcTool.Forms
             // Vertex buffer.
             MyVertex[] vertices = new MyVertex[]
                 {
-                    new MyVertex() { Position = new Vector3(0.0f, 0.5f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(0.45f, -0.5f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(-0.45f, -0.5f, 0.0f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) }
+                    //new MyVertex() { Position = new Vector3(0.0f, 0.5f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
+                    //new MyVertex() { Position = new Vector3(0.5f, -0.5f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
+                    //new MyVertex() { Position = new Vector3(-0.5f, -0.5f, 0.0f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) }
+
+                    new MyVertex() { Position = new Vector3(-1f, -1f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(-1f, 1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, 1f, 0.0f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, 1f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(-1f, -1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, -1f, 0.0f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) },
+
+                    new MyVertex() { Position = new Vector3(1f, -1f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, 1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, 1f, 2f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, 1f, 2f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, -1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
+                    new MyVertex() { Position = new Vector3(1f, -1f, 2f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) }
                 };
 
             // Create the vertex buffer.
@@ -341,7 +380,7 @@ namespace DeadRisingArcTool.Forms
 
                 // TODO: This currently will not work for cube maps.
                 // Create the data stream which will pin the pixel buffer to an IntPtr we can use for sub resource mapping.
-                this.textureStreams[i] = DataStream.Create(texture.mipMapPixelBuffers[0][0], true, false);
+                this.textureStreams[i] = texture.PixelDataStream;
 
                 // Setup common texture description properties.
                 Texture2DDescription desc = new Texture2DDescription();
@@ -352,54 +391,11 @@ namespace DeadRisingArcTool.Forms
                 desc.Usage = ResourceUsage.Default;
                 desc.BindFlags = BindFlags.ShaderResource;
                 desc.SampleDescription.Count = 1;
-
-                // Set the number of textures in the resource based on the resource type.
-                if (texture.header.TextureType == TextureType.Type_2D)
-                {
-                    desc.ArraySize = 1;
-                }
-                else if (texture.header.TextureType == TextureType.Type_CubeMap)
-                {
-                    desc.ArraySize = 6;
-                }
-                else if (texture.header.TextureType == TextureType.Type_DepthMap)
-                {
-                    desc.ArraySize = 1;
-                }
-
-                //// Get the pinned address of the pixel data for the following loop.
-                ////IntPtr pPixelData = this.textureStreams[i].
-
-                //// Seek to the beginning of the data stream for this texture.
-                //// Note: We let this class handle all the pointer math.
-                //this.textureStreams[i].Seek(0, System.IO.SeekOrigin.Begin);
-
-                //// Allocate and setup sub resources array for each mip map for each face.
-                //DataBox[] subResources = new DataBox[desc.ArraySize * texture.header.MipMapCount];
-                //for (int x = 0; x < desc.ArraySize; x++)
-                //{
-                //    // Loop for the number of mip maps for this face.
-                //    for (int y = 0; y < texture.header.MipMapCount; y++)
-                //    {
-                //        int bytesPerRow = 0;
-                //        int numberOfBlocks = 0;
-
-                //        // Get the pitch values for the current mip level.
-                //        rTexture.CalculateMipMapPitch(texture.header.Width, texture.header.Height, y, texture.header.Format, out bytesPerRow, out numberOfBlocks);
-
-                //        // Setup the current sub resource.
-                //        int index = (x * texture.header.MipMapCount) + y;
-                //        subResources[index] = new DataBox(this.textureStreams[i].PositionPointer, bytesPerRow, numberOfBlocks);
-
-                //        // Seek to the next mip.
-                //        this.textureStreams[i].Seek(bytesPerRow * numberOfBlocks, System.IO.SeekOrigin.Current);
-                //    }
-                //}
+                desc.ArraySize = texture.FaceCount;
 
                 // Create the texture using the description and resource data we setup.
                 this.textures[i] = new Texture2D(this.device, desc);
-                //this.device.ImmediateContext.UpdateSubresource(subResources[0], this.textures[i]);
-                this.device.ImmediateContext.UpdateSubresource(texture.mipMapPixelBuffers[0][0], this.textures[i]);
+                this.device.ImmediateContext.UpdateSubresource(texture.SubResources[0], this.textures[i]);
 
                 // Create the shader resource that will use this texture.
                 this.shaderResources[i] = new ShaderResourceView(this.device, this.textures[i]);
@@ -435,7 +431,8 @@ namespace DeadRisingArcTool.Forms
             this.device.ImmediateContext.Rasterizer.SetViewport(0, 0, this.ClientSize.Width, this.ClientSize.Height, 0.0f, 1.0f);
 
             // Set output target.
-            this.device.ImmediateContext.OutputMerger.SetTargets(this.renderView);
+            //this.device.ImmediateContext.OutputMerger.SetTargets(this.renderView);
+            this.device.ImmediateContext.OutputMerger.SetRenderTargets(this.depthStencilView, this.renderView);
 
             // Set the vertex and index buffers.
             this.device.ImmediateContext.InputAssembler.InputLayout = this.vertexDecl;
@@ -449,7 +446,7 @@ namespace DeadRisingArcTool.Forms
             this.device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;
 
             // The pixel shader constants do not change between primtive draw calls, update them now.
-            this.shaderConsts.gXfViewProj = Matrix.Transpose(this.worldGround * this.camera.ViewMatrix * this.projectionMatrix);
+            this.shaderConsts.gXfViewProj = this.worldGround * this.camera.ViewMatrix * this.projectionMatrix;
             this.shaderConsts.gXfMatrixMapFactor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 #else
             this.device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.primaryVertexBuffer, 28, 0));
@@ -484,7 +481,8 @@ namespace DeadRisingArcTool.Forms
                 this.device.ImmediateContext.PixelShader.SetConstantBuffer(0, this.shaderConstantBuffer);
 
                 // Draw the primtive.
-                this.device.ImmediateContext.DrawIndexed(this.model.primitives[i].IndexCount, this.model.primitives[i].StartingIndexLocation, 0);
+                this.device.ImmediateContext.DrawIndexed(this.model.primitives[i].StartingIndexLocation, this.model.primitives[i].IndexCount, 0);
+                //this.device.ImmediateContext.DrawIndexed(this.model.primitives[i].IndexCount, this.model.primitives[i].StartingIndexLocation, 0);
             }
 #else
             // Update the shader constants buffer with the new data.
@@ -494,7 +492,7 @@ namespace DeadRisingArcTool.Forms
             this.device.ImmediateContext.VertexShader.SetConstantBuffer(0, this.shaderConstantBuffer);
 
             // Draw the primtive.
-            this.device.ImmediateContext.Draw(3, 0);
+            this.device.ImmediateContext.Draw(12, 0);
 #endif
 
             // Present the final frame.

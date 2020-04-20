@@ -66,6 +66,13 @@ namespace DeadRisingArcTool.Controls
             // Load the first mip map image into the preview box.
             Bitmap bitmap = this.Bitmap.GetBitmap(0);
             this.pictureBox1.BackgroundImage = bitmap;
+            if (bitmap == null)
+            {
+                // Flag that we are no longer loading the form and bail.
+                this.isLoading = false;
+                return;
+            }
+
 
             // If the image is larger than the picture box then scale it.
             if (bitmap.Width > this.PreferredImageSize.Width || bitmap.Height > this.PreferredImageSize.Height)
@@ -82,9 +89,9 @@ namespace DeadRisingArcTool.Controls
             }
 
             // Check if we need to set the background color.
-            if ((this.Bitmap.header.Flags & 4) != 0)
+            if (this.Bitmap.header.Flags.HasFlag(TextureFlags.HasD3DClearColor) == true)
             {
-                // Convert the background color to integers.
+                // Convert the background color to integers (RGBA order?).
                 int b = 255 * (int)this.Bitmap.BackgroundColor[0];
                 int g = 255 * (int)this.Bitmap.BackgroundColor[1];
                 int r = 255 * (int)this.Bitmap.BackgroundColor[2];
@@ -111,12 +118,22 @@ namespace DeadRisingArcTool.Controls
 
             // Set the preview image to the selected mip map level.
             this.pictureBox1.BackgroundImage = this.Bitmap.GetBitmap(this.comboBox1.SelectedIndex);
-
-            // If the image is larger than the picture box then scale it.
-            if (this.pictureBox1.Size.Width < this.pictureBox1.BackgroundImage.Width || this.pictureBox1.Height < this.pictureBox1.BackgroundImage.Height)
-                this.pictureBox1.BackgroundImageLayout = ImageLayout.Stretch;
-            else
-                this.pictureBox1.BackgroundImageLayout = ImageLayout.None;
+            if (this.pictureBox1.BackgroundImage != null)
+            {
+                // If the image is larger than the picture box then scale it.
+                if (this.pictureBox1.BackgroundImage.Width > this.PreferredImageSize.Width || this.pictureBox1.BackgroundImage.Height > this.PreferredImageSize.Height)
+                {
+                    // Set the picture box to the preferred size and scale the image to fit.
+                    this.pictureBox1.Size = this.PreferredImageSize;
+                    this.pictureBox1.BackgroundImageLayout = ImageLayout.Stretch;
+                }
+                else
+                {
+                    // Set the picture box to be the same size as the image.
+                    this.pictureBox1.Size = this.pictureBox1.BackgroundImage.Size;
+                    this.pictureBox1.BackgroundImageLayout = ImageLayout.None;
+                }
+            }
         }
     }
 }

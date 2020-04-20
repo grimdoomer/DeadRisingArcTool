@@ -123,13 +123,13 @@ namespace DeadRisingArcTool.Graphics
                         break;
                     case "Equals":
                     case "Add":
-                        speed += 0.001f;
-
+                        speed += 0.0001f;
+                        if (speed < 0) { speed = 0.002f; }
                         break;
                     case "Minus":
                     case "NumPadMinus":
-                        speed -= 0.001f;
-                        if (speed < 0) { speed = 0.01f; }
+                        speed -= 0.0001f;
+                        if (speed < 0) { speed = 0.002f; }
                         break;
                 }
             }
@@ -175,6 +175,7 @@ namespace DeadRisingArcTool.Graphics
             this.upVector = Vector3.TransformCoordinate(DefaultUp, camRotation);
 
             // Update directional vectors based on our new rotation.
+            camRotation = Matrix.RotationYawPitchRoll(camYaw, camPitch, 0.0f);
             this.camForward = Vector3.TransformCoordinate(DefaultForward, camRotation);
             this.camBackward = Vector3.TransformCoordinate(DefaultBackward, camRotation);
             this.camRight = Vector3.TransformCoordinate(DefaultRight, camRotation);
