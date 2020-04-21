@@ -39,6 +39,7 @@
             this.Text = "RenderView";
             this.Load += new System.EventHandler(this.RenderView_Load);
             this.FormClosing += RenderView_FormClosing;
+            this.SizeChanged += RenderView_SizeChanged;
             this.ResumeLayout(false);
 
         }

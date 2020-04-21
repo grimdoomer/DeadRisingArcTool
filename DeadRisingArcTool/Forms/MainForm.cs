@@ -309,7 +309,7 @@ namespace DeadRisingArcTool
                 if (decompressedData != null)
                 {
                     // Parse the game resource using the parser type.
-                    GameResource resource = GameResource.FromGameResource(decompressedData, fileEntry.FileName, fileEntry.FileType, 
+                    GameResource resource = GameResource.FromGameResource(decompressedData, fileEntry.FileName, fileEntry.FileType,
                         this.arcFileCollection.ArcFiles[datum.ArcIndex].Endian == IO.Endianness.Big);
                     if (resource != null)
                     {
@@ -335,6 +335,12 @@ namespace DeadRisingArcTool
                         }
                     }
                 }
+            }
+            else
+            {
+                // Loop through all of the resource editors and hide all of them.
+                for (int i = 0; i < this.resourceEditors.Count; i++)
+                    this.resourceEditors[i].Visible = false;
             }
 
             // Enable context menu options.

@@ -17,6 +17,7 @@ using SharpDX;
 using System.Runtime.InteropServices;
 using DeadRisingArcTool.Graphics;
 using DeadRisingArcTool.FileFormats.Bitmaps;
+using DeadRisingArcTool.FileFormats;
 
 namespace DeadRisingArcTool.Forms
 {
@@ -141,8 +142,8 @@ namespace DeadRisingArcTool.Forms
         Texture2D[] textures = null;
         ShaderResourceView[] shaderResources = null;
 
-        // Indicates if we should quit the render loop.
-        bool isClosing = false;
+        bool isClosing = false;         // Indicates if we should quit the render loop
+        bool hasResized = false;        // Indicates if the form has changed size
 
         public RenderView(ArcFile arcFile, rModel model)
         {
@@ -155,8 +156,11 @@ namespace DeadRisingArcTool.Forms
 
         private void RenderView_Load(object sender, EventArgs e)
         {
-            // Initialize D3D layer.
+            // Show the form and gain focus.
             this.Show();
+            this.Focus();
+
+            // Initialize D3D layer.
             InitializeD3D();
 
             // Create the rendering buffers from the model data.
@@ -177,6 +181,12 @@ namespace DeadRisingArcTool.Forms
             this.isClosing = true;
         }
 
+        private void RenderView_SizeChanged(object sender, System.EventArgs e)
+        {
+            // Flag that the form has resized so the directx thread can adjust it's frame buffer size.
+            this.hasResized = true;
+        }
+
         private void InitializeD3D()
         {
             // Setup the swapchain description structure.
@@ -193,7 +203,7 @@ namespace DeadRisingArcTool.Forms
             SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, desc, out this.device, out this.swapChain);
 
             // Setup the projection matrix.
-            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 10000.0f);
+            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 40000.0f);
             this.worldGround = Matrix.Identity;
 
             // Ignore all window events.
@@ -203,25 +213,8 @@ namespace DeadRisingArcTool.Forms
             this.backBuffer = Texture2D.FromSwapChain<Texture2D>(this.swapChain, 0);
             this.renderView = new RenderTargetView(this.device, this.backBuffer);
 
-            // Create a texture for the dpeth stencil.
-            Texture2DDescription depthStencilDesc = new Texture2DDescription();
-            depthStencilDesc.Width = this.ClientSize.Width;
-            depthStencilDesc.Height = this.ClientSize.Height;
-            depthStencilDesc.MipLevels = 1;
-            depthStencilDesc.ArraySize = 1;
-            depthStencilDesc.Format = Format.D32_Float;
-            depthStencilDesc.SampleDescription.Count = 1;
-            depthStencilDesc.SampleDescription.Quality = 0;
-            depthStencilDesc.Usage = ResourceUsage.Default;
-            depthStencilDesc.BindFlags = BindFlags.DepthStencil;
-            this.depthStencil = new Texture2D(this.device, depthStencilDesc);
-
-            // Create the depth stencil view.
-            DepthStencilViewDescription depthStencilViewDesc = new DepthStencilViewDescription();
-            depthStencilViewDesc.Dimension = DepthStencilViewDimension.Texture2D;
-            depthStencilViewDesc.Format = Format.D32_Float;
-            this.depthStencilView = new DepthStencilView(this.device, this.depthStencil, depthStencilViewDesc);
-            this.device.ImmediateContext.OutputMerger.SetRenderTargets(this.depthStencilView, this.renderView);
+            // Create the depth stencil and depth stencil view.
+            CreateDepthStencil();
 
             // Setup the depth stencil state.
             DepthStencilStateDescription stateDesc = new DepthStencilStateDescription();
@@ -249,7 +242,7 @@ namespace DeadRisingArcTool.Forms
             this.rasterState = new RasterizerState(this.device, rasterStateDesc);
 
             // Set the viewport.
-            this.device.ImmediateContext.Rasterizer.SetViewport(0, 0, (float)this.ClientSize.Width, (float)this.ClientSize.Height, 0.0f, 1.0f);
+            //this.device.ImmediateContext.Rasterizer.SetViewport(0, 0, (float)this.ClientSize.Width, (float)this.ClientSize.Height, 0.0f, 1.0f);
 
 #if REAL_CODE
             // Compile out vertex and pixel shaders.
@@ -281,6 +274,8 @@ namespace DeadRisingArcTool.Forms
 
             // Initialize the camera and set starting position.
             this.camera = new Camera(this);
+            this.camera.Position = new Vector3(this.model.primitives[0].Unk9.X, this.model.primitives[0].Unk9.Y, this.model.primitives[0].Unk9.Z);
+            this.camera.LookAt = this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
             this.camera.speed = 0.002f;
 
             this.camera.ComputePosition();
@@ -291,8 +286,10 @@ namespace DeadRisingArcTool.Forms
 #if REAL_CODE
 
             // Setup the vertex declaration.
-            this.vertexDecl = new InputLayout(this.device, this.vertexByteCode.Data, new InputElement[]
-                {
+            if (this.model.primitives[0].VertexStride2 == 12)
+            {
+                this.vertexDecl = new InputLayout(this.device, this.vertexByteCode.Data, new InputElement[]
+                    {
                     new InputElement("POSITION", 0, Format.R16G16B16A16_SNorm, 0, 0),
                     new InputElement("NORMAL", 0, Format.R16G16B16A16_SNorm, 16, 0),
                     new InputElement("TANGENT", 0, Format.R16G16B16A16_SNorm, 0, 1),
@@ -300,7 +297,31 @@ namespace DeadRisingArcTool.Forms
                     new InputElement("TEXCOORD", 1, Format.R16G16_SNorm, 8, 1),
                     new InputElement("BLENDWEIGHT", 0, Format.R8G8B8A8_UNorm, 12, 0),
                     new InputElement("BLENDINDICES", 0, Format.R8G8B8A8_UInt, 8, 0),
-                });
+                    new InputElement("TEXCOORD", 2, Format.R32G32B32A32_Float, 0, 0),
+                    new InputElement("TEXCOORD", 3, Format.R32G32B32A32_Float, 0, 0),
+                    });
+            }
+            else if (this.model.primitives[0].VertexStride2 == 28)
+            {
+                this.vertexDecl = new InputLayout(this.device, this.vertexByteCode.Data, new InputElement[]
+                    {
+                        new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                        new InputElement("NORMAL", 0, Format.R16G16B16A16_SNorm, 12, 0),
+                        new InputElement("TANGENT", 0, Format.R16G16B16A16_SNorm, 0, 1),
+                        new InputElement("TEXCOORD", 0, Format.R32G32_Float, 20, 0),
+                        new InputElement("TEXCOORD", 1, Format.R32G32_Float, 8, 1),
+                        new InputElement("TEXCOORD", 2, Format.R16G16_SNorm, 16, 1),
+                        new InputElement("TEXCOORD", 3, Format.R32G32_Float, 20, 1),
+
+                        // HACK: put these here now to satisfy the vertex shader.
+                        new InputElement("BLENDWEIGHT", 0, Format.R8G8B8A8_UNorm, 0, 0),
+                        new InputElement("BLENDINDICES", 0, Format.R8G8B8A8_UInt, 0, 0),
+                    });
+            }
+            else
+            {
+
+            }
 
             // Create the vertex and index buffer from the model data streams.
             this.primaryVertexBuffer = SharpDX.Direct3D11.Buffer.Create<byte>(this.device, BindFlags.VertexBuffer, this.model.vertexData1);
@@ -308,19 +329,9 @@ namespace DeadRisingArcTool.Forms
             this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<short>(this.device, BindFlags.IndexBuffer, this.model.indiceBuffer);
 
             // Set the bounding box parameters to the vertex shader constant buffer.
-            bool test = true;
-            if (test == true)
-            {
-                this.shaderConsts.gXfQuantPosScale = this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
-                this.shaderConsts.gXfQuantPosOffset = this.model.header.BoundingBoxMin;
-                this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
-            }
-            else
-            {
-                this.shaderConsts.gXfQuantPosScale = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
-                this.shaderConsts.gXfQuantPosOffset = new Vector3(1.0f, 1.0f, 1.0f);// this.model.header.BoundingBoxMin;
-                this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
-            }
+            this.shaderConsts.gXfQuantPosScale = this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
+            this.shaderConsts.gXfQuantPosOffset = this.model.header.BoundingBoxMin;
+            this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
 
 #else
 
@@ -406,12 +417,19 @@ namespace DeadRisingArcTool.Forms
 
         private void Render()
         {
+            // Check if the form has resized and if so reset our render state to accomidate the size change.
+            if (this.hasResized == true)
+                ResizeRenderTarget();
+
             // Only move the camera if the window is visible.
             if (this.Visible == true && this.Focused == true)
             {
                 // Update the camera.
                 this.camera.move();
             }
+
+            // Set our render target to our swapchain buffer.
+            this.device.ImmediateContext.OutputMerger.SetRenderTargets(this.depthStencilView, this.renderView);
 
             // Clear the backbuffer.
             this.device.ImmediateContext.ClearRenderTargetView(this.renderView, SharpDX.Color.CornflowerBlue);
@@ -483,8 +501,7 @@ namespace DeadRisingArcTool.Forms
                 this.device.ImmediateContext.PixelShader.SetConstantBuffer(0, this.shaderConstantBuffer);
 
                 // Draw the primtive.
-                this.device.ImmediateContext.DrawIndexed(this.model.primitives[i].StartingIndexLocation, this.model.primitives[i].IndexCount, 0);
-                //this.device.ImmediateContext.DrawIndexed(this.model.primitives[i].IndexCount, this.model.primitives[i].StartingIndexLocation, 0);
+                this.device.ImmediateContext.DrawIndexed(this.model.primitives[i].IndexCount, this.model.primitives[i].StartingIndexLocation, this.model.primitives[i].Unk8);
             }
 #else
             // Update the shader constants buffer with the new data.
@@ -499,6 +516,54 @@ namespace DeadRisingArcTool.Forms
 
             // Present the final frame.
             this.swapChain.Present(0, PresentFlags.None);
+        }
+
+        private void CreateDepthStencil()
+        {
+            // Create a texture for the dpeth stencil.
+            Texture2DDescription depthStencilDesc = new Texture2DDescription();
+            depthStencilDesc.Width = this.ClientSize.Width;
+            depthStencilDesc.Height = this.ClientSize.Height;
+            depthStencilDesc.MipLevels = 1;
+            depthStencilDesc.ArraySize = 1;
+            depthStencilDesc.Format = Format.D32_Float;
+            depthStencilDesc.SampleDescription.Count = 1;
+            depthStencilDesc.SampleDescription.Quality = 0;
+            depthStencilDesc.Usage = ResourceUsage.Default;
+            depthStencilDesc.BindFlags = BindFlags.DepthStencil;
+            this.depthStencil = new Texture2D(this.device, depthStencilDesc);
+
+            // Create the depth stencil view.
+            DepthStencilViewDescription depthStencilViewDesc = new DepthStencilViewDescription();
+            depthStencilViewDesc.Dimension = DepthStencilViewDimension.Texture2D;
+            depthStencilViewDesc.Format = Format.D32_Float;
+            this.depthStencilView = new DepthStencilView(this.device, this.depthStencil, depthStencilViewDesc);
+        }
+
+        private void ResizeRenderTarget()
+        {
+            // Clear the current device state.
+            this.device.ImmediateContext.ClearState();
+
+            // Release all references to the swap chain buffers.
+            this.device.ImmediateContext.OutputMerger.ResetTargets();
+            this.backBuffer.Dispose();
+            this.renderView.Dispose();
+
+            // Dispose of the old depth stencil texture and create a new one.
+            this.depthStencil.Dispose();
+            this.depthStencilView.Dispose();
+            CreateDepthStencil();
+
+            // Resize the swap chain.
+            this.swapChain.ResizeBuffers(1, this.ClientSize.Width, this.ClientSize.Height, Format.R8G8B8A8_UNorm, SwapChainFlags.None);
+            this.backBuffer = this.swapChain.GetBackBuffer<Texture2D>(0);
+
+            // Create a new render target view using the back buffer.
+            this.renderView = new RenderTargetView(this.device, this.backBuffer);
+
+            // Update the projection matrix.
+            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 40000.0f);
         }
     }
 }

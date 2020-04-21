@@ -26,6 +26,8 @@ struct ZPassVS_INPUT
 	float3      tangent:		TANGENT;
 	float2		texCoord0:		TEXCOORD0;
 	float2		texCoord1:		TEXCOORD1;
+	float2		texCoord2:		TEXCOORD2;
+	float2		texCoord3:		TEXCOORD3;
 
 	float4		boneWeights0:	BLENDWEIGHT0;
 	int4		boneIndices0:	BLENDINDICES0;
@@ -62,9 +64,9 @@ ZPassVS_OUTPUT XfZPassVS(ZPassVS_INPUT I)
 	wmat = getWorldMatrix4wtFromTex(I.boneWeights0, I.boneIndices0);
 
 	//float3	wp = mul(wmat, float4(decodePosition(I.position.xyz), 1));
-	float3	wp = decodePosition(I.position.xyz);
+	//float3	wp = decodePosition(I.position.xyz);
 
-	//float3 wp = I.position;
+	float3 wp = I.position;
 
 	O.position = mul(float4(wp, 1), gXfViewProj);
 

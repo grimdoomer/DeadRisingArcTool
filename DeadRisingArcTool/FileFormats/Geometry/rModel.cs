@@ -133,8 +133,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x10 */ public int StartingVertex; // vertex data 1
 	    /* 0x14 */ public int Unk16;
 	    /* 0x18 */ public int Unk5;	
-	    /* 0x1C */ public int IndexCount;               // Passed to CDeviceContext::DrawIndexed
-	    /* 0x20 */ public int StartingIndexLocation;    // Passed to CDeviceContext::DrawIndexed
+	    /* 0x1C */ public int StartingIndexLocation;    // Passed to CDeviceContext::DrawIndexed
+	    /* 0x20 */ public int IndexCount;               // Passed to CDeviceContext::DrawIndexed
 	    /* 0x24 */ public int Unk8;
 	    /* 0x28 */ // padding to align vectors
 	    /* 0x30 */ public Vector4 Unk9;
@@ -352,8 +352,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 model.primitives[i].StartingVertex = reader.ReadInt32();
                 model.primitives[i].Unk16 = reader.ReadInt32();
                 model.primitives[i].Unk5 = reader.ReadInt32();
-                model.primitives[i].IndexCount = reader.ReadInt32();
                 model.primitives[i].StartingIndexLocation = reader.ReadInt32();
+                model.primitives[i].IndexCount = reader.ReadInt32();
                 model.primitives[i].Unk8 = reader.ReadInt32();
                 reader.BaseStream.Position += 8;
                 model.primitives[i].Unk9 = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());

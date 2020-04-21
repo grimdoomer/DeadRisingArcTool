@@ -80,6 +80,9 @@ namespace DeadRisingArcTool.FileFormats.Archive
         // Dictionary of arc file datums to file names.
         private Dictionary<DatumIndex, string> arcFileNameDictionary = new Dictionary<DatumIndex, string>();
 
+        // Dictionary of arc file names to datums for reverse lookup.
+        private Dictionary<string, DatumIndex[]> arcFileNameReverseDictionary = new Dictionary<string, DatumIndex[]>();
+
         /// <summary>
         /// Root directory the arc files were loaded from.
         /// </summary>
@@ -101,7 +104,26 @@ namespace DeadRisingArcTool.FileFormats.Archive
             for (int i = 0; i < this.arcFiles[arcIndex].FileEntries.Length; i++)
             {
                 // Create a datum for the file entry and add it to the dictionary.
-                this.arcFileNameDictionary.Add(new DatumIndex((short)arcIndex, (short)i), this.arcFiles[arcIndex].FileEntries[i].FileName);
+                DatumIndex datum = new DatumIndex((short)arcIndex, (short)i);
+                this.arcFileNameDictionary.Add(datum, this.arcFiles[arcIndex].FileEntries[i].FileName);
+
+                // Add the file name to the reverse lookup dictionary.
+                if (this.arcFileNameReverseDictionary.ContainsKey(this.arcFiles[arcIndex].FileEntries[i].FileName) == false)
+                {
+                    // Add to the reverse lookup dictionary.
+                    this.arcFileNameReverseDictionary.Add(this.arcFiles[arcIndex].FileEntries[i].FileName, new DatumIndex[] { datum });
+                }
+                else
+                {
+                    // Allocate a new array that is 1 element larger than the existing array (gross).
+                    string fileName = this.arcFiles[arcIndex].FileEntries[i].FileName;
+                    DatumIndex[] datumArray = new DatumIndex[this.arcFileNameReverseDictionary[fileName].Length + 1];
+                    Array.Copy(this.arcFileNameReverseDictionary[fileName], datumArray, this.arcFileNameReverseDictionary[fileName].Length);
+                    
+                    // Add the new datum and set the array back to the revese lookup dictionary.
+                    datumArray[this.arcFileNameReverseDictionary[fileName].Length] = datum;
+                    this.arcFileNameReverseDictionary[fileName] = datumArray;
+                }
             }
         }
 
@@ -134,9 +156,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
             foreach (DatumIndex datum in this.arcFileNameDictionary.Keys)
             {
                 // Add the file path as tree nodes
-                string fileName = this.arcFiles[datum.ArcIndex].FileEntries[datum.FileIndex].FileName + "." + 
-                    this.arcFiles[datum.ArcIndex].FileEntries[datum.FileIndex].FileType.ToString();
-                AddFilePathAsTreeNodes(root, fileName, datum);
+                AddFilePathAsTreeNodes(root, this.arcFiles[datum.ArcIndex].FileEntries[datum.FileIndex].FileName,
+                    this.arcFiles[datum.ArcIndex].FileEntries[datum.FileIndex].FileType, datum);
             }
 
             // Return the tree node collection.
@@ -160,8 +181,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 for (int x = 0; x < this.arcFiles[i].FileEntries.Length; x++)
                 {
                     // Add the file path as tree nodes
-                    string fileName = this.arcFiles[i].FileEntries[x].FileName + "." + this.arcFiles[i].FileEntries[x].FileType.ToString();
-                    AddFilePathAsTreeNodes(arcNode, fileName, new DatumIndex((short)i, (short)x));
+                    AddFilePathAsTreeNodes(arcNode, this.arcFiles[i].FileEntries[x].FileName, this.arcFiles[i].FileEntries[x].FileType, new DatumIndex((short)i, (short)x));
                 }
             }
 
@@ -200,8 +220,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
                     }
 
                     // Add the file path as tree nodes to the resource type node.
-                    string fileName = this.arcFiles[i].FileEntries[x].FileName + "." + this.arcFiles[i].FileEntries[x].FileType.ToString();
-                    AddFilePathAsTreeNodes(previousNode, fileName, new DatumIndex((short)i, (short)x));
+                    AddFilePathAsTreeNodes(previousNode, this.arcFiles[i].FileEntries[x].FileName, this.arcFiles[i].FileEntries[x].FileType, new DatumIndex((short)i, (short)x));
                 }
             }
 
@@ -209,7 +228,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
             return root.Nodes;
         }
 
-        private void AddFilePathAsTreeNodes(TreeNode root, string filePath, object tag)
+        private void AddFilePathAsTreeNodes(TreeNode root, string filePath, ResourceType fileType, object tag)
         {
             // Split the file name.
             string[] pieces = filePath.Split(new string[] { "\\" }, StringSplitOptions.None);
@@ -236,6 +255,13 @@ namespace DeadRisingArcTool.FileFormats.Archive
                     {
                         // Set the tag to the datum of the file entry.
                         newNode.Tag = tag;
+
+                        // Check if we have a supported parser for this resource type.
+                        if (GameResource.ResourceParsers.ContainsKey(fileType) == false)
+                        {
+                            // Set the node color to red.
+                            newNode.ForeColor = System.Drawing.Color.Red;
+                        }
                     }
 
                     // Add the node to the parent node's collection.

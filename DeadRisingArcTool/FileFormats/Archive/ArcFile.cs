@@ -181,7 +181,11 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
                 // Check if the type of file is known.
                 if (GameResource.KnownResourceTypes.ContainsKey(fileType) == true)
+                {
+                    // Set the file type and add it as a file extension to the file name.
                     fileEntry.FileType = GameResource.KnownResourceTypes[fileType];
+                    fileEntry.FileName += "." + fileEntry.FileType.ToString();
+                }
                 else
                     fileEntry.FileType = ResourceType.Unknown;
 
@@ -200,13 +204,14 @@ namespace DeadRisingArcTool.FileFormats.Archive
             return Result;
         }
 
-        public byte[] DecompressFileEntry(string fileName)
+        public byte[] DecompressFileEntry(string fileName, bool matchFileExtension = false)
         {
             // Loop through all of the files until we find one that matches.
             for (int i = 0; i < this.fileEntries.Count; i++)
             {
                 // Check if the file name matches.
-                if (this.fileEntries[i].FileName == fileName)
+                if ((matchFileExtension == true && this.fileEntries[i].FileName == fileName) ||
+                    (matchFileExtension == false && CompareFileNamesNoExt(this.fileEntries[i].FileName, fileName) == true))
                 {
                     // Decompress the file entry.
                     return DecompressFileEntry(i);
@@ -215,6 +220,24 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
             // A file with matching name was not found.
             return null;
+        }
+
+        private bool CompareFileNamesNoExt(string file1, string file2)
+        {
+            // Loop and compare the the file names.
+            for (int i = 0; i < Math.Min(file1.Length, file2.Length); i++)
+            {
+                // If the characters don't match we fail.
+                if (file1[i] != file2[i])
+                    return false;
+            }
+
+            // Make sure the next character in file1 is a period for the file extension.
+            if (file1.Length <= file2.Length || file1[file2.Length] != '.')
+                return false;
+
+            // If we made it here it's good enough for what we need.
+            return true;
         }
 
         public byte[] DecompressFileEntry(int fileIndex)
@@ -241,7 +264,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
         }
 
         /// <summary>
-        /// Decompresses the specified file to file
+        /// Extracts the specified arc file to disk
         /// </summary>
         /// <param name="fileIndex">Index of the file to decompress</param>
         /// <param name="outputFileName">File path to save the decompressed data to</param>

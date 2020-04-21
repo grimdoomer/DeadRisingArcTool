@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeadRisingArcTool.FileFormats.Archive;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -248,6 +249,28 @@ namespace DeadRisingArcTool.FileFormats
 
             // Invoke the FromGameResource method on the parser type.
             return (GameResource)resourceParsers[fileType].GetMethod("FromGameResource").Invoke(null, new object[] { buffer, fileName, fileType, isBigEndian });
+        }
+
+        /// <summary>
+        /// Gets the full file name with file extension for the specified <see cref="ArcFileEntry"/>
+        /// </summary>
+        /// <param name="fileEntry"></param>
+        /// <returns></returns>
+        public static string GetFullResourceName(ArcFileEntry fileEntry)
+        {
+            return GetFullResourceName(fileEntry.FileName, fileEntry.FileType);
+        }
+
+        /// <summary>
+        /// Gets the full file name with extension for the specified file
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="fileType"></param>
+        /// <returns></returns>
+        public static string GetFullResourceName(string filePath, ResourceType fileType)
+        {
+            // Return the resource file name with file extension.
+            return filePath + "." + fileType.ToString();
         }
     }
 }
