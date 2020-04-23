@@ -15,6 +15,11 @@ namespace DeadRisingArcTool.FileFormats.Archive
     public struct DatumIndex
     {
         /// <summary>
+        /// Value used for resources that are not assigned to an arc file.
+        /// </summary>
+        public const int Unassigned = -1;
+
+        /// <summary>
         /// Index of the archive in the ArcFileCollection.
         /// </summary>
         public short ArcIndex { get; set; }
@@ -100,6 +105,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
         {
             // Add the arc file to the collection.
             int arcIndex = this.arcFiles.Count;
+            arcFile.Index = arcIndex;   // HACK: I hate this but it will have to do for now
             this.arcFiles.Add(arcFile);
 
             // Loop through the arc file entry list and create a datum for each file.

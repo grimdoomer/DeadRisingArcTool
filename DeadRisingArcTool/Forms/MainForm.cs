@@ -488,7 +488,15 @@ namespace DeadRisingArcTool
 
                 // Create a new render window.
                 RenderView render = new RenderView(selectedNode);
-                render.Visible = true;
+
+                // TODO: Figure out what the fuck is up with this...
+                try
+                {
+                    render.Visible = true;
+                }
+                catch (ObjectDisposedException ex)
+                {
+                }
             }
             else
             {

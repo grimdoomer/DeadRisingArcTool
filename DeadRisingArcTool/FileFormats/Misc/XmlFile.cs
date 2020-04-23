@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeadRisingArcTool.FileFormats.Archive;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,17 +37,17 @@ namespace DeadRisingArcTool.FileFormats.Misc
         /// </summary>
         public byte[] Buffer { get; private set; }
 
-        protected XmlFile(byte[] buffer, string fileName, ResourceType fileType, bool isBigEndian)
-            : base(fileName, fileType, isBigEndian)
+        protected XmlFile(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
+            : base(fileName, datum, fileType, isBigEndian)
         {
             // Initialize fields.
             this.Buffer = buffer;
         }
 
-        public static XmlFile FromGameResource(byte[] buffer, string fileName, ResourceType fileType, bool isBigEndian)
+        public static XmlFile FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
             // Create a new XmlFile from the resource buffer.
-            return new XmlFile(buffer, fileName, fileType, isBigEndian);
+            return new XmlFile(buffer, fileName, datum, fileType, isBigEndian);
         }
     }
 }

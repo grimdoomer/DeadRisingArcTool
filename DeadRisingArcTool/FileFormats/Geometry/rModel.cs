@@ -1,4 +1,5 @@
-﻿using DeadRisingArcTool.FileFormats.Bitmaps;
+﻿using DeadRisingArcTool.FileFormats.Archive;
+using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
 using IO;
@@ -135,7 +136,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x0A */ public byte Unk13;
 	    /* 0x0B */ // padding
         /* 0x0C */ public int VertexCount;
-        /* 0x10 */ public int StartingVertex; // vertex data 1
+        /* 0x10 */ public int StartingVertex;
 	    /* 0x14 */ public int VertexStream1Offset;      // Passed to CDeviceContext::IASetVertexBuffers
 	    /* 0x18 */ public int VertexStream2Offset;	    // Passed to CDeviceContext::IASetVertexBuffers
 	    /* 0x1C */ public int StartingIndexLocation;    // Passed to CDeviceContext::DrawIndexed
@@ -180,20 +181,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private Texture2D[] dxTextures = null;
         private ShaderResourceView[] shaderResources = null;
 
-        protected rModel(string fileName, ResourceType fileType, bool isBigEndian)
-            : base(fileName, fileType, isBigEndian)
+        protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
+            : base(fileName, datum, fileType, isBigEndian)
         {
 
         }
 
-        public static rModel FromGameResource(byte[] buffer, string fileName, ResourceType fileType, bool isBigEndian)
+        public static rModel FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
             // Make sure the buffer is large enough to hold the header structure.
             if (buffer.Length < rModelHeader.kSizeOf)
                 return null;
 
             // Create a new model object to populate with data.
-            rModel model = new rModel(fileName, fileType, isBigEndian);
+            rModel model = new rModel(fileName, datum, fileType, isBigEndian);
 
             // Create a new memory stream and binary reader for the buffer.
             MemoryStream ms = new MemoryStream(buffer);

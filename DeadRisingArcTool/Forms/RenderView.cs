@@ -258,14 +258,6 @@ namespace DeadRisingArcTool.Forms
             stateDesc.IsStencilEnabled = false;
             stateDesc.StencilReadMask = 0xFF;
             stateDesc.StencilWriteMask = 0xFF;
-            stateDesc.FrontFace.FailOperation = StencilOperation.Increment;
-            stateDesc.FrontFace.DepthFailOperation = StencilOperation.Increment;
-            stateDesc.FrontFace.PassOperation = StencilOperation.Decrement;
-            stateDesc.FrontFace.Comparison = Comparison.LessEqual;
-            stateDesc.BackFace.FailOperation = StencilOperation.Increment;
-            stateDesc.BackFace.DepthFailOperation = StencilOperation.Increment;
-            stateDesc.BackFace.PassOperation = StencilOperation.Decrement;
-            stateDesc.BackFace.Comparison = Comparison.LessEqual;
             this.depthStencilState = new DepthStencilState(this.device, stateDesc);
 
             // Setup the rasterizer state.

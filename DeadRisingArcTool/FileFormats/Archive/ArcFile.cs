@@ -48,7 +48,10 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// Full file path of the arc file.
         /// </summary>
         public string FileName { get; private set;  }
-
+        /// <summary>
+        /// Index of the arc file in the global <see cref="ArcFileCollection"/> collection
+        /// </summary>
+        public int Index { get; set; }
         /// <summary>
         /// Endiannes of the arc file.
         /// </summary>
@@ -254,7 +257,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
             }
 
             // Parse the resource game and return the object.
-            return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[index].FileName, this.fileEntries[index].FileType, this.endian == Endianness.Big);
+            return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[index].FileName, 
+                new DatumIndex((short)this.Index, (short)index), this.fileEntries[index].FileType, this.endian == Endianness.Big);
         }
 
         /// <summary>
@@ -274,7 +278,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
             }
 
             // Parse the resource game and return the object.
-            return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[fileIndex].FileName, this.fileEntries[fileIndex].FileType, this.endian == Endianness.Big);
+            return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[fileIndex].FileName,
+                new DatumIndex((short)this.Index, (short)fileIndex), this.fileEntries[fileIndex].FileType, this.endian == Endianness.Big);
         }
 
         public byte[] DecompressFileEntry(string fileName, bool matchFileExtension = false)

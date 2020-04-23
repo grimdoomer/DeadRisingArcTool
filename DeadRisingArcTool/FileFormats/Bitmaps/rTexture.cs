@@ -1,4 +1,5 @@
-﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+﻿using DeadRisingArcTool.FileFormats.Archive;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using IO;
 using SharpDX;
 using SharpDX.Direct3D11;
@@ -85,8 +86,8 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         public bool XboxFormat { get; private set; }
         public int FaceCount { get; private set; }
 
-        public rTexture(string fileName, ResourceType fileType, bool isBigEndian)
-            : base(fileName, fileType, isBigEndian)
+        public rTexture(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
+            : base(fileName, datum, fileType, isBigEndian)
         {
 
         }
@@ -252,14 +253,14 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             return pixelData;
         }
 
-        public static rTexture FromGameResource(byte[] buffer, string fileName, ResourceType fileType, bool isBigEndian)
+        public static rTexture FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
             // Make sure the buffer is large enough to contain the texture header.
             if (buffer.Length < rTextureHeader.kSizeOf)
                 return null;
 
             // Create a new texture object to populate with data.
-            rTexture texture = new rTexture(fileName, fileType, isBigEndian);
+            rTexture texture = new rTexture(fileName, datum, fileType, isBigEndian);
 
             // Create a new memory stream and binary reader for the buffer.
             MemoryStream ms = new MemoryStream(buffer);

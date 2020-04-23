@@ -176,6 +176,10 @@ namespace DeadRisingArcTool.FileFormats
         /// </summary>
         public string FileName { get; protected set; }
         /// <summary>
+        /// Datum for tracking what arc file this resource is located in
+        /// </summary>
+        public DatumIndex Datum { get; set; }
+        /// <summary>
         /// True if the byte order of the resource is big endian
         /// </summary>
         public bool IsBigEndian { get; protected set; }
@@ -204,12 +208,14 @@ namespace DeadRisingArcTool.FileFormats
         /// Creates a new game resource of the specified type
         /// </summary>
         /// <param name="fileName">Game resource file name</param>
+        /// <param name="index">Datum index for locating the file</param>
         /// <param name="fileType">Resource file type</param>
         /// <param name="isBigEndian">True if the file is in big endian byte order</param>
-        protected GameResource(string fileName, ResourceType fileType, bool isBigEndian)
+        protected GameResource(string fileName, DatumIndex index, ResourceType fileType, bool isBigEndian)
         {
             // Initialize fields.
             this.FileName = fileName;
+            this.Datum = index;
             this.FileType = fileType;
             this.IsBigEndian = isBigEndian;
         }
@@ -240,17 +246,18 @@ namespace DeadRisingArcTool.FileFormats
         /// </summary>
         /// <param name="buffer">Game resource buffer</param>
         /// <param name="fileName">Name of the file</param>
+        /// <param name="datum">Datum index of the file</param>
         /// <param name="fileType">Type of file</param>
         /// <param name="isBigEndian">True if the file is in big endian byte order, false otherwise</param>
         /// <returns>The parsed GameResource instance</returns>
-        public static GameResource FromGameResource(byte[] buffer, string fileName, ResourceType fileType, bool isBigEndian)
+        public static GameResource FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
             // Make sure we have a parser for the resource type.
             if (resourceParsers.ContainsKey(fileType) == false)
                 return null;
 
             // Invoke the FromGameResource method on the parser type.
-            return (GameResource)resourceParsers[fileType].GetMethod("FromGameResource").Invoke(null, new object[] { buffer, fileName, fileType, isBigEndian });
+            return (GameResource)resourceParsers[fileType].GetMethod("FromGameResource").Invoke(null, new object[] { buffer, fileName, datum, fileType, isBigEndian });
         }
 
         /// <summary>
