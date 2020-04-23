@@ -1,4 +1,6 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,7 +88,7 @@ namespace DeadRisingArcTool.FileFormats
         rUBMembershipSpaceList
     }
 
-    public abstract class GameResource
+    public abstract class GameResource : IRenderable
     {
         #region KnownResourceTypes
 
@@ -272,5 +274,24 @@ namespace DeadRisingArcTool.FileFormats
             // Return the resource file name with file extension.
             return filePath + "." + fileType.ToString();
         }
+
+        #region IRenderable
+
+        public virtual bool InitializeGraphics(IRenderManager manager, Device device)
+        {
+            return false;
+        }
+
+        public virtual bool DrawFrame(IRenderManager manager, Device device)
+        {
+            return false;
+        }
+
+        public virtual void CleanupGraphics(IRenderManager manager, Device device)
+        {
+
+        }
+
+        #endregion
     }
 }

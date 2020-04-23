@@ -38,6 +38,10 @@
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.treeViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.extractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.sortByToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.fileNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.arcFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.resourceTypeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.FileInfoBox = new System.Windows.Forms.GroupBox();
             this.lblFileType = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
@@ -50,10 +54,7 @@
             this.lblOffset = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.sortByToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.fileNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.arcFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.resourceTypeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.renderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.treeViewContextMenu.SuspendLayout();
             this.FileInfoBox.SuspendLayout();
@@ -125,16 +126,48 @@
             // 
             this.treeViewContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.extractToolStripMenuItem,
-            this.sortByToolStripMenuItem});
+            this.sortByToolStripMenuItem,
+            this.renderToolStripMenuItem});
             this.treeViewContextMenu.Name = "treeViewContextMenu";
-            this.treeViewContextMenu.Size = new System.Drawing.Size(181, 70);
+            this.treeViewContextMenu.Size = new System.Drawing.Size(181, 92);
             // 
             // extractToolStripMenuItem
             // 
             this.extractToolStripMenuItem.Name = "extractToolStripMenuItem";
-            this.extractToolStripMenuItem.Size = new System.Drawing.Size(109, 22);
+            this.extractToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.extractToolStripMenuItem.Text = "Extract";
             this.extractToolStripMenuItem.Click += new System.EventHandler(this.extractToolStripMenuItem_Click);
+            // 
+            // sortByToolStripMenuItem
+            // 
+            this.sortByToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileNameToolStripMenuItem,
+            this.arcFileToolStripMenuItem,
+            this.resourceTypeToolStripMenuItem});
+            this.sortByToolStripMenuItem.Name = "sortByToolStripMenuItem";
+            this.sortByToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.sortByToolStripMenuItem.Text = "Sort By";
+            // 
+            // fileNameToolStripMenuItem
+            // 
+            this.fileNameToolStripMenuItem.Name = "fileNameToolStripMenuItem";
+            this.fileNameToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.fileNameToolStripMenuItem.Text = "File Name";
+            this.fileNameToolStripMenuItem.Click += new System.EventHandler(this.fileNameToolStripMenuItem_Click);
+            // 
+            // arcFileToolStripMenuItem
+            // 
+            this.arcFileToolStripMenuItem.Name = "arcFileToolStripMenuItem";
+            this.arcFileToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.arcFileToolStripMenuItem.Text = "Arc File";
+            this.arcFileToolStripMenuItem.Click += new System.EventHandler(this.arcFileToolStripMenuItem_Click);
+            // 
+            // resourceTypeToolStripMenuItem
+            // 
+            this.resourceTypeToolStripMenuItem.Name = "resourceTypeToolStripMenuItem";
+            this.resourceTypeToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.resourceTypeToolStripMenuItem.Text = "Resource Type";
+            this.resourceTypeToolStripMenuItem.Click += new System.EventHandler(this.resourceTypeToolStripMenuItem_Click);
             // 
             // FileInfoBox
             // 
@@ -260,36 +293,12 @@
             this.splitContainer1.SplitterDistance = 297;
             this.splitContainer1.TabIndex = 3;
             // 
-            // sortByToolStripMenuItem
+            // renderToolStripMenuItem
             // 
-            this.sortByToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileNameToolStripMenuItem,
-            this.arcFileToolStripMenuItem,
-            this.resourceTypeToolStripMenuItem});
-            this.sortByToolStripMenuItem.Name = "sortByToolStripMenuItem";
-            this.sortByToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.sortByToolStripMenuItem.Text = "Sort By";
-            // 
-            // fileNameToolStripMenuItem
-            // 
-            this.fileNameToolStripMenuItem.Name = "fileNameToolStripMenuItem";
-            this.fileNameToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.fileNameToolStripMenuItem.Text = "File Name";
-            this.fileNameToolStripMenuItem.Click += new System.EventHandler(this.fileNameToolStripMenuItem_Click);
-            // 
-            // arcFileToolStripMenuItem
-            // 
-            this.arcFileToolStripMenuItem.Name = "arcFileToolStripMenuItem";
-            this.arcFileToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.arcFileToolStripMenuItem.Text = "Arc File";
-            this.arcFileToolStripMenuItem.Click += new System.EventHandler(this.arcFileToolStripMenuItem_Click);
-            // 
-            // resourceTypeToolStripMenuItem
-            // 
-            this.resourceTypeToolStripMenuItem.Name = "resourceTypeToolStripMenuItem";
-            this.resourceTypeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.resourceTypeToolStripMenuItem.Text = "Resource Type";
-            this.resourceTypeToolStripMenuItem.Click += new System.EventHandler(this.resourceTypeToolStripMenuItem_Click);
+            this.renderToolStripMenuItem.Name = "renderToolStripMenuItem";
+            this.renderToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.renderToolStripMenuItem.Text = "Render";
+            this.renderToolStripMenuItem.Click += new System.EventHandler(this.renderToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -344,6 +353,7 @@
         private System.Windows.Forms.ToolStripMenuItem fileNameToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem arcFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem resourceTypeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem renderToolStripMenuItem;
     }
 }
 

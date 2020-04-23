@@ -71,6 +71,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
     public class ArcFileCollection
     {
+        public static ArcFileCollection Instance { get; set; } = null;
+
         private List<ArcFile> arcFiles = new List<ArcFile>();
         /// <summary>
         /// List of arc files that have been loaded into the collection.
@@ -130,6 +132,31 @@ namespace DeadRisingArcTool.FileFormats.Archive
         public void GetArcFileEntryFromDatum(DatumIndex datum, out ArcFile arcFile, out ArcFileEntry fileEntry)
         {
             // Return the arc file and file entry.
+            arcFile = this.arcFiles[datum.ArcIndex];
+            fileEntry = arcFile.FileEntries[datum.FileIndex];
+        }
+
+        /// <summary>
+        /// Checks if there is an arc file containing the specified file name
+        /// </summary>
+        /// <param name="fileName">Full file name including file extension of the file to search for</param>
+        /// <param name="arcFile">Output arc file the file was found in</param>
+        /// <param name="fileEntry">The <see cref="ArcFileEntry"/> for the arc file</param>
+        public void GetArcFileEntryFromFileName(string fileName, out ArcFile arcFile, out ArcFileEntry fileEntry)
+        {
+            // Check if we have an entry for this file name.
+            if (this.arcFileNameReverseDictionary.ContainsKey(fileName) == false)
+            {
+                // No matching file name found.
+                arcFile = null;
+                fileEntry = null;
+                return;
+            }
+
+            // Get the datum for this arc file entry.
+            // TODO: One day, in the maybe not so distant future, we will need to handle loading from
+            // a specific arc file.
+            DatumIndex datum = this.arcFileNameReverseDictionary[fileName][0];
             arcFile = this.arcFiles[datum.ArcIndex];
             fileEntry = arcFile.FileEntries[datum.FileIndex];
         }

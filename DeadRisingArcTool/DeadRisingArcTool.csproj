@@ -98,6 +98,12 @@
     <Compile Include="FileFormats\Bitmaps\Swizzle.cs" />
     <Compile Include="FileFormats\GameResource.cs" />
     <Compile Include="FileFormats\GameResourceParserAttribute.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\IRenderable.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\IRenderManager.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShaderCollection.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShader.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Shaders\LevelGeometryShader.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Shaders\MeshShader.cs" />
     <Compile Include="FileFormats\Geometry\rModel.cs" />
     <Compile Include="FileFormats\Bitmaps\Color.cs" />
     <Compile Include="FileFormats\Bitmaps\DXTDecoder.cs" />
@@ -120,7 +126,7 @@
     <Compile Include="Forms\RenderView.Designer.cs">
       <DependentUpon>RenderView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Graphics\Camera.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Camera.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\IOExtensions.cs" />
@@ -157,10 +163,16 @@
     <None Include="FileFormats\Geometry\Shaders\BasicShader.vs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="FileFormats\Geometry\Shaders\XfMaterialZPass.ps">
+    <None Include="FileFormats\Geometry\Shaders\XfLevelMesh.ps">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="FileFormats\Geometry\Shaders\XfMaterialZPass.vs">
+    <None Include="FileFormats\Geometry\Shaders\XfLevelMesh.vs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="FileFormats\Geometry\Shaders\XfMesh.ps">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="FileFormats\Geometry\Shaders\XfMesh.vs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />

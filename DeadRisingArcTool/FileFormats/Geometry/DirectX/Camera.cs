@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace DeadRisingArcTool.Graphics
+namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
     public class Camera : IDisposable
     {

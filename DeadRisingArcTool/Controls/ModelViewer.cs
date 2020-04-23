@@ -72,9 +72,10 @@ namespace DeadRisingArcTool.Controls
 
         private void btnRender_Click(object sender, EventArgs e)
         {
-            // Display a new render window.
-            RenderView renderer = new RenderView(this.ArcFile, (rModel)this.GameResource);
-            renderer.Visible = true;
+            //// Display a new render window.
+            //int index = this.ArcFile.FindArcFileFromName(this.GameResource.FileName);
+            //RenderView renderer = new RenderView(datum);
+            //renderer.Visible = true;
         }
 
         private string StructureToString(object obj)

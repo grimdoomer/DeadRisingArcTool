@@ -44,9 +44,6 @@ namespace DeadRisingArcTool
         // Loading dialog used while loading the arc folder.
         LoadingDialog loadingDialog = null;
 
-        // List of currently loaded arc files.
-        ArcFileCollection arcFileCollection = null;
-
         // Specialized editors.
         List<GameResourceEditorControl> resourceEditors = new List<GameResourceEditorControl>();
         int activeResourceEditor = -1;
@@ -112,10 +109,10 @@ namespace DeadRisingArcTool
                 this.asyncWorker.WorkerSupportsCancellation = true;
 
                 // Initialize the arc file collection.
-                this.arcFileCollection = new ArcFileCollection(fbd.SelectedPath);
+                ArcFileCollection.Instance = new ArcFileCollection(fbd.SelectedPath);
 
                 // Run the background worker.
-                this.asyncWorker.RunWorkerAsync(this.arcFileCollection);
+                this.asyncWorker.RunWorkerAsync();
 
                 // Disable the main form and display the loading dialog.
                 this.Enabled = false;
@@ -185,11 +182,8 @@ namespace DeadRisingArcTool
             // Get the BackgroundWorker instance from the sender object.
             BackgroundWorker worker = (BackgroundWorker)sender;
 
-            // Get the arc file collection from the thread argument.
-            ArcFileCollection arcCollection = (ArcFileCollection)e.Argument;
-
             // Build a list of arc files to process.
-            string[] arcFiles = FindArcFilesInFolder(arcCollection.RootDirectory, true, false);
+            string[] arcFiles = FindArcFilesInFolder(ArcFileCollection.Instance.RootDirectory, true, false);
             if (arcFiles.Length == 0)
             {
                 // No arc files were found.
@@ -221,11 +215,11 @@ namespace DeadRisingArcTool
                 }
 
                 // Add the arc file to the collection.
-                arcCollection.AddArcFile(arcFile);
+                ArcFileCollection.Instance.AddArcFile(arcFile);
             }
 
             // Build the tree view node collection now so we don't tie up the GUI thread.
-            e.Result = arcCollection.BuildTreeNodeArray(TreeNodeOrder.FolderPath);
+            e.Result = ArcFileCollection.Instance.BuildTreeNodeArray(TreeNodeOrder.FolderPath);
         }
 
         #endregion
@@ -292,10 +286,10 @@ namespace DeadRisingArcTool
 
             // Get the datum index for the arc file entry.
             DatumIndex datum = (DatumIndex)e.Node.Tag;
-            ArcFileEntry fileEntry = this.arcFileCollection.ArcFiles[datum.ArcIndex].FileEntries[datum.FileIndex];
+            ArcFileEntry fileEntry = ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].FileEntries[datum.FileIndex];
 
             // Update the properties view.
-            this.lblArcFile.Text = this.arcFileCollection.ArcFiles[datum.ArcIndex].FileName.Substring(this.arcFileCollection.ArcFiles[datum.ArcIndex].FileName.LastIndexOf("\\") + 1);
+            this.lblArcFile.Text = ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].FileName.Substring(ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].FileName.LastIndexOf("\\") + 1);
             this.lblCompressedSize.Text = fileEntry.CompressedSize.ToString();
             this.lblDecompressedSize.Text = fileEntry.DecompressedSize.ToString();
             this.lblOffset.Text = fileEntry.DataOffset.ToString();
@@ -304,34 +298,28 @@ namespace DeadRisingArcTool
             // Check if there is a resource parser for this game resource.
             if (GameResource.ResourceParsers.ContainsKey(fileEntry.FileType) == true)
             {
-                // Decompress the file entry so we can load specialied editors for it.
-                byte[] decompressedData = this.arcFileCollection.ArcFiles[datum.ArcIndex].DecompressFileEntry(datum.FileIndex);
-                if (decompressedData != null)
+                // Parse the game resource using the parser type.
+                GameResource resource = ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].GetArcFileAsResource<GameResource>(datum.FileIndex);
+                if (resource != null)
                 {
-                    // Parse the game resource using the parser type.
-                    GameResource resource = GameResource.FromGameResource(decompressedData, fileEntry.FileName, fileEntry.FileType,
-                        this.arcFileCollection.ArcFiles[datum.ArcIndex].Endian == IO.Endianness.Big);
-                    if (resource != null)
+                    // Loop through all of the resource editors and see if we have one that supports this resource type.
+                    for (int i = 0; i < this.resourceEditors.Count; i++)
                     {
-                        // Loop through all of the resource editors and see if we have one that supports this resource type.
-                        for (int i = 0; i < this.resourceEditors.Count; i++)
+                        // Check if this editor supports this resource type.
+                        if (this.resourceEditors[i].CanEditResource(fileEntry.FileType) == true)
                         {
-                            // Check if this editor supports this resource type.
-                            if (this.resourceEditors[i].CanEditResource(fileEntry.FileType) == true)
-                            {
-                                // Update the resource being edited and make the editor visible.
-                                this.resourceEditors[i].UpdateResource(this.arcFileCollection.ArcFiles[datum.ArcIndex], resource);
-                                this.resourceEditors[i].Visible = true;
+                            // Update the resource being edited and make the editor visible.
+                            this.resourceEditors[i].UpdateResource(ArcFileCollection.Instance.ArcFiles[datum.ArcIndex], resource);
+                            this.resourceEditors[i].Visible = true;
 
-                                // Set this as the active resource editor.
-                                this.activeResourceEditor = i;
-                            }
-                            else
-                            {
-                                // Clear any old game resources and make sure the editor is invisible.
-                                this.resourceEditors[i].UpdateResource(null, null);
-                                this.resourceEditors[i].Visible = false;
-                            }
+                            // Set this as the active resource editor.
+                            this.activeResourceEditor = i;
+                        }
+                        else
+                        {
+                            // Clear any old game resources and make sure the editor is invisible.
+                            this.resourceEditors[i].UpdateResource(null, null);
+                            this.resourceEditors[i].Visible = false;
                         }
                     }
                 }
@@ -411,7 +399,7 @@ namespace DeadRisingArcTool
                 this.Enabled = false;
 
                 // Extract the file.
-                this.arcFileCollection.ArcFiles[datum.ArcIndex].ExtractFile(datum.FileIndex, sfd.FileName);
+                ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].ExtractFile(datum.FileIndex, sfd.FileName);
 
                 // Re-enable the form.
                 this.Enabled = true;
@@ -477,7 +465,7 @@ namespace DeadRisingArcTool
             this.treeView1.Nodes.Clear();
 
             // Build the tree node graph from the arc file collection.
-            TreeNodeCollection treeNodes = this.arcFileCollection.BuildTreeNodeArray(order);
+            TreeNodeCollection treeNodes = ArcFileCollection.Instance.BuildTreeNodeArray(order);
             this.treeView1.Nodes.AddRange(treeNodes.Cast<TreeNode>().ToArray());
 
             // Sort the tree view.
@@ -489,5 +477,69 @@ namespace DeadRisingArcTool
         }
 
         #endregion
+
+        private void renderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // If this is a single file get the datum and render it solo.
+            if (this.treeView1.SelectedNode.Tag != null)
+            {
+                // Get the file datum from the tree view node.
+                DatumIndex selectedNode = (DatumIndex)(this.treeView1.SelectedNode != null ? this.treeView1.SelectedNode.Tag : null);
+
+                // Create a new render window.
+                RenderView render = new RenderView(selectedNode);
+                render.Visible = true;
+            }
+            else
+            {
+                // Recursively build the list of all model files in this node.
+                DatumIndex[] modelDatums = BuildModelListFromTreeNode(treeView1.SelectedNode);
+
+                // Make sure we found at least 1 datum to render.
+                if (modelDatums.Length > 0)
+                {
+                    // Create the render window.
+                    RenderView render = new RenderView(modelDatums);
+
+                    // TODO: Figure out what the fuck is up with this...
+                    try
+                    {
+                        render.Visible = true;
+                    }
+                    catch (ObjectDisposedException ex)
+                    {
+                    }
+                }
+            }
+        }
+
+        private DatumIndex[] BuildModelListFromTreeNode(TreeNode node)
+        {
+            // List of model files found.
+            List<DatumIndex> modelDatums = new List<DatumIndex>();
+
+            // Loop through all of the child nodess.
+            foreach (TreeNode childNode in node.Nodes)
+            {
+                // If this node has no children check it for the .rModel extension.
+                if (childNode.Nodes.Count == 0 && childNode.Text.EndsWith(".rModel") == true)
+                {
+                    // Skip the skybox for now.
+                    if (childNode.Text.Contains("sky") == true)
+                        continue;
+
+                    // Add the datum to the list.
+                    modelDatums.Add((DatumIndex)childNode.Tag);
+                }
+                else if (childNode.Nodes.Count > 0)
+                {
+                    // Recursively search all children.
+                    modelDatums.AddRange(BuildModelListFromTreeNode(childNode));
+                }
+            }
+
+            // Return the list of datums.
+            return modelDatums.ToArray();
+        }
     }
 }

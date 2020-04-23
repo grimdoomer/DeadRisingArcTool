@@ -1,5 +1,7 @@
-﻿using IO;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using IO;
 using SharpDX;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -66,7 +68,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         // Background color used for loading screen images.
         public float[] BackgroundColor = new float[4];
 
-        // Data stream that pins the managed byte[] and allows us to pass addresses of it to the directx layer.
+        // Data stream that pins the managed byte[] and allows us to pass its address to the directx layer.
         public DataStream PixelDataStream { get; private set; }
 
         // Sub resource array, one for each each mip level for each face of the texture.
@@ -554,6 +556,25 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 Array.Copy(sourceBuffer, i * sourceSize.Width * 4, destBuffer, dstOffset, sourceSize.Width * 4);
             }
         }
+
+        #endregion
+
+        #region IRenderable
+
+        public override bool InitializeGraphics(IRenderManager manager, Device device)
+        {
+            return true;
+        }
+
+        //public override bool DrawFrame(IRenderManager manager, Device device)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        //public override void CleanupGraphics(IRenderManager manager, Device device)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         #endregion
     }

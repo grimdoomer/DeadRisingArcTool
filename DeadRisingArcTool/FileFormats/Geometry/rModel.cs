@@ -1,11 +1,16 @@
-﻿using IO;
+﻿using DeadRisingArcTool.FileFormats.Bitmaps;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+using IO;
 using SharpDX;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Buffer = SharpDX.Direct3D11.Buffer;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
@@ -131,11 +136,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x0B */ // padding
         /* 0x0C */ public int VertexCount;
         /* 0x10 */ public int StartingVertex; // vertex data 1
-	    /* 0x14 */ public int Unk16;
-	    /* 0x18 */ public int Unk5;	
+	    /* 0x14 */ public int VertexStream1Offset;      // Passed to CDeviceContext::IASetVertexBuffers
+	    /* 0x18 */ public int VertexStream2Offset;	    // Passed to CDeviceContext::IASetVertexBuffers
 	    /* 0x1C */ public int StartingIndexLocation;    // Passed to CDeviceContext::DrawIndexed
 	    /* 0x20 */ public int IndexCount;               // Passed to CDeviceContext::DrawIndexed
-	    /* 0x24 */ public int Unk8;
+	    /* 0x24 */ public int BaseVertexLocation;       // Passed to CDeviceContext::DrawIndexed
 	    /* 0x28 */ // padding to align vectors
 	    /* 0x30 */ public Vector4 Unk9;
 	    /* 0x40 */ public Vector4 Unk10;
@@ -161,9 +166,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         public Primitive[] primitives;
 
         // Vertex and index buffers.
-        public short[] indiceBuffer;
+        public short[] indexData;
         public byte[] vertexData1;
         public byte[] vertexData2;
+
+        // DirectX resources for rendering.
+        private Buffer primaryVertexBuffer = null;
+        private Buffer secondaryVertexBuffer = null;
+        private Buffer indexBuffer = null;
+        private BuiltInShader[] shaders = null;
+
+        private rTexture[] gameTextures = null;
+        private Texture2D[] dxTextures = null;
+        private ShaderResourceView[] shaderResources = null;
 
         protected rModel(string fileName, ResourceType fileType, bool isBigEndian)
             : base(fileName, fileType, isBigEndian)
@@ -350,11 +365,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 reader.BaseStream.Position += 1;
                 model.primitives[i].VertexCount = reader.ReadInt32();
                 model.primitives[i].StartingVertex = reader.ReadInt32();
-                model.primitives[i].Unk16 = reader.ReadInt32();
-                model.primitives[i].Unk5 = reader.ReadInt32();
+                model.primitives[i].VertexStream1Offset = reader.ReadInt32();
+                model.primitives[i].VertexStream2Offset = reader.ReadInt32();
                 model.primitives[i].StartingIndexLocation = reader.ReadInt32();
                 model.primitives[i].IndexCount = reader.ReadInt32();
-                model.primitives[i].Unk8 = reader.ReadInt32();
+                model.primitives[i].BaseVertexLocation = reader.ReadInt32();
                 reader.BaseStream.Position += 8;
                 model.primitives[i].Unk9 = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                 model.primitives[i].Unk10 = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
@@ -380,11 +395,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             reader.BaseStream.Position = model.header.IndiceDataOffset;
 
             // Allocate and read the indice data.
-            model.indiceBuffer = new short[model.header.IndiceCount - 1];
+            model.indexData = new short[model.header.IndiceCount - 1];
             for (int i = 0; i < model.header.IndiceCount - 1; i++)
             {
                 // Read the index data.
-                model.indiceBuffer[i] = reader.ReadInt16();
+                model.indexData[i] = reader.ReadInt16();
             }
 
             // Close the binary reader and memory stream.
@@ -394,5 +409,131 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Return the model object.
             return model;
         }
+
+        #region IRenderable
+
+        public override bool InitializeGraphics(IRenderManager manager, Device device)
+        {
+            // Create our vertex and index buffers from the model data.
+            this.primaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData1);
+            this.secondaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData2);
+            this.indexBuffer = Buffer.Create<short>(device, BindFlags.IndexBuffer, this.indexData);
+
+            // Allocate resources for the texture array.
+            this.gameTextures = new rTexture[this.header.NumberOfTextures + 1];
+            this.dxTextures = new Texture2D[this.header.NumberOfTextures + 1];
+            this.shaderResources = new ShaderResourceView[this.header.NumberOfTextures + 1];
+
+            // Loop through all of the textures and setup the directx resources for them.
+            for (int i = 0; i < this.dxTextures.Length; i++)
+            {
+                // First texture is null?
+                if (i == 0)
+                    continue;
+
+                // Decompress and parse the game resource for this texture.
+                this.gameTextures[i] = (rTexture)manager.GetResourceFromFileName(GameResource.GetFullResourceName(this.textureFileNames[i - 1], ResourceType.rTexture));
+                if (this.gameTextures[i] != null)
+                {
+                    // Setup the texture description.
+                    Texture2DDescription desc = new Texture2DDescription();
+                    desc.Width = this.gameTextures[i].Width;
+                    desc.Height = this.gameTextures[i].Height;
+                    desc.MipLevels = this.gameTextures[i].MipMapCount;
+                    desc.Format = rTexture.DXGIFromTextureFormat(this.gameTextures[i].Format);
+                    desc.Usage = ResourceUsage.Default;
+                    desc.BindFlags = BindFlags.ShaderResource;
+                    desc.SampleDescription.Count = 1;
+                    desc.ArraySize = this.gameTextures[i].FaceCount;
+
+                    // Create the texture using the description and resource data we setup.
+                    this.dxTextures[i] = new Texture2D(device, desc);
+                    device.ImmediateContext.UpdateSubresource(this.gameTextures[i].SubResources[0], this.dxTextures[i]);
+
+                    // Create the shader resource that will use this texture.
+                    this.shaderResources[i] = new ShaderResourceView(device, this.dxTextures[i]);
+                }
+            }
+
+            // Load all the geometry shaders that we might need.
+            this.shaders = new BuiltInShader[3];
+            this.shaders[0] = manager.GetBuiltInShader(BuiltInShaderType.Game_LevelGeometry2);
+            this.shaders[1] = manager.GetBuiltInShader(BuiltInShaderType.Game_Mesh);
+            this.shaders[2] = manager.GetBuiltInShader(BuiltInShaderType.Game_LevelGeometry1);
+
+            // Successfully initialized.
+            return true;
+        }
+
+        public override bool DrawFrame(IRenderManager manager, Device device)
+        {
+            // TODO: Update shader constants before we call the shader DrawFrame routine.
+
+            // Set the primitive type.
+            device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;
+
+            // Loop through all of the primitives for the model and draw each one.
+            for (int i = 0; i < this.primitives.Length; i++)
+            {
+                // Check if the primitive is enabled.
+                if (this.primitives[i].Enabled == 0)
+                    continue;
+
+                // Set the vertex and index buffers.
+                device.ImmediateContext.InputAssembler.SetVertexBuffers(0,
+                    new VertexBufferBinding(this.primaryVertexBuffer, this.primitives[0].VertexStride1, this.primitives[i].VertexStream1Offset),
+                    new VertexBufferBinding(this.secondaryVertexBuffer, this.primitives[0].VertexStride2, this.primitives[i].VertexStream2Offset));
+                device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
+
+                // Setup the vertex shader, pixel shader, sampler states, and vertex declaration.
+                if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 12)
+                {
+                    // Normal mesh shader.
+                    this.shaders[1].DrawFrame(manager, device);
+                }
+                else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 28)
+                {
+                    // Level geometry shader.
+                    this.shaders[2].DrawFrame(manager, device);
+                }
+                else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 0)
+                {
+                    //
+                    this.shaders[2].DrawFrame(manager, device);
+                }
+                else
+                {
+                    /*
+                     * Most likely this:
+                        POSITION		0	DXGI_FORMAT_R32G32B32_FLOAT		0	0	0	0
+		                COLOR			0	DXGI_FORMAT_B8G8R8A8_UNORM		0	12	0	0
+		                TEXCOORD		0	DXGI_FORMAT_R16G16B16A16_SNORM	0	16	0	0
+		                TEXCOORD		1	DXGI_FORMAT_R8G8B8A8_UINT		0	24	0	0
+		                TEXCOORD		2	DXGI_FORMAT_R8G8B8A8_UINT		0	28	0	0
+                     * 
+                     */
+                    continue;
+                }
+
+                // Get the material for the primitive.
+                Material material = this.materials[this.primitives[i].MaterialIndex];
+
+                // Set the textures being used by the material.
+                device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.TextureIndex1]);
+
+                // Draw the primtive.
+                device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
+            }
+
+            // Done rendering.
+            return true;
+        }
+
+        public override void CleanupGraphics(IRenderManager manager, Device device)
+        {
+            // TODO:
+        }
+
+        #endregion
     }
 }

@@ -15,9 +15,10 @@ using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
 using SharpDX;
 using System.Runtime.InteropServices;
-using DeadRisingArcTool.Graphics;
 using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
 
 namespace DeadRisingArcTool.Forms
 {
@@ -98,13 +99,14 @@ namespace DeadRisingArcTool.Forms
     }
 #endif
 
-    public partial class RenderView : Form
+    public partial class RenderView : Form, IRenderManager
     {
-        // List of currently loaded arc files.
-        ArcFile arcFile = null;
+        // List of game resources to render.
+        DatumIndex[] renderDatums;
+        GameResource[] resourcesToRender;
 
-        // Model to render.
-        rModel model = null;
+        // Dictionary of file names to loaded IRenderable
+        Dictionary<string, GameResource> loadedResources = new Dictionary<string, GameResource>();
 
         // DirectX interfaces for rendering.
         SharpDX.Direct3D11.Device device = null;
@@ -121,35 +123,20 @@ namespace DeadRisingArcTool.Forms
         Matrix projectionMatrix;
         Matrix worldGround;
 
-        // Shaders used for rendering.
-        ShaderBytecode vertexByteCode = null;
-        VertexShader vertexShader = null;
-        PixelShader pixelShader = null;
-        SamplerState shaderSampler = null;
-
-        // Vertex and index buffers for rendering.
-        InputLayout vertexDecl = null;
-        SharpDX.Direct3D11.Buffer primaryVertexBuffer = null;
-        SharpDX.Direct3D11.Buffer secondaryVertexBuffer = null;
-        SharpDX.Direct3D11.Buffer indexBuffer = null;
+        // Built in shader collection.
+        BuiltInShaderCollection shaderCollection = null;
 
         // Shader constant buffer.
         ShaderConstants shaderConsts = new ShaderConstants();
         SharpDX.Direct3D11.Buffer shaderConstantBuffer = null;
 
-        // Texture array used for materials.
-        DataStream[] textureStreams = null;
-        Texture2D[] textures = null;
-        ShaderResourceView[] shaderResources = null;
-
         bool isClosing = false;         // Indicates if we should quit the render loop
         bool hasResized = false;        // Indicates if the form has changed size
 
-        public RenderView(ArcFile arcFile, rModel model)
+        public RenderView(params DatumIndex[] renderDatums)
         {
             // Initialize fields.
-            this.arcFile = arcFile;
-            this.model = model;
+            this.renderDatums = renderDatums;
 
             InitializeComponent();
         }
@@ -173,6 +160,9 @@ namespace DeadRisingArcTool.Forms
                 Render();
                 Application.DoEvents();
             }
+
+            // Cleanup shader resources.
+            this.shaderCollection.CleanupGraphics(this, device);
         }
 
         private void RenderView_FormClosing(object sender, System.Windows.Forms.FormClosingEventArgs e)
@@ -186,6 +176,53 @@ namespace DeadRisingArcTool.Forms
             // Flag that the form has resized so the directx thread can adjust it's frame buffer size.
             this.hasResized = true;
         }
+
+        #region IRenderManager
+
+        public GameResource GetResourceFromFileName(string fileName)
+        {
+            // Check to see if we have already loaded this game resource for rendering.
+            if (this.loadedResources.ContainsKey(fileName) == true)
+            {
+                // The game resource has already been loaded.
+                return this.loadedResources[fileName];
+            }
+
+            // Find the arc file the resource is in.
+            ArcFileCollection.Instance.GetArcFileEntryFromFileName(fileName, out ArcFile arcFile, out ArcFileEntry fileEntry);
+            if (arcFile == null || fileEntry == null)
+            {
+                // Failed to find a resource with the specified name.
+                return null;
+            }
+
+            // Parse the game resource and create a new GameResource object we can render.
+            GameResource resource = arcFile.GetArcFileAsResource<GameResource>(fileName);
+            if (resource == null)
+            {
+                // Failed to find and load a resource with the name specified.
+                return null;
+            }
+
+            // Initialize the resource in case the calling resource needs data from it.
+            if (resource.InitializeGraphics(this, this.device) == false)
+            {
+                // Failed to initialize the resource for rendering.
+                return null;
+            }
+
+            // Add the game resource to the loaded resources collection and return.
+            this.loadedResources.Add(fileName, resource);
+            return resource;
+        }
+
+        public BuiltInShader GetBuiltInShader(BuiltInShaderType type)
+        {
+            // Get the shader from the shader collection.
+            return this.shaderCollection.GetShader(type);
+        }
+
+        #endregion
 
         private void InitializeD3D()
         {
@@ -203,11 +240,8 @@ namespace DeadRisingArcTool.Forms
             SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, desc, out this.device, out this.swapChain);
 
             // Setup the projection matrix.
-            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 40000.0f);
+            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 400000.0f);
             this.worldGround = Matrix.Identity;
-
-            // Ignore all window events.
-            // TODO:
 
             // Create our output texture for rendering.
             this.backBuffer = Texture2D.FromSwapChain<Texture2D>(this.swapChain, 0);
@@ -241,178 +275,51 @@ namespace DeadRisingArcTool.Forms
             rasterStateDesc.IsDepthClipEnabled = true;
             this.rasterState = new RasterizerState(this.device, rasterStateDesc);
 
-            // Set the viewport.
-            //this.device.ImmediateContext.Rasterizer.SetViewport(0, 0, (float)this.ClientSize.Width, (float)this.ClientSize.Height, 0.0f, 1.0f);
-
-#if REAL_CODE
-            // Compile out vertex and pixel shaders.
-            this.vertexByteCode = ShaderBytecode.FromFile(Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfMaterialZPass.vs");
-            this.vertexShader = new VertexShader(this.device, this.vertexByteCode);
-
-            ShaderBytecode pixelByteCode = ShaderBytecode.FromFile(Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfMaterialZPass.ps");
-            this.pixelShader = new PixelShader(this.device, pixelByteCode);
-#else
-            // Compile out vertex and pixel shaders.
-            this.vertexByteCode = ShaderBytecode.FromFile(Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\BasicShader.vs");
-            this.vertexShader = new VertexShader(this.device, this.vertexByteCode);
-
-            ShaderBytecode pixelByteCode = ShaderBytecode.FromFile(Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\BasicShader.ps");
-            this.pixelShader = new PixelShader(this.device, pixelByteCode);
-#endif
-
-            // Setup the sampler state for the vertex shader.
-            SamplerStateDescription samplerDesc = new SamplerStateDescription();
-            samplerDesc.AddressU = TextureAddressMode.Wrap;
-            samplerDesc.AddressV = TextureAddressMode.Wrap;
-            samplerDesc.AddressW = TextureAddressMode.Wrap;
-            samplerDesc.BorderColor = new SharpDX.Mathematics.Interop.RawColor4(0.0f, 0.0f, 0.0f, 0.0f);
-            samplerDesc.MaximumLod = 0;
-            samplerDesc.Filter = Filter.Anisotropic;
-            samplerDesc.MipLodBias = 0;
-            samplerDesc.MaximumAnisotropy = 3;
-            this.shaderSampler = new SamplerState(this.device, samplerDesc);
-
-            // Initialize the camera and set starting position.
-            this.camera = new Camera(this);
-            this.camera.Position = new Vector3(this.model.primitives[0].Unk9.X, this.model.primitives[0].Unk9.Y, this.model.primitives[0].Unk9.Z);
-            this.camera.LookAt = this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
-            this.camera.speed = 0.002f;
-
-            this.camera.ComputePosition();
-        }
-
-        private void InitializeModelData()
-        {
-#if REAL_CODE
-
-            // Setup the vertex declaration.
-            if (this.model.primitives[0].VertexStride2 == 12)
+            // Initialize the shader collection.
+            this.shaderCollection = new BuiltInShaderCollection();
+            if (this.shaderCollection.InitializeGraphics(this, device) == false)
             {
-                this.vertexDecl = new InputLayout(this.device, this.vertexByteCode.Data, new InputElement[]
-                    {
-                    new InputElement("POSITION", 0, Format.R16G16B16A16_SNorm, 0, 0),
-                    new InputElement("NORMAL", 0, Format.R16G16B16A16_SNorm, 16, 0),
-                    new InputElement("TANGENT", 0, Format.R16G16B16A16_SNorm, 0, 1),
-                    new InputElement("TEXCOORD", 0, Format.R16G16_SNorm, 24, 0),
-                    new InputElement("TEXCOORD", 1, Format.R16G16_SNorm, 8, 1),
-                    new InputElement("BLENDWEIGHT", 0, Format.R8G8B8A8_UNorm, 12, 0),
-                    new InputElement("BLENDINDICES", 0, Format.R8G8B8A8_UInt, 8, 0),
-                    new InputElement("TEXCOORD", 2, Format.R32G32B32A32_Float, 0, 0),
-                    new InputElement("TEXCOORD", 3, Format.R32G32B32A32_Float, 0, 0),
-                    });
+                // Failed to initialize shaders.
             }
-            else if (this.model.primitives[0].VertexStride2 == 28)
-            {
-                this.vertexDecl = new InputLayout(this.device, this.vertexByteCode.Data, new InputElement[]
-                    {
-                        new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                        new InputElement("NORMAL", 0, Format.R16G16B16A16_SNorm, 12, 0),
-                        new InputElement("TANGENT", 0, Format.R16G16B16A16_SNorm, 0, 1),
-                        new InputElement("TEXCOORD", 0, Format.R32G32_Float, 20, 0),
-                        new InputElement("TEXCOORD", 1, Format.R32G32_Float, 8, 1),
-                        new InputElement("TEXCOORD", 2, Format.R16G16_SNorm, 16, 1),
-                        new InputElement("TEXCOORD", 3, Format.R32G32_Float, 20, 1),
-
-                        // HACK: put these here now to satisfy the vertex shader.
-                        new InputElement("BLENDWEIGHT", 0, Format.R8G8B8A8_UNorm, 0, 0),
-                        new InputElement("BLENDINDICES", 0, Format.R8G8B8A8_UInt, 0, 0),
-                    });
-            }
-            else
-            {
-
-            }
-
-            // Create the vertex and index buffer from the model data streams.
-            this.primaryVertexBuffer = SharpDX.Direct3D11.Buffer.Create<byte>(this.device, BindFlags.VertexBuffer, this.model.vertexData1);
-            this.secondaryVertexBuffer = SharpDX.Direct3D11.Buffer.Create<byte>(this.device, BindFlags.VertexBuffer, this.model.vertexData2);
-            this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<short>(this.device, BindFlags.IndexBuffer, this.model.indiceBuffer);
-
-            // Set the bounding box parameters to the vertex shader constant buffer.
-            this.shaderConsts.gXfQuantPosScale = this.model.header.BoundingBoxMax - this.model.header.BoundingBoxMin;
-            this.shaderConsts.gXfQuantPosOffset = this.model.header.BoundingBoxMin;
-            this.shaderConsts.gXfMatrixMapFactor = new Vector4(144.0f, 0.0f, 0.00293f, 0.00098f);
-
-#else
-
-            // Setup the vertex declaration.
-            this.vertexDecl = new InputLayout(this.device, this.vertexByteCode, new InputElement[]
-                {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0),
-                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 0)
-                });
-
-            // Vertex buffer.
-            MyVertex[] vertices = new MyVertex[]
-                {
-                    //new MyVertex() { Position = new Vector3(0.0f, 0.5f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    //new MyVertex() { Position = new Vector3(0.5f, -0.5f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    //new MyVertex() { Position = new Vector3(-0.5f, -0.5f, 0.0f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) }
-
-                    new MyVertex() { Position = new Vector3(-1f, -1f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(-1f, 1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, 1f, 0.0f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, 1f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(-1f, -1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, -1f, 0.0f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) },
-
-                    new MyVertex() { Position = new Vector3(1f, -1f, 0.0f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, 1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, 1f, 2f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, 1f, 2f), Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, -1f, 0.0f), Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f) },
-                    new MyVertex() { Position = new Vector3(1f, -1f, 2f), Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f) }
-                };
-
-            // Create the vertex buffer.
-            this.primaryVertexBuffer = SharpDX.Direct3D11.Buffer.Create<MyVertex>(this.device, BindFlags.VertexBuffer, vertices);
-
-#endif
 
             // Create the shader constants buffer.
             this.shaderConstantBuffer = SharpDX.Direct3D11.Buffer.Create(this.device, BindFlags.ConstantBuffer, this.shaderConsts.ToBufferData());
 
-            // Allocate the texture list, first texture is reserved.
-            this.textureStreams = new DataStream[this.model.header.NumberOfTextures + 1];
-            this.textures = new Texture2D[this.model.header.NumberOfTextures + 1];
-            this.shaderResources = new ShaderResourceView[this.model.header.NumberOfTextures + 1];
+            // Create the camera.
+            this.camera = new Camera(this);
+        }
 
-            // Loop and load all of the textures into directx resources.
-            for (int i = 0; i < this.textures.Length; i++)
+        private void InitializeModelData()
+        {
+            // Loop through all of the datums to render and setup each one for rendering.
+            this.resourcesToRender = new GameResource[this.renderDatums.Length];
+            for (int i = 0; i < this.renderDatums.Length; i++)
             {
-                // First texture is reserved?
-                if (i == 0)
-                    continue;
-
-                // Decompress and parse the current texture.
-                string textureFileName = this.model.textureFileNames[i - 1];
-                byte[] decompressedData = this.arcFile.DecompressFileEntry(textureFileName);
-                rTexture texture = rTexture.FromGameResource(decompressedData, textureFileName, FileFormats.ResourceType.rTexture, this.arcFile.Endian == IO.Endianness.Big);
-                if (texture != null)
+                // Create the game resource from the datum.
+                this.resourcesToRender[i] = ArcFileCollection.Instance.ArcFiles[this.renderDatums[i].ArcIndex].GetArcFileAsResource<GameResource>(this.renderDatums[i].FileIndex);
+                if (this.resourcesToRender[i] == null)
                 {
-                    // TODO: This currently will not work for cube maps.
-                    // Create the data stream which will pin the pixel buffer to an IntPtr we can use for sub resource mapping.
-                    this.textureStreams[i] = texture.PixelDataStream;
+                    // Failed to load the required resource.
+                    // TODO: Bubble this up to the user.
+                    throw new NotImplementedException();
+                }
 
-                    // Setup common texture description properties.
-                    Texture2DDescription desc = new Texture2DDescription();
-                    desc.Width = texture.header.Width;
-                    desc.Height = texture.header.Height;
-                    desc.MipLevels = texture.header.MipMapCount;
-                    desc.Format = rTexture.DXGIFromTextureFormat(texture.header.Format);
-                    desc.Usage = ResourceUsage.Default;
-                    desc.BindFlags = BindFlags.ShaderResource;
-                    desc.SampleDescription.Count = 1;
-                    desc.ArraySize = texture.FaceCount;
-
-                    // Create the texture using the description and resource data we setup.
-                    this.textures[i] = new Texture2D(this.device, desc);
-                    this.device.ImmediateContext.UpdateSubresource(texture.SubResources[0], this.textures[i]);
-
-                    // Create the shader resource that will use this texture.
-                    this.shaderResources[i] = new ShaderResourceView(this.device, this.textures[i]);
+                // Let the object initialize and required directx resources.
+                if (this.resourcesToRender[i].InitializeGraphics(this, this.device) == false)
+                {
+                    // Failed to initialize graphics for resource.
+                    // TODO: Bubble this up to the user.
+                    throw new NotImplementedException();
                 }
             }
+
+            // HACK: For now just cast the first resource to an rModel and use it for reference.
+            rModel firstModel = (rModel)this.resourcesToRender[0];
+
+            // Position the camera and make it look at the model.
+            this.camera.Position = new Vector3(firstModel.primitives[0].Unk9.X, firstModel.primitives[0].Unk9.Y, firstModel.primitives[0].Unk9.Z);
+            this.camera.LookAt = firstModel.header.BoundingBoxMax - firstModel.header.BoundingBoxMin;
+            this.camera.speed = 4.0f;// 0.002f;
         }
 
         private void Render()
@@ -439,59 +346,25 @@ namespace DeadRisingArcTool.Forms
             this.device.ImmediateContext.OutputMerger.SetDepthStencilState(this.depthStencilState, 0);
             this.device.ImmediateContext.Rasterizer.State = this.rasterState;
 
-            // Set the shaders.
-            this.device.ImmediateContext.VertexShader.Set(this.vertexShader);
-            this.device.ImmediateContext.PixelShader.Set(this.pixelShader);
-
-            // Set the shader samplers.
-            this.device.ImmediateContext.VertexShader.SetSampler(0, this.shaderSampler);
-            this.device.ImmediateContext.PixelShader.SetSampler(0, this.shaderSampler);
-
             // Set the viewport.
             this.device.ImmediateContext.Rasterizer.SetViewport(0, 0, this.ClientSize.Width, this.ClientSize.Height, 0.0f, 1.0f);
 
             // Set output target.
-            //this.device.ImmediateContext.OutputMerger.SetTargets(this.renderView);
             this.device.ImmediateContext.OutputMerger.SetRenderTargets(this.depthStencilView, this.renderView);
-
-            // Set the vertex and index buffers.
-            this.device.ImmediateContext.InputAssembler.InputLayout = this.vertexDecl;
-#if REAL_CODE
-            this.device.ImmediateContext.InputAssembler.SetVertexBuffers(0, 
-                new VertexBufferBinding(this.primaryVertexBuffer, this.model.primitives[0].VertexStride1, 0),
-                new VertexBufferBinding(this.secondaryVertexBuffer, this.model.primitives[0].VertexStride2, 0));
-            this.device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, Format.R16_UInt, 0);
-
-            // Set the primitive type.
-            this.device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;
 
             // The pixel shader constants do not change between primtive draw calls, update them now.
             this.shaderConsts.gXfViewProj = this.worldGround * this.camera.ViewMatrix * this.projectionMatrix;
             this.shaderConsts.gXfMatrixMapFactor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-#else
-            this.device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.primaryVertexBuffer, 28, 0));
 
-            // Set the primitive type.
-            this.device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
-
-            // Update the world matrix based on the camera info.
-            this.shaderConsts.WVP = Matrix.Transpose(this.worldGround * this.camera.ViewMatrix * this.projectionMatrix);
-            this.shaderConsts.World = Matrix.Transpose(this.worldGround);
-#endif
-
-#if REAL_CODE
-            // Loop through all of the primitives for the model.
-            for (int i = 0; i < this.model.primitives.Length; i++)
+            // Loop through all of the resources to render and draw each one.
+            for (int i = 0; i < this.resourcesToRender.Length; i++)
             {
-                // Check if the primitive is enabled?
-                if (this.model.primitives[i].Enabled == 0)
-                    continue;
+                // HACK: We can only render rModels for now.
+                rModel model = (rModel)this.resourcesToRender[i];
 
-                // Get the material for this primtive.
-                Material material = this.model.materials[this.model.primitives[i].MaterialIndex];
-
-                // Set the texture being used by the material.
-                this.device.ImmediateContext.PixelShader.SetShaderResources(0, this.shaderResources[material.TextureIndex1]);
+                // Set the bounding box parameters for this model.
+                this.shaderConsts.gXfQuantPosScale = model.header.BoundingBoxMax - model.header.BoundingBoxMin;
+                this.shaderConsts.gXfQuantPosOffset = model.header.BoundingBoxMin;
 
                 // Update the shader constants buffer with the new data.
                 this.device.ImmediateContext.UpdateSubresource(this.shaderConsts.ToBufferData(), this.shaderConstantBuffer);
@@ -500,19 +373,9 @@ namespace DeadRisingArcTool.Forms
                 this.device.ImmediateContext.VertexShader.SetConstantBuffer(0, this.shaderConstantBuffer);
                 this.device.ImmediateContext.PixelShader.SetConstantBuffer(0, this.shaderConstantBuffer);
 
-                // Draw the primtive.
-                this.device.ImmediateContext.DrawIndexed(this.model.primitives[i].IndexCount, this.model.primitives[i].StartingIndexLocation, this.model.primitives[i].Unk8);
+                // Draw the model.
+                this.resourcesToRender[i].DrawFrame(this, this.device);
             }
-#else
-            // Update the shader constants buffer with the new data.
-            this.device.ImmediateContext.UpdateSubresource(this.shaderConsts.ToBufferData(), this.shaderConstantBuffer);
-
-            // Set the shader constants.
-            this.device.ImmediateContext.VertexShader.SetConstantBuffer(0, this.shaderConstantBuffer);
-
-            // Draw the primtive.
-            this.device.ImmediateContext.Draw(12, 0);
-#endif
 
             // Present the final frame.
             this.swapChain.Present(0, PresentFlags.None);

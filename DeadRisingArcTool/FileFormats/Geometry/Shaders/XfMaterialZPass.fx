@@ -29,8 +29,10 @@ struct ZPassVS_INPUT
 	float2		texCoord2:		TEXCOORD2;
 	float2		texCoord3:		TEXCOORD3;
 
+#if (FUNC_SKIN != SKIN_NONE)
 	float4		boneWeights0:	BLENDWEIGHT0;
 	int4		boneIndices0:	BLENDINDICES0;
+#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -61,12 +63,15 @@ ZPassVS_OUTPUT XfZPassVS(ZPassVS_INPUT I)
  
 	float3x4 wmat;
 
-	wmat = getWorldMatrix4wtFromTex(I.boneWeights0, I.boneIndices0);
+	//wmat = getWorldMatrix4wtFromTex(I.boneWeights0, I.boneIndices0);
 
 	//float3	wp = mul(wmat, float4(decodePosition(I.position.xyz), 1));
-	//float3	wp = decodePosition(I.position.xyz);
 
+#if (FUNC_SKIN != SKIN_NONE)
+	float3	wp = decodePosition(I.position.xyz);
+#else
 	float3 wp = I.position;
+#endif
 
 	O.position = mul(float4(wp, 1), gXfViewProj);
 

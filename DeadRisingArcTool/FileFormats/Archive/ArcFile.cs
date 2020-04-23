@@ -204,6 +204,79 @@ namespace DeadRisingArcTool.FileFormats.Archive
             return Result;
         }
 
+        /// <summary>
+        /// Searches for an arc file with matching name and returns the index of the arc file in the <see cref="FileEntries"/> array
+        /// </summary>
+        /// <param name="fileName">Name of the file to search for</param>
+        /// <param name="matchFileExtension">True if the file name should have a matching file extension, or false to ignore the file extension</param>
+        /// <returns>The index of the arc file in the <see cref="FileEntries"/> array, or -1 if a matching file name was not found</returns>
+        public int FindArcFileFromName(string fileName, bool matchFileExtension = false)
+        {
+            // Loop through all of the files until we find one that matches.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Check if the file name matches.
+                if ((matchFileExtension == true && this.fileEntries[i].FileName == fileName) ||
+                    (matchFileExtension == false && CompareFileNamesNoExt(this.fileEntries[i].FileName, fileName) == true))
+                {
+                    // Decompress the file entry.
+                    return i;
+                }
+            }
+
+            // A file with matching name was not found.
+            return -1;
+        }
+
+        /// <summary>
+        /// Searches for a file entry with matching file name and parses the resource data for that file
+        /// </summary>
+        /// <typeparam name="T">Type of <see cref="GameResource"/> that will be returned</typeparam>
+        /// <param name="fileName">Name of the file to search for</param>
+        /// <param name="matchFileExtension">True if the file name should have a matching file extension, or false to ignore the file extension</param>
+        /// <returns>The parsed game resource object, or default(T) otherwise</returns>
+        public T GetArcFileAsResource<T>(string fileName, bool matchFileExtension = false) where T : GameResource
+        {
+            // Search for file entry with matching file name.
+            int index = FindArcFileFromName(fileName, matchFileExtension);
+            if (index == -1)
+            {
+                // A file entry with matching file name was not found.
+                return default(T);
+            }
+
+            // Decompress the file data.
+            byte[] decompressedData = DecompressFileEntry(index);
+            if (decompressedData == null)
+            {
+                // Failed to decompress the file data.
+                return default(T);
+            }
+
+            // Parse the resource game and return the object.
+            return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[index].FileName, this.fileEntries[index].FileType, this.endian == Endianness.Big);
+        }
+
+        /// <summary>
+        ///  Parses the resource data for the file at the specified index
+        /// </summary>
+        /// <typeparam name="T">Type of <see cref="GameResource"/> that will be returned</typeparam>
+        /// <param name="fileIndex">Index of the file to parse</param>
+        /// <returns>The parsed game resource object, or default(T) otherwise</returns>
+        public T GetArcFileAsResource<T>(int fileIndex) where T : GameResource
+        {
+            // Decompress the file data.
+            byte[] decompressedData = DecompressFileEntry(fileIndex);
+            if (decompressedData == null)
+            {
+                // Failed to decompress the file data.
+                return default(T);
+            }
+
+            // Parse the resource game and return the object.
+            return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[fileIndex].FileName, this.fileEntries[fileIndex].FileType, this.endian == Endianness.Big);
+        }
+
         public byte[] DecompressFileEntry(string fileName, bool matchFileExtension = false)
         {
             // Loop through all of the files until we find one that matches.
@@ -233,7 +306,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
             }
 
             // Make sure the next character in file1 is a period for the file extension.
-            if (file1.Length <= file2.Length || file1[file2.Length] != '.')
+            if (file1.Length < file2.Length && file1[file2.Length] != '.')
                 return false;
 
             // If we made it here it's good enough for what we need.
@@ -262,6 +335,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
             CloseArcFile();
             return decompressedData;
         }
+
+        #region File Manipulation
 
         /// <summary>
         /// Extracts the specified arc file to disk
@@ -411,5 +486,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
             CloseArcFile();
             return true;
         }
+
+        #endregion
     }
 }
