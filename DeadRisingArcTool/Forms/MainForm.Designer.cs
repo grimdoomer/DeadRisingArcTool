@@ -42,6 +42,7 @@
             this.fileNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.arcFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resourceTypeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.renderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.FileInfoBox = new System.Windows.Forms.GroupBox();
             this.lblFileType = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
@@ -54,7 +55,9 @@
             this.lblOffset = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.renderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.dEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.batchExtractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.texturesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.treeViewContextMenu.SuspendLayout();
             this.FileInfoBox.SuspendLayout();
@@ -67,7 +70,8 @@
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileToolStripMenuItem});
+            this.fileToolStripMenuItem,
+            this.dEBUGToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(891, 24);
@@ -129,12 +133,12 @@
             this.sortByToolStripMenuItem,
             this.renderToolStripMenuItem});
             this.treeViewContextMenu.Name = "treeViewContextMenu";
-            this.treeViewContextMenu.Size = new System.Drawing.Size(181, 92);
+            this.treeViewContextMenu.Size = new System.Drawing.Size(112, 70);
             // 
             // extractToolStripMenuItem
             // 
             this.extractToolStripMenuItem.Name = "extractToolStripMenuItem";
-            this.extractToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.extractToolStripMenuItem.Size = new System.Drawing.Size(111, 22);
             this.extractToolStripMenuItem.Text = "Extract";
             this.extractToolStripMenuItem.Click += new System.EventHandler(this.extractToolStripMenuItem_Click);
             // 
@@ -145,7 +149,7 @@
             this.arcFileToolStripMenuItem,
             this.resourceTypeToolStripMenuItem});
             this.sortByToolStripMenuItem.Name = "sortByToolStripMenuItem";
-            this.sortByToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.sortByToolStripMenuItem.Size = new System.Drawing.Size(111, 22);
             this.sortByToolStripMenuItem.Text = "Sort By";
             // 
             // fileNameToolStripMenuItem
@@ -168,6 +172,13 @@
             this.resourceTypeToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
             this.resourceTypeToolStripMenuItem.Text = "Resource Type";
             this.resourceTypeToolStripMenuItem.Click += new System.EventHandler(this.resourceTypeToolStripMenuItem_Click);
+            // 
+            // renderToolStripMenuItem
+            // 
+            this.renderToolStripMenuItem.Name = "renderToolStripMenuItem";
+            this.renderToolStripMenuItem.Size = new System.Drawing.Size(111, 22);
+            this.renderToolStripMenuItem.Text = "Render";
+            this.renderToolStripMenuItem.Click += new System.EventHandler(this.renderToolStripMenuItem_Click);
             // 
             // FileInfoBox
             // 
@@ -293,12 +304,32 @@
             this.splitContainer1.SplitterDistance = 297;
             this.splitContainer1.TabIndex = 3;
             // 
-            // renderToolStripMenuItem
+            // dEBUGToolStripMenuItem
             // 
-            this.renderToolStripMenuItem.Name = "renderToolStripMenuItem";
-            this.renderToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.renderToolStripMenuItem.Text = "Render";
-            this.renderToolStripMenuItem.Click += new System.EventHandler(this.renderToolStripMenuItem_Click);
+            this.dEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.batchExtractToolStripMenuItem});
+            this.dEBUGToolStripMenuItem.Visible = false;
+            this.dEBUGToolStripMenuItem.Name = "dEBUGToolStripMenuItem";
+            this.dEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
+            this.dEBUGToolStripMenuItem.Text = "DEBUG";
+#if DEBUG
+            this.dEBUGToolStripMenuItem.Visible = true;
+#endif
+            // 
+            // batchExtractToolStripMenuItem
+            // 
+            this.batchExtractToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.texturesToolStripMenuItem});
+            this.batchExtractToolStripMenuItem.Name = "batchExtractToolStripMenuItem";
+            this.batchExtractToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.batchExtractToolStripMenuItem.Text = "Batch Extract";
+            // 
+            // texturesToolStripMenuItem
+            // 
+            this.texturesToolStripMenuItem.Name = "texturesToolStripMenuItem";
+            this.texturesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.texturesToolStripMenuItem.Text = "Textures";
+            this.texturesToolStripMenuItem.Click += new System.EventHandler(this.texturesToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -354,6 +385,9 @@
         private System.Windows.Forms.ToolStripMenuItem arcFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem resourceTypeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem renderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem dEBUGToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem batchExtractToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem texturesToolStripMenuItem;
     }
 }
 

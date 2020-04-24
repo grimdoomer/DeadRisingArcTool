@@ -1,7 +1,9 @@
 ﻿using DeadRisingArcTool.FileFormats;
 using DeadRisingArcTool.FileFormats.Archive;
+using DeadRisingArcTool.Utilities;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ using System.Windows.Forms;
 
 namespace DeadRisingArcTool.Controls
 {
+    [TypeDescriptionProvider(typeof(AbstractControlDescriptionProvider<GameResourceEditorControl, UserControl>))]
     public abstract class GameResourceEditorControl : UserControl
     {
         /// <summary>

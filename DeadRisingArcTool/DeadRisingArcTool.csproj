@@ -129,6 +129,7 @@
     <Compile Include="FileFormats\Geometry\DirectX\Camera.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\AbstractControlDescriptionProvider.cs" />
     <Compile Include="Utilities\IOExtensions.cs" />
     <EmbeddedResource Include="Controls\BitmapViewer.resx">
       <DependentUpon>BitmapViewer.cs</DependentUpon>

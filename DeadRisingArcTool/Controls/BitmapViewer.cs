@@ -99,11 +99,15 @@ namespace DeadRisingArcTool.Controls
 
                 // Set the background color to the inverse of the values?
                 this.pictureBox1.BackColor = System.Drawing.Color.FromArgb(255 - a, 255 - r, 255 - g, 255 - b);
+
+                // Enable the change clear color button.
+                this.changeClearColorToolStripMenuItem.Enabled = true;
             }
             else
             {
                 // Set the background color to default.
                 this.pictureBox1.BackColor = System.Drawing.Color.FromKnownColor(KnownColor.Control);
+                this.changeClearColorToolStripMenuItem.Enabled = false;
             }
 
             // Flag that we are no longer loading the form.
@@ -134,6 +138,45 @@ namespace DeadRisingArcTool.Controls
                     this.pictureBox1.BackgroundImageLayout = ImageLayout.None;
                 }
             }
+        }
+
+        private void extractToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Get the name of the bitmap for the dialog.
+            string fileName = System.IO.Path.GetFileName(this.Bitmap.FileName);
+            fileName = fileName.Substring(0, fileName.LastIndexOf('.'));
+
+            // Display an open file dialog to save a dds file.
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.FileName = fileName;
+            sfd.Filter = "DDS Image (*.dds)|*.dds";
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                // Build a dds image from the rtexture file.
+                DDSImage ddsImage = DDSImage.FromGameTexture(this.Bitmap);
+
+                // Write the dds image to file.
+                if (ddsImage.WriteToFile(sfd.FileName) == false)
+                {
+                    // Failed to save the bitmap.
+                    MessageBox.Show("Failed to write bitmap to file!");
+                }
+                else
+                {
+                    // TODO: Come up with a more elegant way to tell the user.
+                    MessageBox.Show("Success");
+                }
+            }
+        }
+
+        private void injectToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void changeClearColorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

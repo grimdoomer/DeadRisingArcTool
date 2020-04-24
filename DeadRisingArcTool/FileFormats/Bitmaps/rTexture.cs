@@ -253,6 +253,8 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             return pixelData;
         }
 
+        #region FromGameResource
+
         public static rTexture FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
             // Make sure the buffer is large enough to contain the texture header.
@@ -320,13 +322,6 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 reader.ReadBytes(108);
             }
 
-            // Read all of the pixel data now and pin it so we can build the sub resources array.
-            byte[] pixelData = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
-            texture.PixelDataStream = DataStream.Create(pixelData, true, false);
-
-            // Make sure we are at the start of the pixel data stream.
-            texture.PixelDataStream.Seek(0, SeekOrigin.Begin);
-
             // TODO: Properly handle tiling on xbox 360 textures.
             //if (texture.Swizzled == true)
             //{
@@ -344,7 +339,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 DDS_HEADER ddsHeader = new DDS_HEADER();
                 ddsHeader.dwMagic = reader.ReadInt32();
                 ddsHeader.dwSize = reader.ReadInt32();
-                ddsHeader.dwFlags = reader.ReadInt32();
+                ddsHeader.dwFlags = (DDSD_FLAGS)reader.ReadInt32();
                 ddsHeader.dwHeight = reader.ReadInt32();
                 ddsHeader.dwWidth = reader.ReadInt32();
                 ddsHeader.dwPitchOrLinearSize = reader.ReadInt32();
@@ -353,18 +348,19 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 reader.BaseStream.Position += sizeof(int) * 11;
                 ddsHeader.ddspf = new DDS_PIXELFORMAT();
                 ddsHeader.ddspf.dwSize = reader.ReadInt32();
-                ddsHeader.ddspf.dwFlags = reader.ReadInt32();
+                ddsHeader.ddspf.dwFlags = (DDPF)reader.ReadInt32();
                 ddsHeader.ddspf.dwFourCC = reader.ReadInt32();
                 ddsHeader.ddspf.dwRGBBitCount = reader.ReadInt32();
-                ddsHeader.ddspf.dwRBitMask = reader.ReadInt32();
-                ddsHeader.ddspf.dwGBitMask = reader.ReadInt32();
-                ddsHeader.ddspf.dwBBitMask = reader.ReadInt32();
-                ddsHeader.ddspf.dwABitMask = reader.ReadInt32();
-                ddsHeader.dwCaps = reader.ReadInt32();
-                ddsHeader.dwCaps2 = reader.ReadInt32();
+                ddsHeader.ddspf.dwRBitMask = reader.ReadUInt32();
+                ddsHeader.ddspf.dwGBitMask = reader.ReadUInt32();
+                ddsHeader.ddspf.dwBBitMask = reader.ReadUInt32();
+                ddsHeader.ddspf.dwABitMask = reader.ReadUInt32();
+                ddsHeader.dwCaps = (DDSCAPS)reader.ReadInt32();
+                ddsHeader.dwCaps2 = (DDSCAPS2)reader.ReadInt32();
                 ddsHeader.dwCaps3 = reader.ReadInt32();
                 ddsHeader.dwCaps4 = reader.ReadInt32();
-                reader.BaseStream.Position += sizeof(int); // BUG: We should use the header size to seek to pixel data
+                reader.BaseStream.Position += sizeof(int); 
+                // BUG: need to check for dx10 header.
 
                 // Check the header magic and structure sizes for sanity.
                 if (ddsHeader.dwMagic != DDS_HEADER.kMagic || ddsHeader.dwSize != DDS_HEADER.kSizeOf ||
@@ -376,6 +372,13 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
 
                 // TODO: Save this info off
             }
+
+            // Read all of the pixel data now and pin it so we can build the sub resources array.
+            byte[] pixelData = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
+            texture.PixelDataStream = DataStream.Create(pixelData, true, false);
+
+            // Make sure we are at the start of the pixel data stream.
+            texture.PixelDataStream.Seek(0, SeekOrigin.Begin);
 
             // Set the number of faces this texture has based on the texture type.
             if (texture.header.TextureType == TextureType.Type_CubeMap)
@@ -416,6 +419,8 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             // Return the texture object.
             return texture;
         }
+
+        #endregion
 
         #region Utilities
 
@@ -566,16 +571,6 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         {
             return true;
         }
-
-        //public override bool DrawFrame(IRenderManager manager, Device device)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public override void CleanupGraphics(IRenderManager manager, Device device)
-        //{
-        //    throw new NotImplementedException();
-        //}
 
         #endregion
     }

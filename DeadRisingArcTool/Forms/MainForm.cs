@@ -549,5 +549,41 @@ namespace DeadRisingArcTool
             // Return the list of datums.
             return modelDatums.ToArray();
         }
+
+        private void texturesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Browse for a folder to save all the textures to.
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                // Loop through every single arc file and extract all bitmaps.
+                for (int i = 0; i < ArcFileCollection.Instance.ArcFiles.Length; i++)
+                {
+                    // Loop through all of the files in the arc file and save textures.
+                    for (int x = 0; x < ArcFileCollection.Instance.ArcFiles[i].FileEntries.Length; x++)
+                    {
+                        // Check if this is a texture.
+                        if (ArcFileCollection.Instance.ArcFiles[i].FileEntries[x].FileType != ResourceType.rTexture)
+                            continue;
+
+                        // Parse the game resource.
+                        rTexture texture = ArcFileCollection.Instance.ArcFiles[i].GetArcFileAsResource<rTexture>(x);
+
+                        // Convert to a DDS image.
+                        DDSImage ddsImage = DDSImage.FromGameTexture(texture);
+
+                        // Get the name of the bitmap.
+                        string fileName = System.IO.Path.GetFileName(texture.FileName);
+                        fileName = fileName.Substring(0, fileName.LastIndexOf('.'));
+
+                        // Write to file.
+                        ddsImage.WriteToFile(string.Format("{0}\\{1}.dds", fbd.SelectedPath, fileName));
+                    }
+                }
+
+                // Done.
+                MessageBox.Show("Done!");
+            }
+        }
     }
 }
