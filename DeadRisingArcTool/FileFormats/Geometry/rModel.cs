@@ -187,6 +187,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
         }
 
+        public override byte[] ToBuffer()
+        {
+            throw new NotImplementedException();
+        }
+
         public static rModel FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
             // Make sure the buffer is large enough to hold the header structure.

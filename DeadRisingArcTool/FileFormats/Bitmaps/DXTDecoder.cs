@@ -306,15 +306,15 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 if (bigEndian == true)
                 {
                     decodedData[(ptr * 2)] = 255;
-                    decodedData[(ptr * 2) + 1] = CalculateU8V8Color(SourceData[ptr + 1]);
-                    decodedData[(ptr * 2) + 2] = CalculateU8V8Color(SourceData[ptr]);
+                    decodedData[(ptr * 2) + 1] = CalculateU8V8Color(SourceData[ptr]);
+                    decodedData[(ptr * 2) + 2] = CalculateU8V8Color(SourceData[ptr + 1]);
                     decodedData[(ptr * 2) + 3] = 0;
                 }
                 else
                 {
                     decodedData[(ptr * 2)] = 255;
-                    decodedData[(ptr * 2) + 1] = CalculateU8V8Color(SourceData[ptr]);
-                    decodedData[(ptr * 2) + 2] = CalculateU8V8Color(SourceData[ptr + 1]);
+                    decodedData[(ptr * 2) + 1] = CalculateU8V8Color(SourceData[ptr + 1]);
+                    decodedData[(ptr * 2) + 2] = CalculateU8V8Color(SourceData[ptr]);
                     decodedData[(ptr * 2) + 3] = 0;
                 }
             }

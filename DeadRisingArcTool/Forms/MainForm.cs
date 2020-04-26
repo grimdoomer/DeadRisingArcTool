@@ -550,6 +550,8 @@ namespace DeadRisingArcTool
             return modelDatums.ToArray();
         }
 
+        #region DEBUG Menu
+
         private void texturesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Browse for a folder to save all the textures to.
@@ -585,5 +587,31 @@ namespace DeadRisingArcTool
                 MessageBox.Show("Done!");
             }
         }
+
+        private void restoreBackupsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Disable the main form.
+            this.Enabled = false;
+
+            // Loop through the list of loaded arc files.
+            for (int i = 0; i < ArcFileCollection.Instance.ArcFiles.Length; i++)
+            {
+                // Check if a backup file exists for this arc file.
+                if (File.Exists(ArcFileCollection.Instance.ArcFiles[i].FileName + "_bak") == true)
+                {
+                    // Delete the arc file.
+                    File.Delete(ArcFileCollection.Instance.ArcFiles[i].FileName);
+
+                    // Rename the backup file.
+                    File.Move(ArcFileCollection.Instance.ArcFiles[i].FileName + "_bak", ArcFileCollection.Instance.ArcFiles[i].FileName);
+                }
+            }
+
+            // Done, restart the application so we can reload the arc collection.
+            MessageBox.Show("Done!");
+            Application.Restart();
+        }
+
+        #endregion
     }
 }

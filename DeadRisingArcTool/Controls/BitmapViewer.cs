@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeadRisingArcTool.FileFormats.Bitmaps;
+using DeadRisingArcTool.FileFormats.Archive;
 
 namespace DeadRisingArcTool.Controls
 {
@@ -171,12 +172,96 @@ namespace DeadRisingArcTool.Controls
 
         private void injectToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Browse for a new dds texture on disk.
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "DDS Images (*.dds)|*.dds";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                // Inject the bitmap selected.
+                InjectBitmap(ofd.FileName);
+            }
+        }
 
+        private void InjectBitmap(string filePath)
+        {
+            // Disable the main control.
+            this.Enabled = false;
+
+            // Parse the DDS image from file.
+            DDSImage ddsImage = DDSImage.FromFile(filePath);
+            if (ddsImage == null)
+            {
+                // Failed to parse the image.
+                MessageBox.Show("Failed to read " + filePath);
+                return;
+            }
+
+            // Convert the dds image to a rtexture.
+            rTexture newTexture = rTexture.FromDDSImage(ddsImage, this.Bitmap.FileName, this.Bitmap.Datum, this.Bitmap.FileType, this.Bitmap.IsBigEndian);
+            if (newTexture == null)
+            {
+                // Failed to convert the dds image to rtexture.
+                MessageBox.Show("Failed to convert dds image to rtexture!");
+                return;
+            }
+
+            // Check if the old texture has a background color, and if so copy it.
+            if (this.Bitmap.Flags.HasFlag(TextureFlags.HasD3DClearColor) == true)
+            {
+                // Copy the background color.
+                newTexture.header.Flags |= TextureFlags.HasD3DClearColor;
+                newTexture.BackgroundColor = this.Bitmap.BackgroundColor;
+            }
+
+            // Write the new texture back to the arc file.
+            if (ArcFileCollection.Instance.ArcFiles[this.Bitmap.Datum.ArcIndex].InjectFile(this.Bitmap.Datum.FileIndex, newTexture.ToBuffer()) == false)
+            {
+                // Failed to write the new texture back to the arc file.
+                MessageBox.Show("Failed to write new texture to arc file!");
+                return;
+            }
+
+            // Update the game resource instance and reload the UI.
+            this.GameResource = newTexture;
+            OnGameResourceUpdated();
+
+            // Image successfully injected.
+            this.Enabled = true;
+            MessageBox.Show("Done!");
         }
 
         private void changeClearColorToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void BitmapViewer_DragOver(object sender, DragEventArgs e)
+        {
+            // Check if this is a file drop operation.
+            if (e.Data.GetDataPresent(DataFormats.FileDrop) == true)
+            {
+                // Change the cursor so the user knows the file drop is accepted.
+                e.Effect = DragDropEffects.Copy;
+            }
+        }
+
+        private void BitmapViewer_DragDrop(object sender, DragEventArgs e)
+        {
+            // Get the list of files being dragged onto the control.
+            string[] filePaths = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (filePaths.Length > 0)
+            {
+                // Check the file extension of the file and make sure it is .dds.
+                if (System.IO.Path.GetExtension(filePaths[0]) != ".dds")
+                {
+                    // Unsupported file type.
+                    MessageBox.Show("Unsupported file type!");
+                    return;
+                }
+
+                // Inject the bitmap being dropped.
+                InjectBitmap(filePaths[0]);
+            }
         }
     }
 }

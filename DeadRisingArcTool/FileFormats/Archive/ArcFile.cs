@@ -87,7 +87,17 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
                 // If we want write access then open it for writing as well.
                 if (forWrite == true)
+                {
+                    // Check if the backup file exists and if not create a backup file.
+                    if (File.Exists(this.FileName + "_bak") == false)
+                    {
+                        // Create a backup file.
+                        File.Copy(this.FileName, this.FileName + "_bak");
+                    }
+
+                    // Open the file for writing.
                     this.writer = new EndianWriter(this.endian, this.fileStream);
+                }
             }
             catch (Exception e)
             {
@@ -424,6 +434,31 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// <returns>True if the data was successfully compressed and written to the arc file, false otherwise</returns>
         public bool InjectFile(int fileIndex, string newFilePath)
         {
+            byte[] decompressedData = null;
+
+            try
+            {
+                // Read the contents of the new file.
+                decompressedData = File.ReadAllBytes(newFilePath);
+            }
+            catch (Exception e)
+            {
+                // Failed to read the file contents.
+                return false;
+            }
+
+            // Compress and inject the file data.
+            return InjectFile(fileIndex, decompressedData);
+        }
+
+        /// <summary>
+        /// Replaces the contents of <paramref name="fileIndex"/> with the specified buffer
+        /// </summary>
+        /// <param name="fileIndex">Index of the file to replace</param>
+        /// <param name="data">New file contents to write</param>
+        /// <returns>True if the data was successfully compressed and written to the arc file, false otherwise</returns>
+        public bool InjectFile(int fileIndex, byte[] data)
+        {
             // Open the arc file for writing.
             if (OpenArcFile(true) == false)
             {
@@ -431,11 +466,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 return false;
             }
 
-            // Read the contents of the new file.
-            byte[] decompressedData = File.ReadAllBytes(newFilePath);
-
             // Compress the data.
-            byte[] compressedData = ZlibStream.CompressBuffer(decompressedData);
+            byte[] compressedData = ZlibUtilities.CompressData(data);
 
             // Seek to the end of the this file's data.
             this.reader.BaseStream.Position = this.fileEntries[fileIndex].DataOffset + this.fileEntries[fileIndex].CompressedSize;
@@ -450,14 +482,6 @@ namespace DeadRisingArcTool.FileFormats.Archive
             int offsetShift = compressedData.Length - this.fileEntries[fileIndex].CompressedSize;
             this.writer.Write(compressedData);
 
-            // Align the remaining data to a 2 byte boundary.
-            if (this.writer.BaseStream.Position % 2 != 0)
-            {
-                // Write 1 byte of padding, I don't think this matters but w/e...
-                this.writer.Write(0xCD);
-                offsetShift += 1;
-            }
-
             // Write the remaining file data.
             this.writer.Write(remainingData);
 
@@ -471,14 +495,14 @@ namespace DeadRisingArcTool.FileFormats.Archive
                     this.fileEntries[i].DataOffset += offsetShift;
 
                     // Write the new offset to file.
-                    this.writer.BaseStream.Position = ArcFileHeader.kSizeOf + (ArcFileEntry.kSizeOf * i) + 64;
+                    this.writer.BaseStream.Position = ArcFileHeader.kSizeOf + (ArcFileEntry.kSizeOf * i) + 76;
                     this.writer.Write(this.fileEntries[i].DataOffset);
                 }
                 else if (i == fileIndex)
                 {
                     // Update the data sizes for this file entry.
                     this.fileEntries[i].CompressedSize = compressedData.Length;
-                    this.fileEntries[i].DecompressedSize = decompressedData.Length;
+                    this.fileEntries[i].DecompressedSize = data.Length;
 
                     // Write the new data sizes to file.
                     this.writer.BaseStream.Position = ArcFileHeader.kSizeOf + (ArcFileEntry.kSizeOf * i) + 64 + 4;

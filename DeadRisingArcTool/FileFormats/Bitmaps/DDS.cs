@@ -33,7 +33,8 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         DDPF_FOURCC = 0x4,
         DDPF_RGB = 0x40,
         DDPF_YUV = 0x200,
-        DDPF_LUMINANCE = 0x20000
+        DDPF_LUMINANCE = 0x20000,
+        DDPF_BUMPDUDV = 0x80000
     }
 
     public struct DDS_PIXELFORMAT
@@ -110,16 +111,25 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
 
     public class DDSImage
     {
-        private DDS_HEADER header;
+        public DDS_HEADER header;
         private DDS_HEADER_DXT10 dxt10header;
 
-        private byte[] pixelBuffer;
+        public byte[] PixelBuffer { get; private set; }
 
+        public DDSD_FLAGS Flags { get { return this.header.dwFlags; } }
         public int Width { get { return this.header.dwWidth; } }
         public int Height { get { return this.header.dwHeight; } }
         public int Depth { get { return this.header.dwDepth; } }
         public int MipMapCount { get { return this.header.dwMipMapCount; } }
         public int Format { get { return this.header.ddspf.dwFourCC; } }
+        public DDPF PixelFormatFlags { get { return this.header.ddspf.dwFlags; } }
+        public int BitCount { get { return this.header.ddspf.dwRGBBitCount; } }
+        public uint RBitMask { get { return this.header.ddspf.dwRBitMask; } }
+        public uint GBitMask { get { return this.header.ddspf.dwGBitMask; } }
+        public uint BBitMask { get { return this.header.ddspf.dwBBitMask; } }
+        public uint ABitMask { get { return this.header.ddspf.dwABitMask; } }
+        public DDSCAPS Capabilities { get { return this.header.dwCaps; } }
+        public DDSCAPS2 Capabilities2 { get { return this.header.dwCaps2; } }
 
         protected DDSImage()
         {
@@ -176,14 +186,90 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 writer.Write(this.dxt10header.miscFlags2);
             }
 
-
-
             // Write the pixel data to file.
-            writer.Write(this.pixelBuffer);
+            writer.Write(this.PixelBuffer);
 
             // Close the file and return.
             writer.Close();
             return true;
+        }
+
+        public static DDSImage FromFile(string filePath)
+        {
+            EndianReader reader = null;
+
+            try
+            {
+                // Open the file for reading.
+                reader = new EndianReader(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read));
+            }
+            catch (Exception e)
+            {
+                // Failed to open the file for reading.
+                return null;
+            }
+
+            // Check if the file is large enough to contain the header.
+            if (reader.BaseStream.Length < DDS_HEADER.kSizeOf)
+            {
+                // Image is too small to be valid.
+                reader.Close();
+                return null;
+            }
+
+            // Create a new DDSImage we can populate with info.
+            DDSImage image = new DDSImage();
+            image.header = new DDS_HEADER();
+            image.header.dwMagic = reader.ReadInt32();
+            image.header.dwSize = reader.ReadInt32();
+            image.header.dwFlags = (DDSD_FLAGS)reader.ReadInt32();
+            image.header.dwHeight = reader.ReadInt32();
+            image.header.dwWidth = reader.ReadInt32();
+            image.header.dwPitchOrLinearSize = reader.ReadInt32();
+            image.header.dwDepth = reader.ReadInt32();
+            image.header.dwMipMapCount = reader.ReadInt32();
+            reader.BaseStream.Position += 11 * 4;
+            image.header.ddspf = new DDS_PIXELFORMAT();
+            image.header.ddspf.dwSize = reader.ReadInt32();
+            image.header.ddspf.dwFlags = (DDPF)reader.ReadInt32();
+            image.header.ddspf.dwFourCC = reader.ReadInt32();
+            image.header.ddspf.dwRGBBitCount = reader.ReadInt32();
+            image.header.ddspf.dwRBitMask = reader.ReadUInt32();
+            image.header.ddspf.dwGBitMask = reader.ReadUInt32();
+            image.header.ddspf.dwBBitMask = reader.ReadUInt32();
+            image.header.ddspf.dwABitMask = reader.ReadUInt32();
+            image.header.dwCaps = (DDSCAPS)reader.ReadInt32();
+            image.header.dwCaps2 = (DDSCAPS2)reader.ReadInt32();
+            image.header.dwCaps3 = reader.ReadInt32();
+            image.header.dwCaps4 = reader.ReadInt32();
+            reader.BaseStream.Position += 4;
+
+            // Check if the header is valid.
+            if (image.header.dwMagic != DDS_HEADER.kMagic || image.header.dwSize != DDS_HEADER.kSizeOf)
+            {
+                // Image header is invalid.
+                reader.Close();
+                return null;
+            }
+
+            // Check if there is a DX10 header.
+            if (image.header.ddspf.dwFourCC == MakeFourCC("DX10"))
+            {
+                // Read the DX10 header.
+                image.dxt10header = new DDS_HEADER_DXT10();
+                image.dxt10header.dxgiFormat = (Format)reader.ReadInt32();
+                image.dxt10header.resourceDimension = (ResourceDimension)reader.ReadInt32();
+                image.dxt10header.miscFlag = (ResourceMiscFlags)reader.ReadInt32();
+                image.dxt10header.arraySize = reader.ReadInt32();
+                image.dxt10header.miscFlags2 = reader.ReadInt32();
+            }
+
+            // Read the pixel buffer.
+            image.PixelBuffer = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
+
+            // Close the file and return the image.
+            reader.Close();
+            return image;
         }
 
         public static DDSImage FromGameTexture(rTexture texture)
@@ -227,23 +313,25 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             }
             else
             {
-                // Pitch is row size of the image.
-                //image.header.dwFlags |= DDSD_FLAGS.DDSD_PITCH;
-
-                // Set the rgb format.
-                image.header.ddspf.dwFlags |= DDPF.DDPF_RGB;
-
                 // Set RGBA bit masks based on the texture format.
                 switch (texture.Format)
                 {
                     case TextureFormat.Format_B8G8R8A8_UNORM:
-                    case TextureFormat.Format_R8G8_SNORM:
                         {
+                            image.header.ddspf.dwFlags |= DDPF.DDPF_RGB;
                             image.header.ddspf.dwRGBBitCount = 32;
                             image.header.ddspf.dwRBitMask = 0xFF0000;
                             image.header.ddspf.dwGBitMask = 0xFF00;
                             image.header.ddspf.dwBBitMask = 0xFF;
                             image.header.ddspf.dwABitMask = 0xFF000000;
+                            break;
+                        }
+                    case TextureFormat.Format_R8G8_SNORM:
+                        {
+                            image.header.ddspf.dwFlags |= DDPF.DDPF_BUMPDUDV;
+                            image.header.ddspf.dwRGBBitCount = 16;
+                            image.header.ddspf.dwRBitMask = 0xFF;
+                            image.header.ddspf.dwGBitMask = 0xFF00;
                             break;
                         }
                     default:
@@ -274,22 +362,22 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 image.header.dwFlags |= DDSD_FLAGS.DDSD_DEPTH;
 
             // Allocate the pixel buffer.
-            image.pixelBuffer = new byte[(int)texture.PixelDataStream.Length];
+            image.PixelBuffer = new byte[(int)texture.PixelDataStream.Length];
 
             // Copy the pixel buffer from the texture.
             texture.PixelDataStream.Seek(0, System.IO.SeekOrigin.Begin);
-            texture.PixelDataStream.Read(image.pixelBuffer, 0, image.pixelBuffer.Length);
+            texture.PixelDataStream.Read(image.PixelBuffer, 0, image.PixelBuffer.Length);
 
-            // Check if we need to convert the pixel buffer for none DXTN formats.
-            switch (texture.Format)
-            {
-                case TextureFormat.Format_R8G8_SNORM:
-                    {
-                        image.pixelBuffer = DXTDecoder.DecodeR8G8(image.Width, image.Height, image.pixelBuffer, texture.IsBigEndian);
-                        break;
-                    }
-                default: break;
-            }
+            //// Check if we need to convert the pixel buffer for none DXT formats.
+            //switch (texture.Format)
+            //{
+            //    case TextureFormat.Format_R8G8_SNORM:
+            //        {
+            //            image.PixelBuffer = DXTDecoder.DecodeR8G8(image.Width, image.Height, image.PixelBuffer, texture.IsBigEndian);
+            //            break;
+            //        }
+            //    default: break;
+            //}
 
             // Return the DDS image.
             return image;
@@ -304,6 +392,17 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 case TextureFormat.Format_DXT2: return MakeFourCC("DXT3");
                 case TextureFormat.Format_DXT5: return MakeFourCC("DXT5");
                 default: return 0;// MakeFourCC("DX10");
+            }
+        }
+
+        public static TextureFormat TextureFormatFromFourCC(int fourcc)
+        {
+            switch (fourcc)
+            {
+                case 0x31545844: return TextureFormat.Format_DXT1;
+                case 0x32545844: return TextureFormat.Format_DXT2;
+                case 0x35545844: return TextureFormat.Format_DXT5;
+                default: return TextureFormat.Format_Unsupported;
             }
         }
 

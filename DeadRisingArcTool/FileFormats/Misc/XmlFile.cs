@@ -44,6 +44,11 @@ namespace DeadRisingArcTool.FileFormats.Misc
             this.Buffer = buffer;
         }
 
+        public override byte[] ToBuffer()
+        {
+            return this.Buffer;
+        }
+
         public static XmlFile FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
             // Create a new XmlFile from the resource buffer.

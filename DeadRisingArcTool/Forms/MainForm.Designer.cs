@@ -35,6 +35,9 @@
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.dEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.batchExtractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.texturesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.treeViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.extractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -55,9 +58,7 @@
             this.lblOffset = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.dEBUGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.batchExtractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.texturesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.restoreBackupsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.treeViewContextMenu.SuspendLayout();
             this.FileInfoBox.SuspendLayout();
@@ -112,6 +113,30 @@
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(103, 22);
             this.exitToolStripMenuItem.Text = "Exit";
+            // 
+            // dEBUGToolStripMenuItem
+            // 
+            this.dEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.batchExtractToolStripMenuItem,
+            this.restoreBackupsToolStripMenuItem});
+            this.dEBUGToolStripMenuItem.Name = "dEBUGToolStripMenuItem";
+            this.dEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
+            this.dEBUGToolStripMenuItem.Text = "DEBUG";
+            // 
+            // batchExtractToolStripMenuItem
+            // 
+            this.batchExtractToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.texturesToolStripMenuItem});
+            this.batchExtractToolStripMenuItem.Name = "batchExtractToolStripMenuItem";
+            this.batchExtractToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.batchExtractToolStripMenuItem.Text = "Batch Extract";
+            // 
+            // texturesToolStripMenuItem
+            // 
+            this.texturesToolStripMenuItem.Name = "texturesToolStripMenuItem";
+            this.texturesToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.texturesToolStripMenuItem.Text = "Textures";
+            this.texturesToolStripMenuItem.Click += new System.EventHandler(this.texturesToolStripMenuItem_Click);
             // 
             // treeView1
             // 
@@ -304,32 +329,12 @@
             this.splitContainer1.SplitterDistance = 297;
             this.splitContainer1.TabIndex = 3;
             // 
-            // dEBUGToolStripMenuItem
+            // restoreBackupsToolStripMenuItem
             // 
-            this.dEBUGToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.batchExtractToolStripMenuItem});
-            this.dEBUGToolStripMenuItem.Visible = false;
-            this.dEBUGToolStripMenuItem.Name = "dEBUGToolStripMenuItem";
-            this.dEBUGToolStripMenuItem.Size = new System.Drawing.Size(56, 20);
-            this.dEBUGToolStripMenuItem.Text = "DEBUG";
-#if DEBUG
-            this.dEBUGToolStripMenuItem.Visible = true;
-#endif
-            // 
-            // batchExtractToolStripMenuItem
-            // 
-            this.batchExtractToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.texturesToolStripMenuItem});
-            this.batchExtractToolStripMenuItem.Name = "batchExtractToolStripMenuItem";
-            this.batchExtractToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.batchExtractToolStripMenuItem.Text = "Batch Extract";
-            // 
-            // texturesToolStripMenuItem
-            // 
-            this.texturesToolStripMenuItem.Name = "texturesToolStripMenuItem";
-            this.texturesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.texturesToolStripMenuItem.Text = "Textures";
-            this.texturesToolStripMenuItem.Click += new System.EventHandler(this.texturesToolStripMenuItem_Click);
+            this.restoreBackupsToolStripMenuItem.Name = "restoreBackupsToolStripMenuItem";
+            this.restoreBackupsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.restoreBackupsToolStripMenuItem.Text = "Restore Backups";
+            this.restoreBackupsToolStripMenuItem.Click += new System.EventHandler(this.restoreBackupsToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -388,6 +393,7 @@
         private System.Windows.Forms.ToolStripMenuItem dEBUGToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem batchExtractToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem texturesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem restoreBackupsToolStripMenuItem;
     }
 }
 

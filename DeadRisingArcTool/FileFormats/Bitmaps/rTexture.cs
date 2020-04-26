@@ -69,6 +69,12 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         // Background color used for loading screen images.
         public float[] BackgroundColor = new float[4];
 
+        // Unknown cubemap data, maybe vertices?
+        private byte[] cubemapData;
+
+        // Additional header for depth maps.
+        private DDS_HEADER depthMapHeader;
+
         // Data stream that pins the managed byte[] and allows us to pass its address to the directx layer.
         public DataStream PixelDataStream { get; private set; }
 
@@ -253,7 +259,84 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             return pixelData;
         }
 
-        #region FromGameResource
+        public override byte[] ToBuffer()
+        {
+            // Create a new memory stream to back our file with.
+            MemoryStream ms = new MemoryStream();
+            EndianWriter writer = new EndianWriter(this.IsBigEndian == true ? Endianness.Big : Endianness.Little, ms);
+
+            // Write the header fields.
+            writer.Write(rTextureHeader.kMagic);
+            writer.Write((byte)rTextureHeader.kVersion);
+            writer.Write((byte)this.header.TextureType);
+            writer.Write((byte)this.header.Flags);
+            writer.Write(this.header.MipMapCount);
+            writer.Write(this.header.Width);
+            writer.Write(this.header.Height);
+            writer.Write(this.header.Depth);
+            writer.Write(FourCCFromTextureFormat(this.header.Format, this.XboxFormat));
+
+            // Check if we need to write the background color.
+            if (this.header.Flags.HasFlag(TextureFlags.HasD3DClearColor) == true)
+            {
+                // Write the background color.
+                writer.Write(this.BackgroundColor[0]);
+                writer.Write(this.BackgroundColor[1]);
+                writer.Write(this.BackgroundColor[2]);
+                writer.Write(this.BackgroundColor[3]);
+            }
+
+            // If this is a cubemap write the cubemap data.
+            if (this.header.TextureType == TextureType.Type_CubeMap)
+            {
+                // Write the cubemap data.
+                writer.Write(this.cubemapData);
+            }
+
+            // If this is a depth map we need to write a DDS header for it.
+            if (this.header.TextureType == TextureType.Type_DepthMap)
+            {
+                // Write the DDS header for the depth map.
+                writer.Write(this.depthMapHeader.dwMagic);
+                writer.Write(this.depthMapHeader.dwSize);
+                writer.Write((int)this.depthMapHeader.dwFlags);
+                writer.Write(this.depthMapHeader.dwHeight);
+                writer.Write(this.depthMapHeader.dwWidth);
+                writer.Write(this.depthMapHeader.dwPitchOrLinearSize);
+                writer.Write(this.depthMapHeader.dwDepth);
+                writer.Write(this.depthMapHeader.dwMipMapCount);
+                writer.WritePadding(11 * 4);
+                writer.Write(this.depthMapHeader.ddspf.dwSize);
+                writer.Write((int)this.depthMapHeader.ddspf.dwFlags);
+                writer.Write(this.depthMapHeader.ddspf.dwFourCC);
+                writer.Write(this.depthMapHeader.ddspf.dwRGBBitCount);
+                writer.Write(this.depthMapHeader.ddspf.dwRBitMask);
+                writer.Write(this.depthMapHeader.ddspf.dwGBitMask);
+                writer.Write(this.depthMapHeader.ddspf.dwBBitMask);
+                writer.Write(this.depthMapHeader.ddspf.dwABitMask);
+                writer.Write((int)this.depthMapHeader.dwCaps);
+                writer.Write((int)this.depthMapHeader.dwCaps2);
+                writer.Write(this.depthMapHeader.dwCaps3);
+                writer.Write(this.depthMapHeader.dwCaps4);
+                writer.WritePadding(4);
+            }
+
+            // Read the pixel buffer from the data stream.
+            byte[] pixelData = new byte[this.PixelDataStream.Length];
+            this.PixelDataStream.Seek(0, SeekOrigin.Begin);
+            this.PixelDataStream.Read(pixelData, 0, pixelData.Length);
+
+            // TODO: For xbox textures we need to tile the pixel buffer.
+
+            // Write the pixel data.
+            writer.Write(pixelData);
+
+            // Close the binary writer and return the memory stream as a byte array.
+            writer.Close();
+            return ms.ToArray();
+        }
+
+        #region FromGameResource/DDSImage
 
         public static rTexture FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
         {
@@ -319,7 +402,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             {
                 // Read 108 bytes.
                 // These could be vertex coordinates for 9 vertices that make up the box the cubemap gets rendered on?
-                reader.ReadBytes(108);
+                texture.cubemapData = reader.ReadBytes(108);
             }
 
             // TODO: Properly handle tiling on xbox 360 textures.
@@ -336,41 +419,39 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             if (texture.header.TextureType == TextureType.Type_DepthMap)
             {
                 // Read the DDS image header.
-                DDS_HEADER ddsHeader = new DDS_HEADER();
-                ddsHeader.dwMagic = reader.ReadInt32();
-                ddsHeader.dwSize = reader.ReadInt32();
-                ddsHeader.dwFlags = (DDSD_FLAGS)reader.ReadInt32();
-                ddsHeader.dwHeight = reader.ReadInt32();
-                ddsHeader.dwWidth = reader.ReadInt32();
-                ddsHeader.dwPitchOrLinearSize = reader.ReadInt32();
-                ddsHeader.dwDepth = reader.ReadInt32();
-                ddsHeader.dwMipMapCount = reader.ReadInt32();
+                texture.depthMapHeader = new DDS_HEADER();
+                texture.depthMapHeader.dwMagic = reader.ReadInt32();
+                texture.depthMapHeader.dwSize = reader.ReadInt32();
+                texture.depthMapHeader.dwFlags = (DDSD_FLAGS)reader.ReadInt32();
+                texture.depthMapHeader.dwHeight = reader.ReadInt32();
+                texture.depthMapHeader.dwWidth = reader.ReadInt32();
+                texture.depthMapHeader.dwPitchOrLinearSize = reader.ReadInt32();
+                texture.depthMapHeader.dwDepth = reader.ReadInt32();
+                texture.depthMapHeader.dwMipMapCount = reader.ReadInt32();
                 reader.BaseStream.Position += sizeof(int) * 11;
-                ddsHeader.ddspf = new DDS_PIXELFORMAT();
-                ddsHeader.ddspf.dwSize = reader.ReadInt32();
-                ddsHeader.ddspf.dwFlags = (DDPF)reader.ReadInt32();
-                ddsHeader.ddspf.dwFourCC = reader.ReadInt32();
-                ddsHeader.ddspf.dwRGBBitCount = reader.ReadInt32();
-                ddsHeader.ddspf.dwRBitMask = reader.ReadUInt32();
-                ddsHeader.ddspf.dwGBitMask = reader.ReadUInt32();
-                ddsHeader.ddspf.dwBBitMask = reader.ReadUInt32();
-                ddsHeader.ddspf.dwABitMask = reader.ReadUInt32();
-                ddsHeader.dwCaps = (DDSCAPS)reader.ReadInt32();
-                ddsHeader.dwCaps2 = (DDSCAPS2)reader.ReadInt32();
-                ddsHeader.dwCaps3 = reader.ReadInt32();
-                ddsHeader.dwCaps4 = reader.ReadInt32();
+                texture.depthMapHeader.ddspf = new DDS_PIXELFORMAT();
+                texture.depthMapHeader.ddspf.dwSize = reader.ReadInt32();
+                texture.depthMapHeader.ddspf.dwFlags = (DDPF)reader.ReadInt32();
+                texture.depthMapHeader.ddspf.dwFourCC = reader.ReadInt32();
+                texture.depthMapHeader.ddspf.dwRGBBitCount = reader.ReadInt32();
+                texture.depthMapHeader.ddspf.dwRBitMask = reader.ReadUInt32();
+                texture.depthMapHeader.ddspf.dwGBitMask = reader.ReadUInt32();
+                texture.depthMapHeader.ddspf.dwBBitMask = reader.ReadUInt32();
+                texture.depthMapHeader.ddspf.dwABitMask = reader.ReadUInt32();
+                texture.depthMapHeader.dwCaps = (DDSCAPS)reader.ReadInt32();
+                texture.depthMapHeader.dwCaps2 = (DDSCAPS2)reader.ReadInt32();
+                texture.depthMapHeader.dwCaps3 = reader.ReadInt32();
+                texture.depthMapHeader.dwCaps4 = reader.ReadInt32();
                 reader.BaseStream.Position += sizeof(int); 
                 // BUG: need to check for dx10 header.
 
                 // Check the header magic and structure sizes for sanity.
-                if (ddsHeader.dwMagic != DDS_HEADER.kMagic || ddsHeader.dwSize != DDS_HEADER.kSizeOf ||
-                    ddsHeader.ddspf.dwSize != DDS_PIXELFORMAT.kSizeOf)
+                if (texture.depthMapHeader.dwMagic != DDS_HEADER.kMagic || texture.depthMapHeader.dwSize != DDS_HEADER.kSizeOf ||
+                    texture.depthMapHeader.ddspf.dwSize != DDS_PIXELFORMAT.kSizeOf)
                 {
                     // DDS header is invalid.
                     return null;
                 }
-
-                // TODO: Save this info off
             }
 
             // Read all of the pixel data now and pin it so we can build the sub resources array.
@@ -420,9 +501,148 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             return texture;
         }
 
+        public static rTexture FromDDSImage(DDSImage image, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
+        {
+            // Create a new texture we can populate with info.
+            rTexture texture = new rTexture(fileName, datum, fileType, isBigEndian);
+
+            // Fill out the header fields.
+            texture.header.Magic = rTextureHeader.kMagic;
+            texture.header.Version = rTextureHeader.kVersion;
+            texture.header.Width = image.Width;
+            texture.header.Height = image.Height;
+            texture.header.MipMapCount = (byte)image.MipMapCount;
+            texture.header.Depth = image.Depth;
+
+            // Check various flags to determine what type of texture this is.
+            if (image.Flags.HasFlag(DDSD_FLAGS.DDSD_DEPTH) == true)
+            {
+                // Set the depthmap texture type.
+                texture.header.TextureType = TextureType.Type_DepthMap;
+
+                // Copy the DDS header from the image.
+                texture.depthMapHeader = image.header;
+            }
+            else if (image.Capabilities2.HasFlag(DDSCAPS2.DDSCAPS2_CUBEMAP_ALLFACES) == true)
+                texture.header.TextureType = TextureType.Type_CubeMap;
+            else
+                texture.header.TextureType = TextureType.Type_2D;
+
+            // Check the image's fourcc code to determine the texture format.
+            if (image.Format == 0)
+            {
+                // Check the bit count and color masks to determine the texture format.
+                if (image.header.ddspf.dwFlags.HasFlag(DDPF.DDPF_BUMPDUDV) == true || (image.BitCount == 16 && image.RBitMask == 0xFF && image.GBitMask == 0xFF00))
+                    texture.header.Format = TextureFormat.Format_R8G8_SNORM;
+                else if (image.BitCount == 32)
+                    texture.header.Format = TextureFormat.Format_B8G8R8A8_UNORM;
+
+                // TODO: Do we need to re-encode?
+            }
+            else
+            {
+                // Use the fourcc code to determine the texture format.
+                texture.header.Format = DDSImage.TextureFormatFromFourCC(image.Format);
+            }
+
+            // Set the number of faces this texture has based on the texture type.
+            if (texture.header.TextureType == TextureType.Type_CubeMap)
+            {
+                // Cubemap has 6 faces each with n mip map levels.
+                texture.FaceCount = 6;
+            }
+            else
+            {
+                // All other texture types have 1 face with n mip maps.
+                texture.FaceCount = 1;
+            }
+
+            // Calculate the total size of the pixel buffer.
+            int pixelBufferSize = CalculatePixelBufferSize(texture.header.Width, texture.header.Height, texture.FaceCount, 
+                texture.header.MipMapCount, texture.header.Format, texture.header.TextureType);
+
+            // Check if we need to pad the pixel buffer from the DDS image.
+            byte[] pixelBuffer = image.PixelBuffer;
+            if (pixelBufferSize > image.PixelBuffer.Length)
+            {
+                // Allocate a new array that is the correct size.
+                pixelBuffer = new byte[pixelBufferSize];
+
+                // Copy in the pixel buffer from the DDS image and pad the remaining bytes.
+                Array.Copy(image.PixelBuffer, pixelBuffer, image.PixelBuffer.Length);
+                for (int i = image.PixelBuffer.Length; i < pixelBufferSize; i++)
+                    pixelBuffer[i] = 0xCD;
+            }
+
+            // Create the datastream using the pixel buffer we prepared.
+            texture.PixelDataStream = DataStream.Create(pixelBuffer, true, false);
+
+            // Make sure we are at the start of the pixel data stream.
+            texture.PixelDataStream.Seek(0, SeekOrigin.Begin);
+
+            // Allocate the sub resources array and setup for every face the texture has.
+            texture.SubResources = new DataBox[texture.FaceCount * texture.header.MipMapCount];
+            for (int i = 0; i < texture.FaceCount; i++)
+            {
+                // Loop for the number of mip maps and read each one.
+                for (int x = 0; x < texture.header.MipMapCount; x++)
+                {
+                    int bytesPerRow = 0;
+                    int numberOfBlocks = 0;
+
+                    // Calculate the pitch values for the current mip level.
+                    int mipHeight = texture.header.TextureType == TextureType.Type_CubeMap ? texture.header.Width : texture.header.Height;
+                    CalculateMipMapPitch(texture.header.Width, mipHeight, x, texture.header.Format, out bytesPerRow, out numberOfBlocks);
+
+                    // Setup the resource description for this mip map.
+                    texture.SubResources[(i * texture.header.MipMapCount) + x] = new DataBox(texture.PixelDataStream.PositionPointer, bytesPerRow, bytesPerRow * numberOfBlocks);
+                    texture.PixelDataStream.Seek(bytesPerRow * numberOfBlocks, SeekOrigin.Current);
+                }
+            }
+
+            // Return the texture.
+            return texture;
+        }
+
         #endregion
 
         #region Utilities
+
+        /// <summary>
+        /// Calculates the total size of the pixel buffer for all mip maps for a texture with the given parameters
+        /// </summary>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="faceCount"></param>
+        /// <param name="mipCount"></param>
+        /// <param name="format"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static int CalculatePixelBufferSize(int width, int height, int faceCount, int mipCount, TextureFormat format, TextureType type)
+        {
+            int pixelBufferSize = 0;
+
+            // Loop for every face in the texture.
+            for (int i = 0; i < faceCount; i++)
+            {
+                // Loop for the number of mip maps per face.
+                for (int x = 0; x < mipCount; x++)
+                {
+                    int bytesPerRow = 0;
+                    int numberOfBlocks = 0;
+
+                    // Calculate the pitch values for the current mip level.
+                    int mipHeight = type == TextureType.Type_CubeMap ? width : height;
+                    CalculateMipMapPitch(width, mipHeight, x, format, out bytesPerRow, out numberOfBlocks);
+
+                    // Update the total pixel buffer size.
+                    pixelBufferSize += bytesPerRow * numberOfBlocks;
+                }
+            }
+
+            // Return the pixel buffer size.
+            return pixelBufferSize;
+        }
 
         public static TextureFormat TextureFormatFromFourCC(int fourcc)
         {
@@ -440,6 +660,28 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
 
                 case 0x1828014f: return TextureFormat.Format_A4R4G4B4;
                 default: return TextureFormat.Format_Unsupported;
+            }
+        }
+
+        public static int FourCCFromTextureFormat(TextureFormat format, bool isXboxFormat)
+        {
+            // Check if this is for xbox or not and handle accordingly.
+            if (isXboxFormat == false)
+            {
+                switch (format)
+                {
+                    case TextureFormat.Format_DXT1: return 0x31545844;
+                    case TextureFormat.Format_DXT2: return 0x32545844;
+                    case TextureFormat.Format_DXT5: return 0x35545844;
+                    case TextureFormat.Format_R8G8_SNORM: return 60;
+                    case TextureFormat.Format_B8G8R8A8_UNORM: return 21;
+                    default: return -1;
+                }
+            }
+            else
+            {
+                // Currently not supported.
+                throw new NotImplementedException();
             }
         }
 

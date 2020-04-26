@@ -282,6 +282,12 @@ namespace DeadRisingArcTool.FileFormats
             return filePath + "." + fileType.ToString();
         }
 
+        /// <summary>
+        /// Writes all resource data into a byte array that can be written back to an arc file.
+        /// </summary>
+        /// <returns>Resource data as a byte array.</returns>
+        public abstract byte[] ToBuffer();
+
         #region IRenderable
 
         public virtual bool InitializeGraphics(IRenderManager manager, Device device)

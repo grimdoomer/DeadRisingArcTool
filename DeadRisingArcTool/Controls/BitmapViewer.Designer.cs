@@ -245,26 +245,27 @@
             // extractToolStripMenuItem
             // 
             this.extractToolStripMenuItem.Name = "extractToolStripMenuItem";
-            this.extractToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.extractToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.extractToolStripMenuItem.Text = "Extract";
             this.extractToolStripMenuItem.Click += new System.EventHandler(this.extractToolStripMenuItem_Click);
             // 
             // injectToolStripMenuItem
             // 
             this.injectToolStripMenuItem.Name = "injectToolStripMenuItem";
-            this.injectToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.injectToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.injectToolStripMenuItem.Text = "Inject";
             this.injectToolStripMenuItem.Click += new System.EventHandler(this.injectToolStripMenuItem_Click);
             // 
             // changeClearColorToolStripMenuItem
             // 
             this.changeClearColorToolStripMenuItem.Name = "changeClearColorToolStripMenuItem";
-            this.changeClearColorToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.changeClearColorToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.changeClearColorToolStripMenuItem.Text = "Change clear color";
             this.changeClearColorToolStripMenuItem.Click += new System.EventHandler(this.changeClearColorToolStripMenuItem_Click);
             // 
             // BitmapViewer
             // 
+            this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ContextMenuStrip = this.contextMenuStrip1;
@@ -272,6 +273,8 @@
             this.Controls.Add(this.groupBox1);
             this.Name = "BitmapViewer";
             this.Size = new System.Drawing.Size(520, 645);
+            this.DragDrop += new System.Windows.Forms.DragEventHandler(this.BitmapViewer_DragDrop);
+            this.DragOver += new System.Windows.Forms.DragEventHandler(this.BitmapViewer_DragOver);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
