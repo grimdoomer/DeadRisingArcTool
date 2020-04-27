@@ -35,7 +35,7 @@ namespace DeadRisingArcTool.FileFormats.Misc
         /// <summary>
         /// Xml document data.
         /// </summary>
-        public byte[] Buffer { get; private set; }
+        public byte[] Buffer { get; set; }
 
         protected XmlFile(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)

@@ -111,6 +111,37 @@ namespace DeadRisingArcTool.Controls
             this.isLoading = false;
         }
 
+        public override bool SaveResource()
+        {
+            // Disable the UI while we save changes.
+            this.EditorOwner.SetUIState(false);
+
+            // Write the texture to a buffer we can use to update all the files for this texture.
+            byte[] textureBuffer = this.Bitmap.ToBuffer();
+
+            // Get a list of every datum to be updated for this file and update all of them.
+            DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
+            for (int i = 0; i < datums.Length; i++)
+            {
+                // Write the new texture back to the arc file.
+                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
+                {
+                    // Failed to write the new texture back to the arc file.
+                    MessageBox.Show("Failed to write new texture to arc file " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
+                    this.EditorOwner.SetUIState(true);
+                    return false;
+                }
+            }
+
+            // Flag that we no longer have changes made to the resource.
+            this.HasBeenModified = false;
+
+            // Changes saved successfully.
+            this.EditorOwner.SetUIState(true);
+            MessageBox.Show("Done!");
+            return true;
+        }
+
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             // Check if the event was triggered from the UI loading.
@@ -180,8 +211,8 @@ namespace DeadRisingArcTool.Controls
 
         private void InjectBitmap(string filePath)
         {
-            // Disable the main control.
-            this.Enabled = false;
+            // Set the UI to be disabled while we update the arc files.
+            this.EditorOwner.SetUIState(false);
 
             // Parse the DDS image from file.
             DDSImage ddsImage = DDSImage.FromFile(filePath);
@@ -189,6 +220,7 @@ namespace DeadRisingArcTool.Controls
             {
                 // Failed to parse the image.
                 MessageBox.Show("Failed to read " + filePath);
+                this.EditorOwner.SetUIState(true);
                 return;
             }
 
@@ -198,6 +230,7 @@ namespace DeadRisingArcTool.Controls
             {
                 // Failed to convert the dds image to rtexture.
                 MessageBox.Show("Failed to convert dds image to rtexture!");
+                this.EditorOwner.SetUIState(true);
                 return;
             }
 
@@ -212,8 +245,8 @@ namespace DeadRisingArcTool.Controls
             // Write the texture to a buffer we can use to update all the files for this texture.
             byte[] textureBuffer = newTexture.ToBuffer();
 
-            // Get a list of every datum for this file and update them all.
-            DatumIndex[] datums = ArcFileCollection.Instance.GetDatumsForFileName(this.GameResource.FileName);
+            // Get a list of every datum to be updated for this file and update all of them.
+            DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
             for (int i = 0; i < datums.Length; i++)
             {
                 // Write the new texture back to the arc file.
@@ -221,6 +254,7 @@ namespace DeadRisingArcTool.Controls
                 {
                     // Failed to write the new texture back to the arc file.
                     MessageBox.Show("Failed to write new texture to arc file  " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
+                    this.EditorOwner.SetUIState(true);
                     return;
                 }
             }
@@ -230,7 +264,7 @@ namespace DeadRisingArcTool.Controls
             OnGameResourceUpdated();
 
             // Image successfully injected.
-            this.Enabled = true;
+            this.EditorOwner.SetUIState(true);
             MessageBox.Show("Done!");
         }
 

@@ -50,22 +50,30 @@
         '\"',
         '\'',
         '\''};
+            this.textbox.AutoIndentCharsPatterns = "";
             this.textbox.AutoScrollMinSize = new System.Drawing.Size(27, 14);
             this.textbox.BackBrush = null;
+            this.textbox.ChangedLineColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(255)))), ((int)(((byte)(128)))));
             this.textbox.CharHeight = 14;
             this.textbox.CharWidth = 8;
+            this.textbox.CommentPrefix = null;
             this.textbox.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.textbox.DisabledColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))));
             this.textbox.IsReplaceMode = false;
             this.textbox.Language = FastColoredTextBoxNS.Language.XML;
+            this.textbox.LeftBracket = '<';
+            this.textbox.LeftBracket2 = '(';
             this.textbox.Location = new System.Drawing.Point(3, 3);
             this.textbox.Name = "textbox";
             this.textbox.Paddings = new System.Windows.Forms.Padding(0);
+            this.textbox.RightBracket = '>';
+            this.textbox.RightBracket2 = ')';
             this.textbox.SelectionColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(255)))));
             this.textbox.ServiceColors = ((FastColoredTextBoxNS.ServiceColors)(resources.GetObject("textbox.ServiceColors")));
             this.textbox.Size = new System.Drawing.Size(436, 278);
             this.textbox.TabIndex = 0;
             this.textbox.Zoom = 100;
+            this.textbox.TextChanged += new System.EventHandler<FastColoredTextBoxNS.TextChangedEventArgs>(this.textbox_TextChanged);
             // 
             // TextEditor
             // 

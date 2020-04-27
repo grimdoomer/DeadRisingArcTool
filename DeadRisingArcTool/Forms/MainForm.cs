@@ -20,7 +20,7 @@ using System.Windows.Forms;
 
 namespace DeadRisingArcTool
 {
-    public partial class MainForm : Form
+    public partial class MainForm : Form, IResourceEditorOwner
     {
         public enum TreeViewMenuState
         {
@@ -73,6 +73,7 @@ namespace DeadRisingArcTool
             {
                 // Create a new instance of the game resource editor.
                 GameResourceEditorControl editorControl = (GameResourceEditorControl)Activator.CreateInstance(resourceEditorTypes[i]);
+                editorControl.EditorOwner = this;
 
                 // Setup the editor control.
                 editorControl.Visible = false;
@@ -284,6 +285,19 @@ namespace DeadRisingArcTool
 
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
+            // If there is an active resource editor and changes have been made, check if we should save or discard.
+            if (this.activeResourceEditor != -1 && this.resourceEditors[this.activeResourceEditor].HasBeenModified == true)
+            {
+                // Prompt if we should save changes or discard them.
+                string fileName = this.resourceEditors[this.activeResourceEditor].GameResource.FileName;
+                if (MessageBox.Show("There are unsaved changes to " + Path.GetFileName(fileName) + ", would you like to save them?", 
+                    "Save changes", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    // Have the editor save changes to file.
+                    this.resourceEditors[this.activeResourceEditor].SaveResource();
+                }
+            }
+
             // Check if the selected node is valid and has a the tag property set.
             if (e.Node == null || e.Node.Tag == null)
             {
@@ -295,6 +309,7 @@ namespace DeadRisingArcTool
                 this.lblFileType.Text = "";
 
                 // Loop through all of the resource editors and hide all of them.
+                this.activeResourceEditor = -1;
                 for (int i = 0; i < this.resourceEditors.Count; i++)
                     this.resourceEditors[i].Visible = false;
 
@@ -633,6 +648,24 @@ namespace DeadRisingArcTool
             // Done, restart the application so we can reload the arc collection.
             MessageBox.Show("Done!");
             Application.Restart();
+        }
+
+        #endregion
+
+        #region IResourceEditorOwner
+
+        public void SetUIState(bool enabled)
+        {
+            // Set the UI state.
+            this.Enabled = enabled;
+        }
+
+        public DatumIndex[] GetDatumsToUpdateForResource(string fileName)
+        {
+            // TODO: Here is where we will check if the user wants to update all duplicates or pick an choose.
+
+            // For now we update all duplicate files.
+            return ArcFileCollection.Instance.GetDatumsForFileName(fileName);
         }
 
         #endregion

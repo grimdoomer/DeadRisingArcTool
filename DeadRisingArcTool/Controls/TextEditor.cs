@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeadRisingArcTool.FileFormats;
 using DeadRisingArcTool.FileFormats.Misc;
+using DeadRisingArcTool.FileFormats.Archive;
 
 namespace DeadRisingArcTool.Controls
 {
@@ -33,9 +34,12 @@ namespace DeadRisingArcTool.Controls
                     ResourceType.rItemLayout,
                     ResourceType.rMobLayout,
                     ResourceType.rSprLayout,
-                    ResourceType.rSMAdd)]
+                    ResourceType.rSMAdd,
+                    ResourceType.rMapLink)]
     public partial class TextEditor : GameResourceEditorControl
     {
+        public XmlFile TextFile { get { return (XmlFile)this.GameResource; } }
+
         public TextEditor()
         {
             InitializeComponent();
@@ -52,8 +56,66 @@ namespace DeadRisingArcTool.Controls
             }
 
             // The game resource is a XmlFile.
-            XmlFile file = (XmlFile)this.GameResource;
-            this.textbox.Text = Encoding.Default.GetString(file.Buffer);
+            this.textbox.Text = Encoding.Default.GetString(this.TextFile.Buffer);
+            this.HasBeenModified = false;
+            this.textbox.IsChanged = false;
+        }
+
+        public override bool SaveResource()
+        {
+            // Set the UI state to disabled while we write to file.
+            this.EditorOwner.SetUIState(false);
+
+            // Update the xml file buffer.
+            this.TextFile.Buffer = Encoding.ASCII.GetBytes(this.textbox.Text);
+
+            // Get a list of duplicate datums that we should update and update all of them.
+            DatumIndex[] datums = ArcFileCollection.Instance.GetDatumsForFileName(this.GameResource.FileName);
+            for (int i = 0; i < datums.Length; i++)
+            {
+                // Update the arc file with the new resource data.
+                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, this.TextFile.Buffer) == false)
+                {
+                    // Failed to write the arc file data.
+                    MessageBox.Show("Failed to write file to arc " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
+                    this.EditorOwner.SetUIState(true);
+                    return false;
+                }
+            }
+
+            // Flag that we no longer have changes made to the resource.
+            this.HasBeenModified = false;
+            this.textbox.IsChanged = false;
+
+            // Changes saved successfully, re-enable the UI.
+            this.EditorOwner.SetUIState(true);
+            MessageBox.Show("Changes saved successfully!");
+            return true;
+        }
+
+        private void textbox_TextChanged(object sender, FastColoredTextBoxNS.TextChangedEventArgs e)
+        {
+            // Flag that the resource data has been modified.
+            this.HasBeenModified = true;
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // Check for the Ctrl+S hotkey.
+            if (keyData == (Keys.Control | Keys.S))
+            {
+                // If changes have been made save them.
+                if (this.HasBeenModified == true)
+                {
+                    SaveResource();
+                }
+
+                // Skip passing the event to the base class.
+                return true;
+            }
+
+            // Let the base class handle it.
+            return base.ProcessCmdKey(ref msg, keyData);
         }
     }
 }

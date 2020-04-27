@@ -78,6 +78,11 @@ namespace DeadRisingArcTool.Controls
             this.textBox1.Text = headerInfo.Replace("\n", "\r\n") + textures.Replace("\n", "\r\n") + joints.Replace("\n", "\r\n") + materials.Replace("\n", "\r\n") + primitives.Replace("\n", "\r\n");
         }
 
+        public override bool SaveResource()
+        {
+            throw new NotImplementedException();
+        }
+
         private void btnRender_Click(object sender, EventArgs e)
         {
             // Display a new render window.

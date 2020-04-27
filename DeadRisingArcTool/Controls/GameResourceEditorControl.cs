@@ -15,6 +15,11 @@ namespace DeadRisingArcTool.Controls
     public abstract class GameResourceEditorControl : UserControl
     {
         /// <summary>
+        /// Owner of this resource editor
+        /// </summary>
+        public IResourceEditorOwner EditorOwner { get; set; }
+
+        /// <summary>
         /// Game resource the editor is currently displaying.
         /// </summary>
         public GameResource GameResource { get; protected set; }
@@ -23,6 +28,11 @@ namespace DeadRisingArcTool.Controls
         /// Arc file that contains <see cref="GameResource"/>
         /// </summary>
         public ArcFile ArcFile { get; protected set; }
+
+        /// <summary>
+        /// Indicates if the resource data has been modified since it was loaded
+        /// </summary>
+        public bool HasBeenModified { get; protected set; }
 
         /// <summary>
         /// Determins if this editor can edit the specified resource type
@@ -53,6 +63,12 @@ namespace DeadRisingArcTool.Controls
             // Call to the GUI layer to update.
             OnGameResourceUpdated();
         }
+
+        /// <summary>
+        /// Called when the resource editor should save any changes made back to the arc files.
+        /// </summary>
+        /// <returns>True if the file(s) were saved successfully, false otherwise</returns>
+        public abstract bool SaveResource();
 
         /// <summary>
         /// Called when <see cref="GameResource"/> is changed so the UI can update.
