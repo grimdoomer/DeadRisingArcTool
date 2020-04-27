@@ -50,6 +50,14 @@ namespace DeadRisingArcTool.Controls
             }
             textures += "\n";
 
+            string joints = "*** Joints\n";
+            for (int i = 0; i < model.joints.Length; i++)
+            {
+                string joint = "   Joint #" + i.ToString() + "\n";
+                joint += StructureToString(model.joints[i]);
+                joints += joint + "\n";
+            }
+
             string materials = "*** Materials\n";
             for (int i = 0; i < model.materials.Length; i++)
             {
@@ -67,7 +75,7 @@ namespace DeadRisingArcTool.Controls
             }
 
             // Set textbox text.
-            this.textBox1.Text = headerInfo.Replace("\n", "\r\n") + textures.Replace("\n", "\r\n") + materials.Replace("\n", "\r\n") + primitives.Replace("\n", "\r\n");
+            this.textBox1.Text = headerInfo.Replace("\n", "\r\n") + textures.Replace("\n", "\r\n") + joints.Replace("\n", "\r\n") + materials.Replace("\n", "\r\n") + primitives.Replace("\n", "\r\n");
         }
 
         private void btnRender_Click(object sender, EventArgs e)
@@ -93,7 +101,10 @@ namespace DeadRisingArcTool.Controls
             FieldInfo[] fields = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
             for (int i = 0; i < fields.Length; i++)
             {
-                outputString += string.Format("\t{0}:{1}\n", fields[i].Name, fields[i].GetValue(obj).ToString());
+                // Get the value of field and make sure it's not null.
+                object value = fields[i].GetValue(obj);
+                if (value != null)
+                    outputString += string.Format("\t{0}:{1}\n", fields[i].Name, value.ToString());
             }
 
             // Return the string.

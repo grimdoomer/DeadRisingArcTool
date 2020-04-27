@@ -100,13 +100,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x14 */ public int Unk7;
         /* 0x18 */ public int Unk8;
         /* 0x1C */ // padding
-	    /* 0x20 */ public int TextureIndex1;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x20 */ public int BaseMapTexture;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x24 */ // padding, 0x20 set to 64bit texture object address at runtime
-	    /* 0x28 */ public int TextureIndex2;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x28 */ public int NormalMapTexture;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x2C */ // padding
-	    /* 0x30 */ public int TextureIndex3;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x30 */ public int MaskMapTexture;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x34 */ // padding
-	    /* 0x38 */ public int TextureIndex4;	// texture index, subtract 1 (0 indicates null?)
+	    /* 0x38 */ public int LightmapTexture;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x3C */ // padding
 	    /* 0x40 */ public int TextureIndex5;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x44 */ // padding
@@ -327,13 +327,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     model.materials[i].Unk7 = reader.ReadInt32();
                     model.materials[i].Unk8 = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
-                    model.materials[i].TextureIndex1 = reader.ReadInt32();
+                    model.materials[i].BaseMapTexture = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
-                    model.materials[i].TextureIndex2 = reader.ReadInt32();
+                    model.materials[i].NormalMapTexture = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
-                    model.materials[i].TextureIndex3 = reader.ReadInt32();
+                    model.materials[i].MaskMapTexture = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
-                    model.materials[i].TextureIndex4 = reader.ReadInt32();
+                    model.materials[i].LightmapTexture = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
                     model.materials[i].TextureIndex5 = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
@@ -525,7 +525,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 Material material = this.materials[this.primitives[i].MaterialIndex];
 
                 // Set the textures being used by the material.
-                device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.TextureIndex1]);
+                device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.BaseMapTexture]);
 
                 // Draw the primtive.
                 device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
