@@ -17,7 +17,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         //public Controller XboxControler;
 
         public float radius = 1.0f;
-        public float speed = 1.0f;
+        public float Speed { get; set; } = 1.0f;
+        public float SpeedModifier { get; set; } = 0.002f;
 
         public int oldx = 0;
         public int oldy = 0;
@@ -99,37 +100,37 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 {
                     case "W":
                         //this.moveBackForward += this.speed;
-                        this.position += this.camForward * this.speed;
+                        this.position += this.camForward * this.Speed;
                         break;
                     case "S":
                         //this.moveBackForward -= this.speed;
-                        this.position += this.camBackward * this.speed;
+                        this.position += this.camBackward * this.Speed;
                         break;
                     case "A":
-                        this.position += this.camLeft * this.speed;
+                        this.position += this.camLeft * this.Speed;
                         //this.moveLeftRight -= this.speed;
                         break;
                     case "D":
-                        this.position += this.camRight * this.speed;
+                        this.position += this.camRight * this.Speed;
                         //this.moveLeftRight += this.speed;
                         break;
                     case "Z":
-                        this.position += DefaultUp * this.speed;
+                        this.position += DefaultUp * this.Speed;
                         //this.position.Z -= this.speed;
                         break;
                     case "X":
-                        this.position += DefaultDown * this.speed;
+                        this.position += DefaultDown * this.Speed;
                         //this.position.Z += this.speed;
                         break;
                     case "Equals":
                     case "Add":
-                        speed += 0.0001f;
-                        if (speed < 0) { speed = 0.002f; }
+                        Speed += SpeedModifier;
+                        if (Speed < 0) { Speed = 0.002f; }
                         break;
                     case "Minus":
                     case "NumPadMinus":
-                        speed -= 0.0001f;
-                        if (speed < 0) { speed = 0.002f; }
+                        Speed -= SpeedModifier;
+                        if (Speed < 0) { Speed = 0.002f; }
                         break;
                 }
             }

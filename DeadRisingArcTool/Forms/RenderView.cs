@@ -311,7 +311,8 @@ namespace DeadRisingArcTool.Forms
             // Position the camera and make it look at the model.
             this.camera.Position = new Vector3(firstModel.primitives[0].Unk9.X, firstModel.primitives[0].Unk9.Y, firstModel.primitives[0].Unk9.Z);
             this.camera.LookAt = firstModel.header.BoundingBoxMax - firstModel.header.BoundingBoxMin;
-            this.camera.speed = 4.0f;// 0.002f;
+            this.camera.Speed = Math.Abs(firstModel.primitives[0].Unk9.X / 1000.0f);
+            this.camera.SpeedModifier = Math.Abs(firstModel.primitives[0].Unk9.X / 100000.0f);
         }
 
         private void Render()
