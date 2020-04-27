@@ -167,6 +167,25 @@ namespace DeadRisingArcTool.FileFormats.Archive
             fileEntry = arcFile.FileEntries[datum.FileIndex];
         }
 
+        /// <summary>
+        /// Gets a list of all the <see cref="DatumIndex"/>'s for the specified file name. Used to find
+        /// datums for duplicate files.
+        /// </summary>
+        /// <param name="fileName">Name of the file</param>
+        /// <returns>A <see cref="DatumIndex"/> array</returns>
+        public DatumIndex[] GetDatumsForFileName(string fileName)
+        {
+            // Check if this file name is present in the reverse lookup dictionary.
+            if (this.arcFileNameReverseDictionary.ContainsKey(fileName) == true)
+            {
+                // Return the list of datums for this file name.
+                return this.arcFileNameReverseDictionary[fileName];
+            }
+
+            // Reverse lookup dictionary does not contain this file name.
+            return new DatumIndex[0];
+        }
+
         #region TreeNode Utilities
 
         public TreeNodeCollection BuildTreeNodeArray(TreeNodeOrder order)

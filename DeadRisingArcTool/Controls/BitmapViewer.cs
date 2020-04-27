@@ -100,15 +100,11 @@ namespace DeadRisingArcTool.Controls
 
                 // Set the background color to the inverse of the values?
                 this.pictureBox1.BackColor = System.Drawing.Color.FromArgb(255 - a, 255 - r, 255 - g, 255 - b);
-
-                // Enable the change clear color button.
-                this.changeClearColorToolStripMenuItem.Enabled = true;
             }
             else
             {
                 // Set the background color to default.
                 this.pictureBox1.BackColor = System.Drawing.Color.FromKnownColor(KnownColor.Control);
-                this.changeClearColorToolStripMenuItem.Enabled = false;
             }
 
             // Flag that we are no longer loading the form.
@@ -213,12 +209,20 @@ namespace DeadRisingArcTool.Controls
                 newTexture.BackgroundColor = this.Bitmap.BackgroundColor;
             }
 
-            // Write the new texture back to the arc file.
-            if (ArcFileCollection.Instance.ArcFiles[this.Bitmap.Datum.ArcIndex].InjectFile(this.Bitmap.Datum.FileIndex, newTexture.ToBuffer()) == false)
+            // Write the texture to a buffer we can use to update all the files for this texture.
+            byte[] textureBuffer = newTexture.ToBuffer();
+
+            // Get a list of every datum for this file and update them all.
+            DatumIndex[] datums = ArcFileCollection.Instance.GetDatumsForFileName(this.GameResource.FileName);
+            for (int i = 0; i < datums.Length; i++)
             {
-                // Failed to write the new texture back to the arc file.
-                MessageBox.Show("Failed to write new texture to arc file!");
-                return;
+                // Write the new texture back to the arc file.
+                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
+                {
+                    // Failed to write the new texture back to the arc file.
+                    MessageBox.Show("Failed to write new texture to arc file  " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
+                    return;
+                }
             }
 
             // Update the game resource instance and reload the UI.
@@ -228,11 +232,6 @@ namespace DeadRisingArcTool.Controls
             // Image successfully injected.
             this.Enabled = true;
             MessageBox.Show("Done!");
-        }
-
-        private void changeClearColorToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void BitmapViewer_DragOver(object sender, DragEventArgs e)

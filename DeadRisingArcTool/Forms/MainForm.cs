@@ -86,20 +86,25 @@ namespace DeadRisingArcTool
             }
         }
 
+        #region MenuStrip Buttons
+
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Browse for the game's arc file folder.
             FolderBrowserDialog fbd = new FolderBrowserDialog();
             fbd.Description = "Dead Rising arc folder";
 
-            // Debug hacks because I'm lazy.
-#if DEBUG
-            fbd.SelectedPath = "K:\\_SteamLibrary\\steamapps\\common\\Dead Rising\\nativeWin64";
-#endif
+            // Check if there is a saved file path in the settings file.
+            if (Properties.Settings.Default.ArcFolder != string.Empty)
+                fbd.SelectedPath = Properties.Settings.Default.ArcFolder;
 
             // Show the dialog.
             if (fbd.ShowDialog() == DialogResult.OK)
             {
+                // Save the selected folder path for next time.
+                Properties.Settings.Default.ArcFolder = fbd.SelectedPath;
+                Properties.Settings.Default.Save();
+
                 // Setup the background worker.
                 this.asyncWorker = new BackgroundWorker();
                 this.asyncWorker.DoWork += AsyncWorker_LoadArcFolder;
@@ -124,6 +129,20 @@ namespace DeadRisingArcTool
                 }
             }
         }
+
+        private void closeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Just restart the application, it's easier than trying to close everything out.
+            Application.Restart();
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Quit the application.
+            Application.Exit();
+        }
+
+        #endregion
 
         #region AsyncWorker: Arc loading
 
@@ -478,6 +497,8 @@ namespace DeadRisingArcTool
 
         #endregion
 
+        #region TreeView ToolStrip
+
         private void renderToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // If this is a single file get the datum and render it solo.
@@ -549,6 +570,8 @@ namespace DeadRisingArcTool
             // Return the list of datums.
             return modelDatums.ToArray();
         }
+
+        #endregion
 
         #region DEBUG Menu
 

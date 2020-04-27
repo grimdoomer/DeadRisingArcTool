@@ -50,7 +50,6 @@
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.extractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.injectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.changeClearColorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.contextMenuStrip1.SuspendLayout();
@@ -237,10 +236,9 @@
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.extractToolStripMenuItem,
-            this.injectToolStripMenuItem,
-            this.changeClearColorToolStripMenuItem});
+            this.injectToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(174, 70);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(181, 70);
             // 
             // extractToolStripMenuItem
             // 
@@ -255,13 +253,6 @@
             this.injectToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
             this.injectToolStripMenuItem.Text = "Inject";
             this.injectToolStripMenuItem.Click += new System.EventHandler(this.injectToolStripMenuItem_Click);
-            // 
-            // changeClearColorToolStripMenuItem
-            // 
-            this.changeClearColorToolStripMenuItem.Name = "changeClearColorToolStripMenuItem";
-            this.changeClearColorToolStripMenuItem.Size = new System.Drawing.Size(173, 22);
-            this.changeClearColorToolStripMenuItem.Text = "Change clear color";
-            this.changeClearColorToolStripMenuItem.Click += new System.EventHandler(this.changeClearColorToolStripMenuItem_Click);
             // 
             // BitmapViewer
             // 
@@ -306,6 +297,5 @@
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem extractToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem injectToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem changeClearColorToolStripMenuItem;
     }
 }
