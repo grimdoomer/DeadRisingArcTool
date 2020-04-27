@@ -53,10 +53,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x5C */
         /* 0x60 */ // vec3 bounding box sphere position?
         /* 0x6C */ // float bounding box sphere radius?
-        /* 0x70 */ public Vector3 BoundingBoxMin;
-        /* 0x7C */ // padding
-        /* 0x80 */ public Vector3 BoundingBoxMax;
-        /* 0x8C */ // padding
+        /* 0x70 */ public Vector4 BoundingBoxMin;
+        /* 0x80 */ public Vector4 BoundingBoxMax;
         /* 0x90 */
         /* 0x94 */ // used by something in code
         /* 0x98 */
@@ -231,9 +229,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             reader.BaseStream.Position += 4;
             model.header.IndiceDataOffset = reader.ReadInt32();
             reader.BaseStream.Position = 0x70;
-            model.header.BoundingBoxMin = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            model.header.BoundingBoxMin = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), 0.0f);
             reader.BaseStream.Position += 4;
-            model.header.BoundingBoxMax = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            model.header.BoundingBoxMax = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), 0.0f);
             reader.BaseStream.Position = rModelHeader.kSizeOf;
 
             // Verify the header magic is correct.

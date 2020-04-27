@@ -19,6 +19,7 @@ using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+using DeadRisingArcTool.Utilities;
 
 namespace DeadRisingArcTool.Forms
 {
@@ -28,76 +29,17 @@ namespace DeadRisingArcTool.Forms
         public Vector4 Color;
     }
 
-#if REAL_CODE
-    public class ShaderConstants
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ShaderConstants
     {
         public const int kSizeOf = (4 * 4 * 4) + (4 * 4) + (4 * 4) + (4 * 4);
         public const int kElementCount = (4 * 4) + 4 + 4 + 4;
 
-        public Matrix gXfViewProj = new Matrix();
-        public Vector4 gXfMatrixMapFactor = new Vector4();
-        public Vector3 gXfQuantPosScale = new Vector3();
-        public Vector3 gXfQuantPosOffset = new Vector3();
-
-        public float[] ToBufferData()
-        {
-            // Allocate a float array to copy all the values to.
-            float[] buffer = new float[kElementCount];
-
-            // gXfViewProj:
-            buffer[0] = this.gXfViewProj[0, 0];
-            buffer[1] = this.gXfViewProj[1, 0];
-            buffer[2] = this.gXfViewProj[2, 0];
-            buffer[3] = this.gXfViewProj[3, 0];
-            buffer[4] = this.gXfViewProj[0, 1];
-            buffer[5] = this.gXfViewProj[1, 1];
-            buffer[6] = this.gXfViewProj[2, 1];
-            buffer[7] = this.gXfViewProj[3, 1];
-            buffer[8] = this.gXfViewProj[0, 2];
-            buffer[9] = this.gXfViewProj[1, 2];
-            buffer[10] = this.gXfViewProj[2, 2];
-            buffer[11] = this.gXfViewProj[3, 2];
-            buffer[12] = this.gXfViewProj[0, 3];
-            buffer[13] = this.gXfViewProj[1, 3];
-            buffer[14] = this.gXfViewProj[2, 3];
-            buffer[15] = this.gXfViewProj[3, 3];
-
-            // gXfMatrixMapFactor:
-            buffer[16] = this.gXfMatrixMapFactor[0];
-            buffer[17] = this.gXfMatrixMapFactor[1];
-            buffer[18] = this.gXfMatrixMapFactor[2];
-            buffer[19] = this.gXfMatrixMapFactor[3];
-
-            // gXfQuantPosScale:
-            buffer[20] = this.gXfQuantPosScale[0];
-            buffer[21] = this.gXfQuantPosScale[1];
-            buffer[22] = this.gXfQuantPosScale[2];
-
-            // gXfQuantPosOffset:
-            buffer[24] = this.gXfQuantPosOffset[0];
-            buffer[25] = this.gXfQuantPosOffset[1];
-            buffer[26] = this.gXfQuantPosOffset[2];
-
-            // Return the buffer.
-            return buffer;
-        }
+        public Matrix gXfViewProj;
+        public Vector4 gXfMatrixMapFactor;
+        public Vector4 gXfQuantPosScale;
+        public Vector4 gXfQuantPosOffset;
     }
-#else
-    public class ShaderConstants
-    {
-        public Matrix WVP = new Matrix();
-        public Matrix World = new Matrix();
-
-        public float[] ToBufferData()
-        {
-            List<float> buffer = new List<float>();
-            buffer.AddRange(this.WVP.ToArray());
-            buffer.AddRange(this.World.ToArray());
-
-            return buffer.ToArray();
-        }
-    }
-#endif
 
     public partial class RenderView : Form, IRenderManager
     {
@@ -275,7 +217,7 @@ namespace DeadRisingArcTool.Forms
             }
 
             // Create the shader constants buffer.
-            this.shaderConstantBuffer = SharpDX.Direct3D11.Buffer.Create(this.device, BindFlags.ConstantBuffer, this.shaderConsts.ToBufferData());
+            this.shaderConstantBuffer = SharpDX.Direct3D11.Buffer.Create(this.device, BindFlags.ConstantBuffer, ref this.shaderConsts, ShaderConstants.kSizeOf);
 
             // Create the camera.
             this.camera = new Camera(this);
@@ -310,7 +252,7 @@ namespace DeadRisingArcTool.Forms
 
             // Position the camera and make it look at the model.
             this.camera.Position = new Vector3(firstModel.primitives[0].Unk9.X, firstModel.primitives[0].Unk9.Y, firstModel.primitives[0].Unk9.Z);
-            this.camera.LookAt = firstModel.header.BoundingBoxMax - firstModel.header.BoundingBoxMin;
+            this.camera.LookAt = (firstModel.header.BoundingBoxMax - firstModel.header.BoundingBoxMin).ToVector3();
             this.camera.Speed = Math.Abs(firstModel.primitives[0].Unk9.X / 1000.0f);
             this.camera.SpeedModifier = Math.Abs(firstModel.primitives[0].Unk9.X / 100000.0f);
         }
@@ -346,7 +288,7 @@ namespace DeadRisingArcTool.Forms
             this.device.ImmediateContext.OutputMerger.SetRenderTargets(this.depthStencilView, this.renderView);
 
             // The pixel shader constants do not change between primtive draw calls, update them now.
-            this.shaderConsts.gXfViewProj = this.worldGround * this.camera.ViewMatrix * this.projectionMatrix;
+            this.shaderConsts.gXfViewProj = Matrix.Transpose(this.worldGround * this.camera.ViewMatrix * this.projectionMatrix);
             this.shaderConsts.gXfMatrixMapFactor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
             // Loop through all of the resources to render and draw each one.
@@ -360,7 +302,7 @@ namespace DeadRisingArcTool.Forms
                 this.shaderConsts.gXfQuantPosOffset = model.header.BoundingBoxMin;
 
                 // Update the shader constants buffer with the new data.
-                this.device.ImmediateContext.UpdateSubresource(this.shaderConsts.ToBufferData(), this.shaderConstantBuffer);
+                this.device.ImmediateContext.UpdateSubresource(ref this.shaderConsts, this.shaderConstantBuffer);
 
                 // Set the shader constants.
                 this.device.ImmediateContext.VertexShader.SetConstantBuffer(0, this.shaderConstantBuffer);
