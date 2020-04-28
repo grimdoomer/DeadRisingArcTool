@@ -14,11 +14,13 @@ Modding tools for Dead Rising 1. This tool will allow you to edit the game files
 
 # How to use
 DeadRisingArcTool (hereby short handed to just ArcTool) works by opening all of the arc files the game uses and building a list of all files inside the archives. After opening ArcTool you can select File->Open to select the game's arc folder, for PC this is Dead Rising\nativeWin64, for Xbox 360 this is just the game's root folder.
+![](/Images/open_folder.png)
 
 ## Basic Navigation
 After opening the arc files ArcTool will create a list of files that is initially sorted by their internal file name. You can change the sort order by right clicking the file list and selecting one of the "Sort By" options. Currently you can sort by file name, arc file, and file type.
 
 Any files displayed in red mean that ArcTool does not have a specialized editor for. You can extract and inject these files but you will not have any further editing ability past that. Any files displayed not in red means AcrTool has a specialized editor for this file type, e.x.: texture viewer, model viewer, xml text editor, etc.
+![](/Images/file_view.png)
 
 Right clicking on a file entry will allow you to extract and inject the file. This will read/write the file using the game's proprietary format e.x.: rtexture, rmodel, etc. If the file type has a specialized editor you may have additional extraction/injection options that are more robust. For exmaple, the texture editor will let you extract and inject textures in .dds format. 
 
@@ -34,6 +36,7 @@ Throughout the game's many arc files there are a lot of textures and such that a
 
 ## Texture Editor
 If you click on any rtexture files the texture editor will display a preview of the image with some additional info, and let you view the different mip map levels for that texture. Right clicking the preview will let you extract/inject the texture in .dds format. If the image has multiple mip maps they will all be extracted into one file. Additionally you can drag-n-drop .dds files onto the preview image and it will automatically inject the file for you.
+![](/Images/texture_editor.png)
 
 Currently all PC texture formats are supported. However, due to discrepancies in how different image editors handle dds files, you may have issues opening dds images saved from ArcTool, as well as issues injecting dds images saved with certain image editors. Here is a compatibility list:
 - DirectX Texture Tool - Full support
@@ -78,6 +81,7 @@ If you make changes to the file the lines changed will have a yellow indicator b
 - Ctrl+S: Save changes
 
 If you make changes to a file and then try to select a new file without saving, you will be prompted to save or discard your changes.
+![](/Images/text_editor.png)
 
 ## Model Editor
 The model editor can view any game model and most of the level geometry for the different levels. After clicking on a rmodel file, the model editor will display some information about the model: textures, joints, materials, primitives, etc. Clicking the Render button will open the render view and display the model with a flycam.
@@ -85,6 +89,7 @@ The model editor can view any game model and most of the level geometry for the 
 Rendering level geometry is done by selecting the folder for the level models you want to render, right clicking, and selecting the "Render" option in the file list. This will search the current folder and all subfolders for rmodel files and render all of them in one window. 
 
 This is typically used for the \scroll\stageN\sXXX folders, you can also use it for the higher up \scroll\stageN folders as well. The more models it tries to render the longer the render view will take to load. Some level sections will have missing bits of geometry here and there because the render viewer is still a WIP and is missing functionality for more advanced features. This will be worked out in a future releases.
+![](/Images/bulk_render.png)
 
 When the render viewer opens it will try to position you near the model with it in sight, and adjust the movement speed of the camera to suit the size of the model. This is all guess work though, so sometimes it will be completely off and you will spawn without the model in front of you. You may need to pan around until you find it.
 
@@ -93,6 +98,8 @@ When the render viewer opens it will try to position you near the model with it 
 - Z/X - Move camera up or down
 - +/- - Change camera movement speed
 - Left mouse hold and click - Aim the camera
+
+![](/Images/model_editor.png)
 
 # Debug Builds
 Any builds posted on github are release builds and considered stable. As I add features and make changes they will be pushed to the dev branch before they get merged into master. If you want to test features as I code them you will need to checkout the dev branch and build it. This branch is not stable and at times may not work or compile correctly.
