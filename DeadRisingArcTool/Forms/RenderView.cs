@@ -96,7 +96,7 @@ namespace DeadRisingArcTool.Forms
             InitializeModelData();
 
             // Show the form and enter the render loop.
-            while (this.isClosing == false)
+            while (this.isClosing == false && this.IsDisposed == false)
             {
                 // Render the next frame and process the windows message queue.
                 Render();
@@ -115,6 +115,10 @@ namespace DeadRisingArcTool.Forms
 
         private void RenderView_SizeChanged(object sender, System.EventArgs e)
         {
+            // Make sure the form has a valid size.
+            if (this.ClientSize.Width == 0 || this.ClientSize.Height == 0)
+                return;
+
             // Flag that the form has resized so the directx thread can adjust it's frame buffer size.
             this.hasResized = true;
         }
@@ -259,6 +263,10 @@ namespace DeadRisingArcTool.Forms
 
         private void Render()
         {
+            // If the form is not visible do not render anything.
+            if (this.Visible == false)
+                return;
+
             // Check if the form has resized and if so reset our render state to accomidate the size change.
             if (this.hasResized == true)
                 ResizeRenderTarget();

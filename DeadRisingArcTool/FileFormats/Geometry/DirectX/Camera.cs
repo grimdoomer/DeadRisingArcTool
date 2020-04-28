@@ -128,7 +128,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                         if (Speed < 0) { Speed = 0.002f; }
                         break;
                     case "Minus":
-                    case "NumPadMinus":
+                    case "Subtract":
                         Speed -= SpeedModifier;
                         if (Speed < 0) { Speed = 0.002f; }
                         break;
@@ -153,8 +153,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             //int tempx = oldx - x;
             //int tempy = oldy - y;
 
-            this.camYaw += -x * 0.001f;     // Flip x direction for RH coordinate system
-            this.camPitch += y * 0.001f;
+            this.camYaw += -x * 0.005f;     // Flip x direction for RH coordinate system
+            this.camPitch += y * 0.005f;
 
 
             //ComputePosition();

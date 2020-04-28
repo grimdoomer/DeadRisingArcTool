@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.28307.705
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeadRisingArcTool", "DeadRisingArcTool\DeadRisingArcTool.csproj", "{38869C5B-3F05-4C34-ADFC-80727013170A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IO", "..\..\Mutation\Mutation\IO\IO.csproj", "{13A4CE71-96C0-4553-B899-AF6C524FD3C9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IO", "IO\IO.csproj", "{13A4CE71-96C0-4553-B899-AF6C524FD3C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

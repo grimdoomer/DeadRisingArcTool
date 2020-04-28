@@ -51,11 +51,14 @@ namespace DeadRisingArcTool.Controls
             textures += "\n";
 
             string joints = "*** Joints\n";
-            for (int i = 0; i < model.joints.Length; i++)
+            if (model.joints != null)
             {
-                string joint = "   Joint #" + i.ToString() + "\n";
-                joint += StructureToString(model.joints[i]);
-                joints += joint + "\n";
+                for (int i = 0; i < model.joints.Length; i++)
+                {
+                    string joint = "   Joint #" + i.ToString() + "\n";
+                    joint += StructureToString(model.joints[i]);
+                    joints += joint + "\n";
+                }
             }
 
             string materials = "*** Materials\n";

@@ -175,6 +175,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private Buffer indexBuffer = null;
         private BuiltInShader[] shaders = null;
 
+        private BlendState transparencyBlendState = null;
+
         private rTexture[] gameTextures = null;
         private Texture2D[] dxTextures = null;
         private ShaderResourceView[] shaderResources = null;
@@ -420,7 +422,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         {
             // Create our vertex and index buffers from the model data.
             this.primaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData1);
-            this.secondaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData2);
+            if (this.vertexData2 != null)
+                this.secondaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData2);
             this.indexBuffer = Buffer.Create<short>(device, BindFlags.IndexBuffer, this.indexData);
 
             // Allocate resources for the texture array.
@@ -465,6 +468,28 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             this.shaders[1] = manager.GetBuiltInShader(BuiltInShaderType.Game_Mesh);
             this.shaders[2] = manager.GetBuiltInShader(BuiltInShaderType.Game_LevelGeometry1);
 
+            // Setup the blend state for image transparency.
+            BlendStateDescription blendDesc = new BlendStateDescription();
+            blendDesc.AlphaToCoverageEnable = false;
+            blendDesc.IndependentBlendEnable = false;
+            //blendDesc.RenderTarget[0].IsBlendEnabled = true;
+            //blendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            //blendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            //blendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            //blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
+            //blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.One;
+            //blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Maximum;
+            //blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            blendDesc.RenderTarget[0].IsBlendEnabled = false;
+            blendDesc.RenderTarget[0].SourceBlend = BlendOption.One;
+            blendDesc.RenderTarget[0].DestinationBlend = BlendOption.Zero;
+            blendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
+            blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
+            blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            this.transparencyBlendState = new BlendState(device, blendDesc);
+
             // Successfully initialized.
             return true;
         }
@@ -475,6 +500,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
             // Set the primitive type.
             device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;
+
+            // Set alpha blending state.
+            device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState);
 
             // Loop through all of the primitives for the model and draw each one.
             for (int i = 0; i < this.primitives.Length; i++)
@@ -502,7 +530,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 }
                 else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 0)
                 {
-                    //
+                    // TODO: I think this is the incorrect vertex declaration...
                     this.shaders[2].DrawFrame(manager, device);
                 }
                 else

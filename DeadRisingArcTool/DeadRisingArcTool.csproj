@@ -181,12 +181,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <None Include="FileFormats\Geometry\Shaders\BasicShader.ps">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="FileFormats\Geometry\Shaders\BasicShader.vs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="FileFormats\Geometry\Shaders\XfLevelMesh.ps">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -214,15 +208,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="FileFormats\Geometry\Shaders\BasicShader.fx" />
     <Content Include="FileFormats\Geometry\Shaders\XfGlobal.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="FileFormats\Geometry\Shaders\XfMaterial.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="FileFormats\Geometry\Shaders\XfMaterialStandard.fx" />
-    <Content Include="FileFormats\Geometry\Shaders\XfMaterialZPass.fx">
+    <Content Include="FileFormats\Geometry\Shaders\XfMaterialStandard.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="IDA\DumpObjectInfo.py" />
@@ -230,7 +222,7 @@
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Mutation\Mutation\IO\IO.csproj">
+    <ProjectReference Include="..\IO\IO.csproj">
       <Project>{13a4ce71-96c0-4553-b899-af6c524fd3c9}</Project>
       <Name>IO</Name>
     </ProjectReference>
