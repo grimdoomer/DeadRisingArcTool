@@ -25,9 +25,9 @@ After opening the arc files ArcTool will create a list of files that is initiall
 Any files displayed in red mean that ArcTool does not have a specialized editor for. You can extract and inject these files but you will not have any further editing ability past that. Any files displayed not in red means AcrTool has a specialized editor for this file type, e.x.: texture viewer, model viewer, xml text editor, etc.
 ![](/Images/file_view.png)
 
-Right clicking on a file entry will allow you to extract and inject the file. This will read/write the file using the game's proprietary format e.x.: rtexture, rmodel, etc. If the file type has a specialized editor you may have additional extraction/injection options that are more robust. For exmaple, the texture editor will let you extract and inject textures in .dds format. 
+Right clicking on a file entry will allow you to extract and inject the file. This will read/write the file using the game's proprietary format e.x.: rtexture, rmodel, etc. If the file type has a specialized editor you may have additional extraction/injection options that are more robust. For example, the texture editor will let you extract and inject textures in .dds format. 
 
-If you want to extract and inject files in the game's propritary format use the Extract/Inject options from the file list. If you want to extract and inject files in a more usable format (.dds, .txt, .obj, etc.) use the Extract/Inject options that are part of the specialized editors. You cannot mix the two together.
+If you want to extract and inject files in the game's proprietary format use the Extract/Inject options from the file list. If you want to extract and inject files in a more usable format (.dds, .txt, .obj, etc.) use the Extract/Inject options that are part of the specialized editors. You cannot mix the two together.
 - File list -> .rtexture, .rmodel, etc.
 - Specialized editor -> .dds, .txt, .obj, etc.
 
@@ -48,7 +48,7 @@ Currently all PC texture formats are supported. However, due to discrepancies in
 
 If you have issues opening or injecting files with a certain image editor, open a github issue with the name of the game file you were trying to modify and the image editor you were using, and I will try to add support for it.
 
-When injecting a a texture ArcTool will update the game file to match the new width, hight, format, type, and mip map count. Though unless you know what you are doing you should match the format the texture was originally in.
+When injecting a a texture ArcTool will update the game file to match the new width, height, format, type, and mip map count. Though unless you know what you are doing you should match the format the texture was originally in.
 
 ## Text Editor
 The following file types can be modified in the text editor:
