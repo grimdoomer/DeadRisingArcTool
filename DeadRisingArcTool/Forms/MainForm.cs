@@ -52,6 +52,11 @@ namespace DeadRisingArcTool
         {
             InitializeComponent();
 
+#if !DEBUG
+            // Hide the debug menu.
+            this.dEBUGToolStripMenuItem.Visible = false;
+#endif
+
             // Set the tag properties of the tree view context menu options.
             this.extractToolStripMenuItem.Tag = TreeViewMenuState.PerFile;
             this.sortByToolStripMenuItem.Tag = TreeViewMenuState.AnyFile;
@@ -87,7 +92,7 @@ namespace DeadRisingArcTool
             }
         }
 
-        #region MenuStrip Buttons
+#region MenuStrip Buttons
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -143,9 +148,9 @@ namespace DeadRisingArcTool
             Application.Exit();
         }
 
-        #endregion
+#endregion
 
-        #region AsyncWorker: Arc loading
+#region AsyncWorker: Arc loading
 
         private void AsyncWorker_LoadArcFolderCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
@@ -242,9 +247,9 @@ namespace DeadRisingArcTool
             e.Result = ArcFileCollection.Instance.BuildTreeNodeArray(TreeNodeOrder.FolderPath);
         }
 
-        #endregion
+#endregion
 
-        #region Utilities
+#region Utilities
 
         private static string[] FindArcFilesInFolder(string folderPath, bool recursive, bool includeNonArcFiles)
         {
@@ -279,9 +284,9 @@ namespace DeadRisingArcTool
             return filesFound.ToArray();
         }
 
-        #endregion
+#endregion
 
-        #region TreeView
+#region TreeView
 
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
         {
@@ -510,9 +515,9 @@ namespace DeadRisingArcTool
             this.Enabled = true;
         }
 
-        #endregion
+#endregion
 
-        #region TreeView ToolStrip
+#region TreeView ToolStrip
 
         private void renderToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -586,9 +591,9 @@ namespace DeadRisingArcTool
             return modelDatums.ToArray();
         }
 
-        #endregion
+#endregion
 
-        #region DEBUG Menu
+#region DEBUG Menu
 
         private void texturesToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -650,9 +655,9 @@ namespace DeadRisingArcTool
             Application.Restart();
         }
 
-        #endregion
+#endregion
 
-        #region IResourceEditorOwner
+#region IResourceEditorOwner
 
         public void SetUIState(bool enabled)
         {
@@ -668,6 +673,6 @@ namespace DeadRisingArcTool
             return ArcFileCollection.Instance.GetDatumsForFileName(fileName);
         }
 
-        #endregion
+#endregion
     }
 }
