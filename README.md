@@ -17,6 +17,8 @@ DeadRisingArcTool (hereby short handed to just ArcTool) works by opening all of 
 
 ![](/Images/open_folder.png)
 
+After you open your game files for the first time ArcTool will remember this location and it will be auto selected the next time you click File->Open.
+
 ## Basic Navigation
 After opening the arc files ArcTool will create a list of files that is initially sorted by their internal file name. You can change the sort order by right clicking the file list and selecting one of the "Sort By" options. Currently you can sort by file name, arc file, and file type.
 
