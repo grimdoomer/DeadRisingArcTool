@@ -14,6 +14,7 @@ Modding tools for Dead Rising 1. This tool will allow you to edit the game files
 
 # How to use
 DeadRisingArcTool (hereby short handed to just ArcTool) works by opening all of the arc files the game uses and building a list of all files inside the archives. After opening ArcTool you can select File->Open to select the game's arc folder, for PC this is Dead Rising\nativeWin64, for Xbox 360 this is just the game's root folder.
+
 ![](/Images/open_folder.png)
 
 ## Basic Navigation
