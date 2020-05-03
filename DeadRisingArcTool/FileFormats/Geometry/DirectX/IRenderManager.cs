@@ -1,4 +1,6 @@
 ﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+using DeadRisingArcTool.Forms;
+using SharpDX;
 using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
@@ -29,5 +31,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// <param name="type">Type of built in shader to get</param>
         /// <returns>Instance of the built in shader</returns>
         BuiltInShader GetBuiltInShader(BuiltInShaderType type);
+
+        // Hackjob mcjankshack this shit in here.
+        void SetMatrixMapFactor(Vector4 vec);
+
+        rMotionList GetMotionList();
     }
 }

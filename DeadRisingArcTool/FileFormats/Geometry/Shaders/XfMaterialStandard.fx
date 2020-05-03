@@ -56,14 +56,16 @@ VS_OUTPUT XfStandardVS(VS_INPUT I)
  
 	float3x4 wmat;
 
-	//wmat = getWorldMatrix4wtFromTex(I.boneWeights0, I.boneIndices0);
-
-	//float3	wp = mul(wmat, float4(decodePosition(I.position.xyz), 1));
+#if (FUNC_SKIN != SKIN_NONE)
+	wmat = getWorldMatrix4wtFromTex(I.boneWeights0, I.boneIndices0);
+#endif
 
 #if (FUNC_SKIN != SKIN_NONE)
-	float3	wp = decodePosition(I.position.xyz);
+	float3	pos = decodePosition(I.position.xyz);
+	float3 wp = mul(wmat, float4(pos, 1));
 #else
-	float3 wp = I.position;
+	float3 pos = I.position;
+	float3 wp = pos;
 #endif
 
 	O.position = mul(float4(wp, 1), gXfViewProj);

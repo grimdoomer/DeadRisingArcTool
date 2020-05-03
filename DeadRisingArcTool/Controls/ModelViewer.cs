@@ -12,6 +12,7 @@ using DeadRisingArcTool.Forms;
 using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats;
 using System.Reflection;
+using DeadRisingArcTool.Utilities;
 
 namespace DeadRisingArcTool.Controls
 {
@@ -112,7 +113,13 @@ namespace DeadRisingArcTool.Controls
                 // Get the value of field and make sure it's not null.
                 object value = fields[i].GetValue(obj);
                 if (value != null)
-                    outputString += string.Format("\t{0}:{1}\n", fields[i].Name, value.ToString());
+                {
+                    // Check if the field has a hex attribute on it.
+                    if (fields[i].GetCustomAttribute<HexAttribute>() != null)
+                        outputString += string.Format("\t{0}:{1}\n", fields[i].Name, int.Parse(value.ToString(), System.Globalization.NumberStyles.Integer).ToString("X"));
+                    else
+                        outputString += string.Format("\t{0}:{1}\n", fields[i].Name, value.ToString());
+                }
             }
 
             // Return the string.

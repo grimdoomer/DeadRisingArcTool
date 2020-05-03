@@ -90,6 +90,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controls\AnimationEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\AnimationEditor.Designer.cs">
+      <DependentUpon>AnimationEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\BitmapViewer.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -119,17 +125,21 @@
     <Compile Include="FileFormats\Bitmaps\Swizzle.cs" />
     <Compile Include="FileFormats\GameResource.cs" />
     <Compile Include="FileFormats\GameResourceParserAttribute.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\BoundingSphere.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\IRenderable.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\IRenderManager.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShaderCollection.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShader.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\LevelGeometryShader.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\MeshShader.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Shaders\WireframeShader.cs" />
     <Compile Include="FileFormats\Geometry\rModel.cs" />
     <Compile Include="FileFormats\Bitmaps\Color.cs" />
     <Compile Include="FileFormats\Bitmaps\DXTDecoder.cs" />
     <Compile Include="FileFormats\Bitmaps\rTexture.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\ShaderIncludeResolver.cs" />
+    <Compile Include="FileFormats\Geometry\rMotionList.cs" />
+    <Compile Include="FileFormats\Misc\BinaryXmlFile.cs" />
     <Compile Include="FileFormats\Misc\XmlFile.cs" />
     <Compile Include="Forms\LoadingDialog.cs">
       <SubType>Form</SubType>
@@ -143,7 +153,9 @@
     <Compile Include="Forms\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\RenderView.cs" />
+    <Compile Include="Forms\RenderView.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\RenderView.Designer.cs">
       <DependentUpon>RenderView.cs</DependentUpon>
     </Compile>
@@ -152,8 +164,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\AbstractControlDescriptionProvider.cs" />
     <Compile Include="Utilities\DirectXExtensions.cs" />
+    <Compile Include="Utilities\HexAttribute.cs" />
     <Compile Include="Utilities\IOExtensions.cs" />
     <Compile Include="Utilities\ZlibUtilities.cs" />
+    <EmbeddedResource Include="Controls\AnimationEditor.resx">
+      <DependentUpon>AnimationEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\BitmapViewer.resx">
       <DependentUpon>BitmapViewer.cs</DependentUpon>
     </EmbeddedResource>
@@ -181,6 +197,12 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="FileFormats\Geometry\Shaders\Wireframe.ps">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="FileFormats\Geometry\Shaders\Wireframe.vs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="FileFormats\Geometry\Shaders\XfLevelMesh.ps">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -208,6 +230,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="FileFormats\Geometry\Shaders\Wireframe.fx" />
     <Content Include="FileFormats\Geometry\Shaders\XfGlobal.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

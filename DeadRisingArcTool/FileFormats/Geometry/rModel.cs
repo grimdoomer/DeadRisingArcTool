@@ -2,6 +2,7 @@
 using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+using DeadRisingArcTool.Utilities;
 using IO;
 using SharpDX;
 using SharpDX.Direct3D11;
@@ -12,6 +13,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Buffer = SharpDX.Direct3D11.Buffer;
+using BoundingSphere = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingSphere;
+using System.Collections;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
@@ -87,13 +90,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     // sizeof = 0xD0
     public struct Material
     {
+        [Hex]
         /* 0x00 */ public byte Flags;
         /* 0x01 */ public byte Unk1;
         /* 0x02 */ public byte Unk2;
         /* 0x03 */ public byte Unk3;
 	    /* 0x04 */ public int Unk4;
+        [Hex]
 	    /* 0x08 */ public int Unk9;
         /* 0x0C */ public int Unk5;
+        [Hex]
         /* 0x10 */ public int Unk6;
         /* 0x14 */ public int Unk7;
         /* 0x18 */ public int Unk8;
@@ -116,8 +122,33 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x5C */ // padding
 	    /* 0x60 */ public int TextureIndex9;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x64 */ // padding
-	
-	    // a bunch of floats
+        /* 0x68 */ public float Unk10;
+        [Hex]
+        /* 0x6C */ public int Unk11;
+        /* 0x70 */ public float Unk12;
+        /* 0x74 */ public float Unk13;
+        /* 0x78 */ public float Unk14;
+        /* 0x7C */ public float Unk15;
+        /* 0x80 */ public float Unk16;
+        /* 0x84 */ public float Unk17;
+        /* 0x88 */ public float Unk18;
+        /* 0x8C */ public float Unk19;
+        /* 0x90 */ public float Unk20;
+        /* 0x94 */ public float Unk21;
+        /* 0x98 */ public float Unk22;
+        /* 0x9C */ public float Unk23;
+        /* 0xA0 */ public float Unk24;
+        /* 0xA4 */ public float Unk25;
+        /* 0xA8 */ public float Unk26;
+        /* 0xAC */ public float Unk27;
+        /* 0xB0 */ public float Unk28;
+        /* 0xB4 */ public float Unk29;
+        /* 0xB8 */ public float Unk30;
+        /* 0xBC */ public float Unk31;
+        /* 0xC0 */ public float Unk32;
+        /* 0xC4 */ public float Unk33;
+        /* 0xC8 */ public float Unk34;
+        /* 0xCC */ public float Unk35;
     }
 
     // sizeof = 0x50
@@ -180,6 +211,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private rTexture[] gameTextures = null;
         private Texture2D[] dxTextures = null;
         private ShaderResourceView[] shaderResources = null;
+
+        // Bone related data.
+        private BoundingSphere[] jointBoundingSpheres;
+        private Texture2D boneMapMatrix;
+        private ShaderResourceView boneMapMatrixShaderView;
 
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
@@ -345,8 +381,32 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     reader.BaseStream.Position += 4;
                     model.materials[i].TextureIndex9 = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
-
-                    reader.BaseStream.Position += 0x68;
+                    model.materials[i].Unk10 = reader.ReadSingle();
+                    model.materials[i].Unk11 = reader.ReadInt32();
+                    model.materials[i].Unk12 = reader.ReadSingle();
+                    model.materials[i].Unk13 = reader.ReadSingle();
+                    model.materials[i].Unk14 = reader.ReadSingle();
+                    model.materials[i].Unk15 = reader.ReadSingle();
+                    model.materials[i].Unk16 = reader.ReadSingle();
+                    model.materials[i].Unk17 = reader.ReadSingle();
+                    model.materials[i].Unk18 = reader.ReadSingle();
+                    model.materials[i].Unk19 = reader.ReadSingle();
+                    model.materials[i].Unk20 = reader.ReadSingle();
+                    model.materials[i].Unk21 = reader.ReadSingle();
+                    model.materials[i].Unk22 = reader.ReadSingle();
+                    model.materials[i].Unk23 = reader.ReadSingle();
+                    model.materials[i].Unk24 = reader.ReadSingle();
+                    model.materials[i].Unk25 = reader.ReadSingle();
+                    model.materials[i].Unk26 = reader.ReadSingle();
+                    model.materials[i].Unk27 = reader.ReadSingle();
+                    model.materials[i].Unk28 = reader.ReadSingle();
+                    model.materials[i].Unk29 = reader.ReadSingle();
+                    model.materials[i].Unk30 = reader.ReadSingle();
+                    model.materials[i].Unk31 = reader.ReadSingle();
+                    model.materials[i].Unk32 = reader.ReadSingle();
+                    model.materials[i].Unk33 = reader.ReadSingle();
+                    model.materials[i].Unk34 = reader.ReadSingle();
+                    model.materials[i].Unk35 = reader.ReadSingle();
                 }
             }
 
@@ -414,6 +474,24 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
             // Return the model object.
             return model;
+        }
+
+        private Vector3 GetJointPosition(int index)
+        {
+            // Check if the joint has a parent and calculate the correct position.
+            if (this.joints[index].ParentIndex != 255)
+                return this.joints[index].Offset + GetJointPosition(this.joints[index].ParentIndex);
+            else
+                return this.joints[index].Offset;
+        }
+
+        private Matrix GetJointTransformation(int index)
+        {
+            // Check if this joint has a parent and caclulate the correct transformation matric.
+            if (this.joints[index].ParentIndex != 255)
+                return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation) * GetJointTransformation(this.joints[index].ParentIndex);
+            else
+                return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation);
         }
 
         #region IRenderable
@@ -490,6 +568,75 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
             this.transparencyBlendState = new BlendState(device, blendDesc);
 
+            // Compute the width of the matrix map to the next highest power of 2.
+            int matrixMapWidth = NextPowerOfTwo(this.joints.Length);
+
+            // Allocate arrays for joint data.
+            this.jointBoundingSpheres = new BoundingSphere[this.joints.Length];
+            Color4[] boneMatrixData = new Color4[matrixMapWidth * 4];
+
+            // Check if there is an animation loaded.
+            if (manager.GetMotionList() != null)
+            {
+                // Get the loaded animation.
+                rMotionList animation = manager.GetMotionList();
+
+                // Check if the first keyframe of the first animation is the type we are expecting.
+                if (animation.animations[0].KeyFrames.Length > 0 && animation.animations[0].KeyFrames[0].Codec == 2 && animation.animations[0].KeyFrames[0].Usage == 4)
+                {
+                    // Compute the animation matrix.
+                    //Matrix animMatrix = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component * DirectXExtensions.MatrixFromVectors(this.jointTranslations[0].Translation).TranslationVector;
+
+                    // Set the translation matrix for the root bone to the rest position.
+                    this.jointTranslations[0].Translation[3].X = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component.X;
+                    this.jointTranslations[0].Translation[3].Y = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component.Y;
+                    this.jointTranslations[0].Translation[3].Z = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component.Z;
+                }
+                else
+                {
+
+                }
+            }
+
+            // Loop through all the joints and initialize resources for each one.
+            for (int i = 0; i < this.joints.Length; i++)
+            {
+                // Create the bounding sphere for the current joint.
+                this.jointBoundingSpheres[i] = new BoundingSphere(GetJointPosition(i), this.joints[i].Length, new Color4(0xFF00FF00));
+                if (this.jointBoundingSpheres[i].InitializeGraphics(manager, device) == false)
+                {
+                    // Failed to initialize graphics for bounding sphere.
+                    return false;
+                }
+
+                // Copy the translation matrix into the bone matrix buffer.
+                Matrix jointMatrix = Matrix.Identity;// GetJointTransformation(this.joints[i].Index);
+                boneMatrixData[i * 4] = new Color4(jointMatrix.Column1);
+                boneMatrixData[i * 4 + 1] = new Color4(jointMatrix.Column2);
+                boneMatrixData[i * 4 + 2] = new Color4(jointMatrix.Column3);
+                boneMatrixData[i * 4 + 3] = new Color4(jointMatrix.Column4);
+            }
+
+            {
+                // Setup the bone map matrix bitmap description, we want a 1x(joint count * 4) image to hold the matrices.
+                Texture2DDescription desc = new Texture2DDescription();
+                desc.Width = matrixMapWidth * 4;
+                desc.Height = 1;
+                desc.ArraySize = 1;
+                desc.BindFlags = BindFlags.ShaderResource;
+                desc.Usage = ResourceUsage.Default;
+                desc.SampleDescription.Count = 1;
+                desc.Format = SharpDX.DXGI.Format.R32G32B32A32_Float;
+                desc.MipLevels = 1;
+
+                // Create the texture and update it's pixel buffer with the matrix data.
+                this.boneMapMatrix = new Texture2D(device, desc);
+                device.ImmediateContext.UpdateSubresource(boneMatrixData, this.boneMapMatrix, rowPitch:16 * 4);
+
+                // Create the shader resource view that will bind this texture.
+                this.boneMapMatrixShaderView = new ShaderResourceView(device, this.boneMapMatrix);
+            }
+
             // Successfully initialized.
             return true;
         }
@@ -518,34 +665,65 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
 
                 // Setup the vertex shader, pixel shader, sampler states, and vertex declaration.
-                if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 12)
+                if (this.primitives[i].VertexStride1 == 28)
                 {
-                    // Normal mesh shader.
-                    this.shaders[1].DrawFrame(manager, device);
-                }
-                else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 28)
-                {
-                    // Level geometry shader.
-                    this.shaders[2].DrawFrame(manager, device);
-                }
-                else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 0)
-                {
-                    // TODO: I think this is the incorrect vertex declaration...
-                    this.shaders[2].DrawFrame(manager, device);
+                    // Check stream 2 stride and set the shader accordingly.
+                    switch (this.primitives[i].VertexStride2)
+                    {
+                        case 12:
+                            {
+                                // Normal mesh shader.
+                                this.shaders[1].DrawFrame(manager, device);
+                                break;
+                            }
+                        case 0:
+                        case 28:
+                        case 32:
+                            {
+                                // Level geometry shader.
+                                this.shaders[2].DrawFrame(manager, device);
+                                break;
+                            }
+                        default:
+                            {
+                                continue;
+                            }
+                    }
                 }
                 else
                 {
-                    /*
-                     * Most likely this:
-                        POSITION		0	DXGI_FORMAT_R32G32B32_FLOAT		0	0	0	0
-		                COLOR			0	DXGI_FORMAT_B8G8R8A8_UNORM		0	12	0	0
-		                TEXCOORD		0	DXGI_FORMAT_R16G16B16A16_SNORM	0	16	0	0
-		                TEXCOORD		1	DXGI_FORMAT_R8G8B8A8_UINT		0	24	0	0
-		                TEXCOORD		2	DXGI_FORMAT_R8G8B8A8_UINT		0	28	0	0
-                     * 
-                     */
                     continue;
                 }
+
+                //// Setup the vertex shader, pixel shader, sampler states, and vertex declaration.
+                //if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 12)
+                //{
+                //    // Normal mesh shader.
+                //    this.shaders[1].DrawFrame(manager, device);
+                //}
+                //else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 28)
+                //{
+                //    // Level geometry shader.
+                //    this.shaders[2].DrawFrame(manager, device);
+                //}
+                //else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 0)
+                //{
+                //    // TODO: I think this is the incorrect vertex declaration...
+                //    this.shaders[2].DrawFrame(manager, device);
+                //}
+                //else
+                //{
+                //    /*
+                //     * Most likely this:
+                //        POSITION		0	DXGI_FORMAT_R32G32B32_FLOAT		0	0	0	0
+		              //  COLOR			0	DXGI_FORMAT_B8G8R8A8_UNORM		0	12	0	0
+		              //  TEXCOORD		0	DXGI_FORMAT_R16G16B16A16_SNORM	0	16	0	0
+		              //  TEXCOORD		1	DXGI_FORMAT_R8G8B8A8_UINT		0	24	0	0
+		              //  TEXCOORD		2	DXGI_FORMAT_R8G8B8A8_UINT		0	28	0	0
+                //     * 
+                //     */
+                //    continue;
+                //}
 
                 // Get the material for the primitive.
                 Material material = this.materials[this.primitives[i].MaterialIndex];
@@ -553,8 +731,21 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 // Set the textures being used by the material.
                 device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.BaseMapTexture]);
 
+                // Set the bone map matrix data.
+                float matrixUnitSize = 1.0f / (float)NextPowerOfTwo(this.joints.Length);
+                float matrixRowSize = matrixUnitSize / 4.0f;
+                manager.SetMatrixMapFactor(new Vector4(0.0f, 0.0f, matrixUnitSize, matrixRowSize));
+                device.ImmediateContext.VertexShader.SetShaderResource(0, this.boneMapMatrixShaderView);
+
                 // Draw the primtive.
                 device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
+            }
+
+            // Loop and draw bounding sphere for all the joints in the mesh.
+            for (int i = 0; i < this.jointBoundingSpheres.Length; i++)
+            {
+                // Draw the bounding sphere.
+                this.jointBoundingSpheres[i].DrawFrame(manager, device);
             }
 
             // Done rendering.
@@ -567,5 +758,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         }
 
         #endregion
+
+        private static int NextPowerOfTwo(int value)
+        {
+            int msb = 0;
+
+            // Get the highest bit set in the value.
+            for (int i = 0; i < 31; i++)
+            {
+                if ((value & (1 << i)) != 0 && i > msb)
+                    msb = i;
+            }
+
+            // Return the next highest power of 2.
+            return 1 << (msb + 1);
+        }
     }
 }

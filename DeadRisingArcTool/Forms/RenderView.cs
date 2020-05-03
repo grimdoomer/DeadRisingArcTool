@@ -50,6 +50,8 @@ namespace DeadRisingArcTool.Forms
         // Dictionary of file names to loaded IRenderable
         Dictionary<string, GameResource> loadedResources = new Dictionary<string, GameResource>();
 
+        rMotionList modelAnimation = null;
+
         // DirectX interfaces for rendering.
         SharpDX.Direct3D11.Device device = null;
         SwapChain swapChain = null;
@@ -168,6 +170,19 @@ namespace DeadRisingArcTool.Forms
             return this.shaderCollection.GetShader(type);
         }
 
+        public void SetMatrixMapFactor(Vector4 vec)
+        {
+            this.shaderConsts.gXfMatrixMapFactor = vec;
+
+            // Update the shader constants buffer with the new data.
+            this.device.ImmediateContext.UpdateSubresource(ref this.shaderConsts, this.shaderConstantBuffer);
+        }
+
+        public rMotionList GetMotionList()
+        {
+            return this.modelAnimation;
+        }
+
         #endregion
 
         private void InitializeD3D()
@@ -229,6 +244,18 @@ namespace DeadRisingArcTool.Forms
 
         private void InitializeModelData()
         {
+            // Check if this model is an npc, and if so jankload the animation for it.
+            if (this.renderDatums.Length == 1 &&
+                ArcFileCollection.Instance.ArcFiles[this.renderDatums[0].ArcIndex].FileEntries[this.renderDatums[0].FileIndex].FileName.Contains("npc") == true)
+            {
+                ArcFile arcFile;
+                ArcFileEntry fileEntry;
+
+                ArcFileCollection.Instance.GetArcFileEntryFromFileName("motion\\npc\\npc40\\npc4000\\npc4000.rMotionList", out arcFile, out fileEntry);
+
+                this.modelAnimation = arcFile.GetArcFileAsResource<rMotionList>(fileEntry.FileName);
+            }
+
             // Loop through all of the datums to render and setup each one for rendering.
             this.resourcesToRender = new GameResource[this.renderDatums.Length];
             for (int i = 0; i < this.renderDatums.Length; i++)
@@ -297,7 +324,7 @@ namespace DeadRisingArcTool.Forms
 
             // The pixel shader constants do not change between primtive draw calls, update them now.
             this.shaderConsts.gXfViewProj = Matrix.Transpose(this.worldGround * this.camera.ViewMatrix * this.projectionMatrix);
-            this.shaderConsts.gXfMatrixMapFactor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+            //this.shaderConsts.gXfMatrixMapFactor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
             // Loop through all of the resources to render and draw each one.
             for (int i = 0; i < this.resourcesToRender.Length; i++)
