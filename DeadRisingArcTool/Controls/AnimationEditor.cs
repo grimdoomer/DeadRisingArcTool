@@ -46,15 +46,15 @@ namespace DeadRisingArcTool.Controls
                 {
                     animationDesc += string.Format("\tKey Frame {0}:\tBufferType={1}\tUsage={2}\t\tJointType={3}\tJointIndex={4}\tWeight={5}\t\tDataSize={6}\tDataOffset={7}\n",
                         x, motion.animations[i].KeyFrames[x].Codec, motion.animations[i].KeyFrames[x].Usage, motion.animations[i].KeyFrames[x].JointType,
-                        motion.animations[i].KeyFrames[x].JointIndex, motion.animations[i].KeyFrames[x].Weight, motion.animations[i].KeyFrames[x].DataSize,
+                        motion.animations[i].KeyFrames[x].JointIndex, motion.animations[i].KeyFrames[x].BlendWeight, motion.animations[i].KeyFrames[x].DataSize,
                         motion.animations[i].KeyFrames[x].DataOffset);
 
-                    for (int z = 0; z < motion.animations[i].KeyFrames[x].KeyFrameData.Length; z++)
-                    {
-                        animationDesc += string.Format("\t\tComponent= X={0}\tY={1}\tZ={2}\t\tFlags={3}\n", motion.animations[i].KeyFrames[x].KeyFrameData[z].Component.X,
-                            motion.animations[i].KeyFrames[x].KeyFrameData[z].Component.Y, motion.animations[i].KeyFrames[x].KeyFrameData[z].Component.Z,
-                            motion.animations[i].KeyFrames[x].KeyFrameData[z].Flags);
-                    }
+                    //for (int z = 0; z < motion.animations[i].KeyFrames[x].KeyFrameData.Length; z++)
+                    //{
+                    //    animationDesc += string.Format("\t\tComponent= X={0}\tY={1}\tZ={2}\t\tFlags={3}\n", motion.animations[i].KeyFrames[x].KeyFrameData[z].Component.X,
+                    //        motion.animations[i].KeyFrames[x].KeyFrameData[z].Component.Y, motion.animations[i].KeyFrames[x].KeyFrameData[z].Component.Z,
+                    //        motion.animations[i].KeyFrames[x].KeyFrameData[z].Flags);
+                    //}
                 }
 
                 animationDesc += "\n";

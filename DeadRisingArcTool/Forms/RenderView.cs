@@ -41,6 +41,23 @@ namespace DeadRisingArcTool.Forms
         public Vector4 gXfQuantPosOffset;
     }
 
+    public class RenderTime
+    {
+        // Global timing data:
+        public long LastTickCount;                  // Tick count from the last frame
+        public long CurrentTickCount;               // Tick count for the current frame
+        public float TimeDelta;                     // Time that has elapsed since the previous frame
+
+        // Animation timing data:
+        public int SelectedAnimation;               // Index of the animation that is currently playing
+        public float AnimationFrameRate;            // Playback rate of the animation i.e.: 10fps
+        public float AnimationTimePerFrame;         // Time per frame of the animation
+        public float AnimationTotalTime;            // Total time the animation will take to complete
+        public float AnimationCurrentTime;          // Time of the current position in animation playback
+        public float AnimationFrameCount;           // Number of frames in the animation
+        public float AnimationCurrentFrame;         // Frame number of the current position in animation playback
+    }
+
     public partial class RenderView : Form, IRenderManager
     {
         // List of game resources to render.
@@ -74,6 +91,9 @@ namespace DeadRisingArcTool.Forms
         ShaderConstants shaderConsts = new ShaderConstants();
         SharpDX.Direct3D11.Buffer shaderConstantBuffer = null;
 
+        // Timing values used for animating meshes.
+        RenderTime renderTime = new RenderTime();
+
         bool isClosing = false;         // Indicates if we should quit the render loop
         bool hasResized = false;        // Indicates if the form has changed size
 
@@ -96,6 +116,9 @@ namespace DeadRisingArcTool.Forms
 
             // Create the rendering buffers from the model data.
             InitializeModelData();
+
+            // Initialize time for the previous frame.
+            this.renderTime.CurrentTickCount = DateTime.Now.Ticks;
 
             // Show the form and enter the render loop.
             while (this.isClosing == false && this.IsDisposed == false)
@@ -183,6 +206,11 @@ namespace DeadRisingArcTool.Forms
             return this.modelAnimation;
         }
 
+        public RenderTime GetTime()
+        {
+            return this.renderTime;
+        }
+
         #endregion
 
         private void InitializeD3D()
@@ -245,15 +273,21 @@ namespace DeadRisingArcTool.Forms
         private void InitializeModelData()
         {
             // Check if this model is an npc, and if so jankload the animation for it.
-            if (this.renderDatums.Length == 1 &&
-                ArcFileCollection.Instance.ArcFiles[this.renderDatums[0].ArcIndex].FileEntries[this.renderDatums[0].FileIndex].FileName.Contains("npc") == true)
+            if (this.renderDatums.Length == 1)// &&
+            //    ArcFileCollection.Instance.ArcFiles[this.renderDatums[0].ArcIndex].FileEntries[this.renderDatums[0].FileIndex].FileName.Contains("npc") == true)
             {
                 ArcFile arcFile;
                 ArcFileEntry fileEntry;
 
-                ArcFileCollection.Instance.GetArcFileEntryFromFileName("motion\\npc\\npc40\\npc4000\\npc4000.rMotionList", out arcFile, out fileEntry);
+                ArcFileCollection.Instance.GetArcFileEntryFromDatum(this.renderDatums[0], out arcFile, out fileEntry);
 
-                this.modelAnimation = arcFile.GetArcFileAsResource<rMotionList>(fileEntry.FileName);
+                string animationFileName = fileEntry.FileName.Replace("rModel", "rMotionList").Replace("model", "motion");
+                ArcFileCollection.Instance.GetArcFileEntryFromFileName(animationFileName, out arcFile, out fileEntry);
+
+                if (fileEntry != null)
+                    this.modelAnimation = arcFile.GetArcFileAsResource<rMotionList>(fileEntry.FileName);
+
+                // Setup time constants for the animation we will be playing.
             }
 
             // Loop through all of the datums to render and setup each one for rendering.
@@ -290,6 +324,11 @@ namespace DeadRisingArcTool.Forms
 
         private void Render()
         {
+            // Update the time from the previous frame to the current frame.
+            this.renderTime.LastTickCount = this.renderTime.CurrentTickCount;
+            this.renderTime.CurrentTickCount = DateTime.Now.Ticks;
+            this.renderTime.TimeDelta = (float)(this.renderTime.CurrentTickCount - this.renderTime.LastTickCount) / (float)TimeSpan.TicksPerSecond;
+
             // If the form is not visible do not render anything.
             if (this.Visible == false)
                 return;
@@ -324,7 +363,6 @@ namespace DeadRisingArcTool.Forms
 
             // The pixel shader constants do not change between primtive draw calls, update them now.
             this.shaderConsts.gXfViewProj = Matrix.Transpose(this.worldGround * this.camera.ViewMatrix * this.projectionMatrix);
-            //this.shaderConsts.gXfMatrixMapFactor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
             // Loop through all of the resources to render and draw each one.
             for (int i = 0; i < this.resourcesToRender.Length; i++)

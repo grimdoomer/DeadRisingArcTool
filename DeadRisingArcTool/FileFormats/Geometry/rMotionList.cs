@@ -36,6 +36,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x18 */ public int Unk2;
         /* 0x1C */ public int Unk3;
         /* 0x20 */ public Vector4 Translation;
+
+        // This is a struct:
         /* 0x30 */ public int Unk4;
         /* 0x34 */ public int Unk5;
         /* 0x38 */ public int Unk6;
@@ -54,24 +56,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x6C */ public int Unk19;
         /* 0x70 */ public int Count1;
         /* 0x74 */ // padding
-        /* 0x78 */ public int Offset1;      // Entries are 8 bytes, 1 float 1 dword
+        /* 0x78 */ public int Offset1;      // SequenceInfo array, see sub_1406B2B40
         /* 0x7C */ // padding
-        /* 0x80 */ public int Unk20;
-        /* 0x84 */ public int Unk21;
-        /* 0x88 */ public int Unk22;
-        /* 0x8C */ public int Unk23;
-        /* 0x90 */ public int Unk24;
-        /* 0x94 */ public int Unk25;
-        /* 0x98 */ public int Unk26;
-        /* 0x9C */ public int Unk27;
-        /* 0xA0 */ public int Unk28;
-        /* 0xA4 */ public int Unk29;
-        /* 0xA8 */ public int Unk30;
-        /* 0xAC */ public int Unk31;
-        /* 0xB0 */ public int Unk32;
-        /* 0xB4 */ public int Unk33;
-        /* 0xB8 */ public int Unk34;
-        /* 0xBC */ public int Unk35;
+
+        /* 0x80 */ public float Unk20;
+        /* 0x84 */ public float Unk21;
+        /* 0x88 */ public float Unk22;
+        /* 0x8C */ public float Unk23;
+        /* 0x90 */ public float Unk24;
+        /* 0x94 */ public float Unk25;
+        /* 0x98 */ public float Unk26;
+        /* 0x9C */ public float Unk27;
+        /* 0xA0 */ public float Unk28;
+        /* 0xA4 */ public float Unk29;
+        /* 0xA8 */ public float Unk30;
+        /* 0xAC */ public float Unk31;
+        /* 0xB0 */ public float Unk32;
+        /* 0xB4 */ public float Unk33;
+        /* 0xB8 */ public float Unk34;
+        /* 0xBC */ public float Unk35;
         /* 0xC0 */ public int Count2;
         /* 0xC4 */ // paddinh
         /* 0xC8 */ public int Offset2;
@@ -96,10 +99,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry
          */
 
         /* 0x00 */ public byte Codec;
-        /* 0x01 */ public byte Usage; //?
+        /* 0x01 */ public byte Usage;
         /* 0x02 */ public byte JointType;
         /* 0x03 */ public byte JointIndex;
-        /* 0x04 */ public float Weight; //?
+        /* 0x04 */ public float BlendWeight;
         /* 0x08 */ public int DataSize;
         /* 0x0C */ // padding
         /* 0x10 */ public int DataOffset;
@@ -108,10 +111,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         public KeyFrameData[] KeyFrameData;
     }
 
+    // sizeof = 8
+    public struct SequenceInfo
+    {
+        /* 0x00 */ public float Sequence;
+        /* 0x04 */ public int Length;   // In frames
+    }
+
     public struct KeyFrameData
     {
-        public Vector3 Component;
-        public int Flags;
+        public Vector4 Component;
+        public float Scalar;
+        public byte Flags;
+        public int Duration;
     }
 
     [GameResourceParser(ResourceType.rMotionList)]
@@ -203,22 +215,22 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 reader.BaseStream.Position += 4;
                 motion.animations[i].Offset1 = reader.ReadInt32();
                 reader.BaseStream.Position += 4;
-                motion.animations[i].Unk20 = reader.ReadInt32();
-                motion.animations[i].Unk21 = reader.ReadInt32();
-                motion.animations[i].Unk22 = reader.ReadInt32();
-                motion.animations[i].Unk23 = reader.ReadInt32();
-                motion.animations[i].Unk24 = reader.ReadInt32();
-                motion.animations[i].Unk25 = reader.ReadInt32();
-                motion.animations[i].Unk26 = reader.ReadInt32();
-                motion.animations[i].Unk27 = reader.ReadInt32();
-                motion.animations[i].Unk28 = reader.ReadInt32();
-                motion.animations[i].Unk29 = reader.ReadInt32();
-                motion.animations[i].Unk30 = reader.ReadInt32();
-                motion.animations[i].Unk31 = reader.ReadInt32();
-                motion.animations[i].Unk32 = reader.ReadInt32();
-                motion.animations[i].Unk33 = reader.ReadInt32();
-                motion.animations[i].Unk34 = reader.ReadInt32();
-                motion.animations[i].Unk35 = reader.ReadInt32();
+                motion.animations[i].Unk20 = reader.ReadSingle();
+                motion.animations[i].Unk21 = reader.ReadSingle();
+                motion.animations[i].Unk22 = reader.ReadSingle();
+                motion.animations[i].Unk23 = reader.ReadSingle();
+                motion.animations[i].Unk24 = reader.ReadSingle();
+                motion.animations[i].Unk25 = reader.ReadSingle();
+                motion.animations[i].Unk26 = reader.ReadSingle();
+                motion.animations[i].Unk27 = reader.ReadSingle();
+                motion.animations[i].Unk28 = reader.ReadSingle();
+                motion.animations[i].Unk29 = reader.ReadSingle();
+                motion.animations[i].Unk30 = reader.ReadSingle();
+                motion.animations[i].Unk31 = reader.ReadSingle();
+                motion.animations[i].Unk32 = reader.ReadSingle();
+                motion.animations[i].Unk33 = reader.ReadSingle();
+                motion.animations[i].Unk34 = reader.ReadSingle();
+                motion.animations[i].Unk35 = reader.ReadSingle();
                 motion.animations[i].Count2 = reader.ReadInt32();
                 reader.BaseStream.Position += 4;
                 motion.animations[i].Offset2 = reader.ReadInt32();
@@ -233,7 +245,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     motion.animations[i].KeyFrames[x].Usage = reader.ReadByte();
                     motion.animations[i].KeyFrames[x].JointType = reader.ReadByte();
                     motion.animations[i].KeyFrames[x].JointIndex = reader.ReadByte();
-                    motion.animations[i].KeyFrames[x].Weight = reader.ReadSingle();
+                    motion.animations[i].KeyFrames[x].BlendWeight = reader.ReadSingle();
                     motion.animations[i].KeyFrames[x].DataSize = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
                     motion.animations[i].KeyFrames[x].DataOffset = reader.ReadInt32();
@@ -254,20 +266,47 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                         switch (motion.animations[i].KeyFrames[x].Codec)
                         {
                             case 1:
-                            case 2: // Uncompressed vector3
+                            case 2:// Uncompressed vector3
                                 {
-                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Component = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Component = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), 0.0f);
                                     break;
                                 }
-                            case 6: // compressed vector3: 17bits per component + flags
+                            case 3: // Uncompressed vector3 w/ scale
+                                {
+                                    float a = reader.ReadSingle();
+                                    float b = reader.ReadSingle();
+                                    float c = reader.ReadSingle();
+
+                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Component = new Vector4(a, b, c, (float)Math.Sqrt((a * a) + (b * b) + (c * c)));
+                                    break;
+                                }
+                            case 4: // Uncompressed Vector3 w/ scale
+                                {
+                                    float a = reader.ReadSingle();
+                                    float b = reader.ReadSingle();
+                                    float c = reader.ReadSingle();
+                                    float scale = 1 - ((a * a) + (b * b) + (c * c));
+
+                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Component = new Vector4(a, b, c, (float)Math.Sqrt(scale > 0.0f ? scale : 0.0f));
+                                    break;
+                                }
+                            case 6: // compressed vector3: 17/17/19 bit compressed vector3 + flags + duration
                                 {
                                     long compressedVec = reader.ReadInt64();
-                                    float a = (float)(compressedVec & 0x1FFFF) * 0.000011984317095849380111694336f;
-                                    float b = (float)((compressedVec >> 17) & 0x1FFFF) * 0.000011984317095849380111694336f;
-                                    float c = (float)((compressedVec >> 34) & 0x1FFFF) * 0.000011984317095849380111694336f;
+                                    float a = (float)(compressedVec & 0x1FFFF) * 0.000011984317f;
+                                    float b = (float)((compressedVec >> 17) & 0x1FFFF) * 0.000011984317f;
+                                    float c = (float)((compressedVec >> 34) & 0x7FFFF) * 0.0000019073523f;
 
-                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Component = new Vector3(a, b, c);
-                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Flags = (int)((compressedVec >> 51) & 0x1FFF);
+                                    // Note: I don't think this condition can exist since we mask 17 or 19 bits but
+                                    // test the entire 64bit register.
+                                    // If any of the packed values were negative recompute them.
+                                    //if ((compressedVec & 0x1FFFF) < 0)
+                                    //    a = ((compressedVec & 0x1FFFF) + 0.000011984317f) * 0.000011984317f;
+
+                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Component = new Vector4(a, b, a - 1.5707964f, b - 1.5707964f);
+                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Scalar = c;
+                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Flags = (byte)((compressedVec >> 53) & 7);
+                                    motion.animations[i].KeyFrames[x].KeyFrameData[z].Duration = (byte)((compressedVec >> 56) & 0xFF);
                                     break;
                                 }
                             default:
@@ -294,7 +333,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             switch (codec)
             {
                 case 1:
-                case 2: return 12;
+                case 2:
+                case 3:
+                case 4: return 12;
                 case 6: return 8;
                 default: return 0;
             }

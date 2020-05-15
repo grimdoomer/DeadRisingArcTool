@@ -36,5 +36,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         void SetMatrixMapFactor(Vector4 vec);
 
         rMotionList GetMotionList();
+
+        RenderTime GetTime();
     }
 }

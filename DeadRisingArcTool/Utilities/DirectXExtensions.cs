@@ -14,6 +14,21 @@ namespace DeadRisingArcTool.Utilities
             return new Vector3(vector.X, vector.Y, vector.Z);
         }
 
+        public static Vector4 ToVector4(this Quaternion quat)
+        {
+            return new Vector4(quat.X, quat.Y, quat.Z, quat.W);
+        }
+
+        public static Quaternion ToQuaternion(this Vector4 vector)
+        {
+            return new Quaternion(vector);
+        }
+
+        public static Vector4 SinEst(this Vector4 vector)
+        {
+            return new Vector4((float)Math.Sin(vector.X), (float)Math.Sin(vector.Y), (float)Math.Sin(vector.Z), (float)Math.Sin(vector.W));
+        }
+
         public static Matrix MatrixFromVectors(Vector4[] vectors)
         {
             return new Matrix(vectors[0].X, vectors[0].Y, vectors[0].Z, vectors[0].W,

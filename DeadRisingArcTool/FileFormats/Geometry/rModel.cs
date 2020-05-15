@@ -52,15 +52,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x4C */ // padding
         /* 0x50 */ public int IndiceDataOffset;
         /* 0x54 */ // padding
-        /* 0x58 */
-        /* 0x5C */
+        /* 0x58 */ // LOD?
+        /* 0x5C */ // int boundary joint number?
         /* 0x60 */ // vec3 bounding box sphere position?
-        /* 0x6C */ // float bounding box sphere radius?
+        /* 0x6C */ public float BoundaryRadius;
         /* 0x70 */ public Vector4 BoundingBoxMin;
         /* 0x80 */ public Vector4 BoundingBoxMax;
-        /* 0x90 */
-        /* 0x94 */ // used by something in code
-        /* 0x98 */
+        /* 0x90 */ public int MidDist;
+        /* 0x94 */ public int LowDist;
+        /* 0x98 */ public int LightGroup;
         /* 0x9C */
         /* 0x9D */ // padding
     }
@@ -76,15 +76,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     }
 
     // sizeof = 0x40
-    public struct JointTranslation
+    public struct BoneMatrix
     {
-        /* 0x00 */ public Vector4[] Translation;
-    }
-
-    // sizeof = 0x40
-    public struct JointData3
-    {
-        /* 0x00 */ public Vector4[] Unknown;
+        /* 0x00 */ public Matrix SRTMatrix;
     }
 
     // sizeof = 0xD0
@@ -122,29 +116,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x5C */ // padding
 	    /* 0x60 */ public int TextureIndex9;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x64 */ // padding
-        /* 0x68 */ public float Unk10;
+        /* 0x68 */ public float Transparency;
         [Hex]
         /* 0x6C */ public int Unk11;
-        /* 0x70 */ public float Unk12;
-        /* 0x74 */ public float Unk13;
-        /* 0x78 */ public float Unk14;
-        /* 0x7C */ public float Unk15;
-        /* 0x80 */ public float Unk16;
-        /* 0x84 */ public float Unk17;
-        /* 0x88 */ public float Unk18;
-        /* 0x8C */ public float Unk19;
-        /* 0x90 */ public float Unk20;
-        /* 0x94 */ public float Unk21;
+        /* 0x70 */ public float FresnelFactor;
+        /* 0x74 */ public float FresnelBias;
+        /* 0x78 */ public float SpecularPow;
+        /* 0x7C */ public float EnvmapPower;
+        /* 0x80 */ public Vector4 LightMapScale;
+        /* 0x90 */ public float DetailFactor;
+        /* 0x94 */ public float DetailWrap;
         /* 0x98 */ public float Unk22;
         /* 0x9C */ public float Unk23;
-        /* 0xA0 */ public float Unk24;
-        /* 0xA4 */ public float Unk25;
-        /* 0xA8 */ public float Unk26;
-        /* 0xAC */ public float Unk27;
-        /* 0xB0 */ public float Unk28;
-        /* 0xB4 */ public float Unk29;
-        /* 0xB8 */ public float Unk30;
-        /* 0xBC */ public float Unk31;
+        /* 0xA0 */ public Vector4 Transmit;
+        /* 0xB0 */ public Vector4 Parallax;
         /* 0xC0 */ public float Unk32;
         /* 0xC4 */ public float Unk33;
         /* 0xC8 */ public float Unk34;
@@ -154,10 +139,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     // sizeof = 0x50
     public struct Primitive
     {
-        /* 0x00 */ public short Unk1; // joint number mb?
+        /* 0x00 */ public short Unk1;
 	    /* 0x02 */ public short	MaterialIndex;
 	    /* 0x04 */ public byte Enabled;
-	    /* 0x05 */ public byte Unk3; // LOD?
+	    /* 0x05 */ public byte Unk3;
 	    /* 0x06 */ public byte Unk11;
         /* 0x07 */ public byte Unk12;
 	    /* 0x08 */ public byte VertexStride1;
@@ -176,6 +161,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x40 */ public Vector4 Unk10;
     }
 
+    public struct AnimatedJoint
+    {
+        public int JointNumber;
+        public int ParentIndex;
+
+        public float Length;
+        public int Type;
+
+        public Vector4 Translation;
+        public Vector4 Rotation;
+        public Vector4 Scale;
+
+        public Vector4 InterpolatedTranslation;
+        public Vector4 InterpolatedRotation;
+        public Vector4 InterpolatedScale;
+
+        public Matrix SRTMatrix;
+    }
+
     [GameResourceParser(ResourceType.rModel)]
     public class rModel : GameResource
     {
@@ -183,8 +187,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
         // Joint data is broken into 3 parts per joint.
         public Joint[] joints;
-        public JointTranslation[] jointTranslations;
-        public JointData3[] jointData3;
+        public BoneMatrix[] jointTranslations;  // ToBone matrix?
+        public BoneMatrix[] jointData3;         // ToParent matrix?
 
         // List of texture files names.
         public string[] textureFileNames;
@@ -214,8 +218,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
         // Bone related data.
         private BoundingSphere[] jointBoundingSpheres;
+        private Color4[] boneMatrixData;
         private Texture2D boneMapMatrix;
         private ShaderResourceView boneMapMatrixShaderView;
+
+        // Animation skeleton data.
+        private Vector4 baseTranslation = new Vector4(0.0f);
+        private AnimatedJoint[] animatedJoints;
+
+        private Vector4 modelPosition = new Vector4(0.0f);
+        private Vector4 modelRotation = new Vector4(1.0f, 0.0f, 0.0f, 0.0f);
+        private Vector4 modelScale = new Vector4(1.0f);
 
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
@@ -270,6 +283,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             model.header.BoundingBoxMin = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), 0.0f);
             reader.BaseStream.Position += 4;
             model.header.BoundingBoxMax = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), 0.0f);
+            reader.BaseStream.Position += 8;
+            model.header.LightGroup = reader.ReadInt32();
             reader.BaseStream.Position = rModelHeader.kSizeOf;
 
             // Verify the header magic is correct.
@@ -306,25 +321,28 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 }
 
                 // Allocate and read all of the joint translations.
-                model.jointTranslations = new JointTranslation[model.header.JointCount];
+                model.jointTranslations = new BoneMatrix[model.header.JointCount];
                 for (int i = 0; i < model.header.JointCount; i++)
                 {
                     // Read the joint translation.
-                    model.jointTranslations[i] = new JointTranslation();
-                    model.jointTranslations[i].Translation = new Vector4[4];
-                    for (int x = 0; x < 4; x++)
-                        model.jointTranslations[i].Translation[x] = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                    model.jointTranslations[i] = new BoneMatrix();
+                    model.jointTranslations[i].SRTMatrix = new Matrix(
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                 }
 
                 // Allocate and read all of the joint data 3.
-                model.jointData3 = new JointData3[model.header.JointCount];
+                model.jointData3 = new BoneMatrix[model.header.JointCount];
                 for (int i = 0; i < model.header.JointCount; i++)
                 {
                     // Read data.
-                    model.jointData3[i] = new JointData3();
-                    model.jointData3[i].Unknown = new Vector4[4];
-                    for (int x = 0; x < 4; x++)
-                        model.jointData3[i].Unknown[x] = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                    model.jointData3[i].SRTMatrix = new Matrix(
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                        reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                 }
             }
 
@@ -381,28 +399,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     reader.BaseStream.Position += 4;
                     model.materials[i].TextureIndex9 = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
-                    model.materials[i].Unk10 = reader.ReadSingle();
+                    model.materials[i].Transparency = reader.ReadSingle();
                     model.materials[i].Unk11 = reader.ReadInt32();
-                    model.materials[i].Unk12 = reader.ReadSingle();
-                    model.materials[i].Unk13 = reader.ReadSingle();
-                    model.materials[i].Unk14 = reader.ReadSingle();
-                    model.materials[i].Unk15 = reader.ReadSingle();
-                    model.materials[i].Unk16 = reader.ReadSingle();
-                    model.materials[i].Unk17 = reader.ReadSingle();
-                    model.materials[i].Unk18 = reader.ReadSingle();
-                    model.materials[i].Unk19 = reader.ReadSingle();
-                    model.materials[i].Unk20 = reader.ReadSingle();
-                    model.materials[i].Unk21 = reader.ReadSingle();
+                    model.materials[i].FresnelFactor = reader.ReadSingle();
+                    model.materials[i].FresnelBias = reader.ReadSingle();
+                    model.materials[i].SpecularPow = reader.ReadSingle();
+                    model.materials[i].EnvmapPower = reader.ReadSingle();
+                    model.materials[i].LightMapScale = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                    model.materials[i].DetailFactor = reader.ReadSingle();
+                    model.materials[i].DetailWrap = reader.ReadSingle();
                     model.materials[i].Unk22 = reader.ReadSingle();
                     model.materials[i].Unk23 = reader.ReadSingle();
-                    model.materials[i].Unk24 = reader.ReadSingle();
-                    model.materials[i].Unk25 = reader.ReadSingle();
-                    model.materials[i].Unk26 = reader.ReadSingle();
-                    model.materials[i].Unk27 = reader.ReadSingle();
-                    model.materials[i].Unk28 = reader.ReadSingle();
-                    model.materials[i].Unk29 = reader.ReadSingle();
-                    model.materials[i].Unk30 = reader.ReadSingle();
-                    model.materials[i].Unk31 = reader.ReadSingle();
+                    model.materials[i].Transmit = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                    model.materials[i].Parallax = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                     model.materials[i].Unk32 = reader.ReadSingle();
                     model.materials[i].Unk33 = reader.ReadSingle();
                     model.materials[i].Unk34 = reader.ReadSingle();
@@ -482,16 +491,422 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             if (this.joints[index].ParentIndex != 255)
                 return this.joints[index].Offset + GetJointPosition(this.joints[index].ParentIndex);
             else
-                return this.joints[index].Offset;
+                return this.joints[index].Offset + this.baseTranslation.ToVector3();
         }
 
-        private Matrix GetJointTransformation(int index)
+        //private Matrix GetJointTransformation(int index)
+        //{
+        //    // Check if this joint has a parent and caclulate the correct transformation matric.
+        //    if (this.joints[index].ParentIndex != 255)
+        //        return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation) * GetJointTransformation(this.joints[index].ParentIndex);
+        //    else
+        //        return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation);
+        //}
+
+        private void UpdateAnimationData(IRenderManager manager, Device device, rMotionList animation)
         {
-            // Check if this joint has a parent and caclulate the correct transformation matric.
-            if (this.joints[index].ParentIndex != 255)
-                return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation) * GetJointTransformation(this.joints[index].ParentIndex);
-            else
-                return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation);
+            // Loop and initialize the animation vectors for every joint in the mesh.
+            for (int i = 0; i < this.animatedJoints.Length; i++)
+            {
+                this.animatedJoints[i].InterpolatedRotation = new Vector4(1.0f, 0.0f, 0.0f, 0.0f);
+                this.animatedJoints[i].InterpolatedTranslation = new Vector4(this.animatedJoints[i].Translation.ToVector3(), 0.0f);
+                this.animatedJoints[i].InterpolatedScale = new Vector4(1.0f);
+            }
+
+            // Loop through all the animated joints and update animation data for the current frame.
+            int animIndex = manager.GetTime().SelectedAnimation;
+            for (int i = 0; i < animation.animations[animIndex].JointCount; i++)
+            {
+                // Get the key frame descriptor for the current joint.
+                KeyFrameDescriptor keyFrameDesc = animation.animations[animIndex].KeyFrames[i];
+
+                // Check if we need to set the joint type and translation.
+                if (keyFrameDesc.JointIndex != 255 && keyFrameDesc.JointType != 2 && this.animatedJoints[keyFrameDesc.JointIndex].Type != keyFrameDesc.JointType)
+                {
+                    // Set the joint type and translation.
+                    this.animatedJoints[keyFrameDesc.JointIndex].Type = keyFrameDesc.JointType;
+                    this.animatedJoints[keyFrameDesc.JointIndex].Translation = new Vector4(this.joints[keyFrameDesc.JointType].Offset, 1.0f);
+                }
+
+                // Check the key frame usage and handle accordingly.
+                switch (keyFrameDesc.Usage)
+                {
+                    case 0:
+                        {
+                            // Joint rotation.
+                            this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedRotation = InterpolateKeyFrame(animation, animIndex, i, 
+                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(1.0f, 0.0f, 0.0f, 0.0f));
+                            break;
+                        }
+                    case 1:
+                        {
+                            // Joint translation.
+                            this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedTranslation = InterpolateKeyFrame(animation, animIndex, i,
+                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, 
+                                new Vector4(this.animatedJoints[keyFrameDesc.JointIndex].Translation.ToVector3(), 0.0f));
+                            break;
+                        }
+                    case 2:
+                        {
+                            // Joint scale.
+                            this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedScale = InterpolateKeyFrame(animation, animIndex, i,
+                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(1.0f));
+                            break;
+                        }
+                    case 3:
+                        {
+                            break;
+                        }
+                    case 4:
+                        {
+                            // Root joint translation.
+                            this.baseTranslation = InterpolateKeyFrame(animation, animIndex, i, 
+                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, this.baseTranslation);
+                            break;
+                        }
+                }
+
+                // If this is not the root bone then setup child bone types.
+                if (keyFrameDesc.JointIndex != 255)
+                {
+                    // Check joint type and set child bone types for final vector computations.
+                    switch (keyFrameDesc.JointType - 3)
+                    {
+                        case 0:
+                        case 1:
+                            {
+                                this.animatedJoints[keyFrameDesc.JointIndex + 1].Type = 2;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 2].Type = 19;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 3].Type = 2;
+                                break;
+                            }
+                        case 4:
+                        case 5:
+                        case 6:
+                        case 7:
+                            {
+                                this.animatedJoints[keyFrameDesc.JointIndex + 1].Type = 2;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 2].Type = 19;
+                                break;
+                            }
+                        case 2:
+                        case 3:
+                        case 14:
+                        case 15:
+                        case 18:
+                        case 19:
+                            {
+                                this.animatedJoints[keyFrameDesc.JointIndex + 1].Type = 2;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 2].Type = 20;
+                                break;
+                            }
+                        case 12:
+                        case 13:
+                            {
+                                this.animatedJoints[keyFrameDesc.JointIndex + 1].Type = 2;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 2].Type = 2;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 3].Type = 20;
+                                break;
+                            }
+                        case 8:
+                        case 9:
+                        case 10:
+                        case 11:
+                            {
+                                this.animatedJoints[keyFrameDesc.JointIndex + 1].Type = 2;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 2].Type = 2;
+                                this.animatedJoints[keyFrameDesc.JointIndex + 3].Type = 19;
+                                break;
+                            }
+                    }
+                }
+            }
+
+            // Setup root node animation matrix.
+            Matrix rootNodeMatrix = Matrix.RotationQuaternion(this.modelRotation.ToQuaternion());
+            rootNodeMatrix.Row4 = new Vector4(this.modelPosition.ToVector3(), 1.0f);
+
+            // Loop through all joints and compute the final animation vectors.
+            Vector4 parentJointPosition = new Vector4(0.0f);
+            for (int i = 0; i < this.animatedJoints.Length; i++)
+            {
+                // Check the joint type and handle accordingly.
+                switch (this.animatedJoints[i].Type)
+                {
+                    case 5:
+                    case 6:
+                    case 15:
+                    case 16:
+                    case 17:
+                    case 18:
+                    case 21:
+                    case 22:
+                        {
+                            // Check if this joint's parent is the root joint, and if not recursively compute the parent matrix.
+                            Matrix parentMatrix = Matrix.Identity;
+                            if (this.animatedJoints[i].ParentIndex != 255)
+                            {
+                                // Loop through the node's parental hierarchy until we hit the root node.
+                                for (AnimatedJoint joint = this.animatedJoints[this.animatedJoints[i].ParentIndex]; 
+                                    joint.ParentIndex != 255; joint = this.animatedJoints[joint.ParentIndex])
+                                {
+                                    // Compute the rotational matrix of the current joint and transform the parent joint matrix by it.
+                                    Matrix jointMatrix = Matrix.RotationQuaternion(joint.InterpolatedRotation.ToQuaternion());
+                                    jointMatrix.Row4 = joint.InterpolatedTranslation;
+                                    parentMatrix *= jointMatrix;
+                                }
+                            }
+
+                            // Transform the root joint's position by the to-parent matrix.
+                            parentJointPosition = Vector4.Transform(rootNodeMatrix.Row4, parentMatrix);
+                            break;
+                        }
+                    case 20:
+                        {
+                            // Transform the interpolated translation by the root node matrix.
+                            Vector3 newTranslation = Vector3.TransformNormal(this.animatedJoints[i].InterpolatedTranslation.ToVector3(), rootNodeMatrix);
+                            newTranslation = (newTranslation + rootNodeMatrix.Row4.ToVector3()) - parentJointPosition.ToVector3();
+
+                            // Caclulate the length of the vector.
+                            float length = newTranslation.Length();
+
+                            // Normalize the vector and set it as the interpolated translation.
+                            newTranslation.Normalize();
+                            this.animatedJoints[i].InterpolatedTranslation = new Vector4(newTranslation, 1.0f);
+
+                            // Set the length of the joint.
+                            this.animatedJoints[i].Length = length;
+                            break;
+                        }
+                }
+
+                // Set the joint's translation, rotation, and scale.
+                this.animatedJoints[i].Rotation = this.animatedJoints[i].InterpolatedRotation;
+                this.animatedJoints[i].Translation = this.animatedJoints[i].InterpolatedTranslation;
+                this.animatedJoints[i].Scale = this.animatedJoints[i].InterpolatedScale;
+
+                // Calculate the final SRT matrix for the joint.
+                this.animatedJoints[i].SRTMatrix = Matrix.RotationQuaternion(this.animatedJoints[i].Rotation.ToQuaternion());
+                this.animatedJoints[i].SRTMatrix.ScaleVector = this.animatedJoints[i].Scale.ToVector3();
+                this.animatedJoints[i].SRTMatrix.TranslationVector = this.animatedJoints[i].Translation.ToVector3();
+            }
+        }
+
+        private Vector4 InterpolateKeyFrame(rMotionList animation, int animationIndex, int keyFrameIndex, float frame0, float frame1, Vector4 defaultValue)
+        {
+            // Setup output vector.
+            Vector4 outputVector = defaultValue;
+
+            // Get the key frame descriptor from the animation.
+            KeyFrameDescriptor keyFrameDesc = animation.animations[animationIndex].KeyFrames[keyFrameIndex];
+
+            // Check the key frame codec and handle accordingly.
+            switch (keyFrameDesc.Codec)
+            {
+                case 1:
+                    {
+                        // Check if we are on an even frame boundary and handle accordingly.
+                        float framePosition = frame0 - (float)((int)frame0);
+                        if (framePosition == 0.0f)
+                        {
+                            // Even frame boundary.
+                            return animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[(int)frame0].Component;
+                        }
+                        else
+                        {
+                            // Compute how much time is remaining for this frame.
+                            float frameRemainder = 1.0f - framePosition;
+
+                            // Get the starting vector for interpolation.
+                            Vector4 vFrameStart = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[(int)frame0].Component;
+
+                            // Check if interpolation will put us past the end of the animation.
+                            Vector4 vFrameEnd;
+                            if (frame0 + 1.0f < frame1)
+                            {
+                                // Interpolate with the next frame.
+                                vFrameEnd = framePosition * animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[(int)frame0 + 1].Component;
+                            }
+                            else
+                            {
+                                // Interpolate with the first frame in the animation (wrap around).
+                                vFrameEnd = framePosition * animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0].Component;
+                            }
+
+                            // Interpolate.
+                            return vFrameStart + (vFrameEnd * frameRemainder);
+                        }
+                    }
+                case 2:
+                    {
+                        // Static position.
+                        return animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0].Component;
+                    }
+                case 3:
+                    {
+                        // Get the starting vector for interpolation.
+                        Vector4 vFrameStart = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[(int)frame0].Component;
+
+                        // Compute the weight component.
+                        float weight = 1.0f - ((vFrameStart.X * vFrameStart.X) + (vFrameStart.Y * vFrameStart.Y) + (vFrameStart.Z * vFrameStart.Z));
+
+                        // Check if we are on an even frame boundary and handle accordingly.
+                        float framePosition = frame0 - (float)((int)frame0);
+                        if (framePosition == 0.0f)
+                        {
+                            // Make sure the weight is not negative.
+                            if (weight < 0.0f)
+                                weight = 0.0f;
+
+                            return new Vector4(vFrameStart.X, vFrameStart.Y, vFrameStart.Z, (float)Math.Sqrt(weight));
+                        }
+                        else
+                        {
+                            // Check if interpolation will put us past the end of the animation.
+                            Vector4 vFrameEnd;
+                            if (frame0 + 1.0f < frame1)
+                            {
+                                // Interpolate with the next frame.
+                                vFrameEnd = framePosition * animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[(int)frame0 + 1].Component;
+                            }
+                            else
+                            {
+                                // Interpolate with the first frame in the animation (wrap around).
+                                vFrameEnd = framePosition * animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0].Component;
+                            }
+
+                            // Set the scalar components of vFrameStart and vFrameEnd;
+                            vFrameStart.W = (float)Math.Sqrt(weight);
+                            vFrameEnd.W = (float)Math.Sqrt(1.0f - ((vFrameEnd.X * vFrameEnd.X) + (vFrameEnd.Y * vFrameEnd.Y) + (vFrameEnd.Z * vFrameEnd.Z)));
+
+                            // Compute the dot product as a reference for vector selection.
+                            float dotProduct = Vector4.Dot(vFrameStart, vFrameEnd);
+                            if (dotProduct < 0.0f)
+                                vFrameEnd = 0.0f - vFrameEnd;
+
+                            vFrameEnd = ((vFrameEnd - vFrameStart) * framePosition) + vFrameStart;
+                            vFrameEnd.Normalize();
+                            return vFrameEnd;
+                        }
+                    }
+                case 4:
+                    {
+                        // Get the starting vector for interpolation.
+                        Vector4 vFrameStart = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0].Component;
+
+                        // Compute the weight component.
+                        float weight = 1.0f - ((vFrameStart.X * vFrameStart.X) + (vFrameStart.Y * vFrameStart.Y) + (vFrameStart.Z * vFrameStart.Z));
+
+                        // Make sure the weight is not negative.
+                        if (weight < 0.0f)
+                            weight = 0.0f;
+
+                        return new Vector4(vFrameStart.X, vFrameStart.Y, vFrameStart.Z, (float)Math.Sqrt(weight));
+                    }
+                case 6:
+                    {
+                        // Find the key frame entry for the current frame position.
+                        int keyFrameDataIndex = -1;
+                        float keyFramePosition = 0.0f;
+                        for (int i = 0; i < animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData.Length; i++)
+                        {
+                            // Check if the current frame falls within this key frame entry.
+                            if (frame0 >= keyFramePosition && frame0 < keyFramePosition + (float)animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[i].Duration)
+                            {
+                                // Current frame number falls in the key frame entry.
+                                keyFrameDataIndex = i;
+                                break;
+                            }
+
+                            // Update keyframe position.
+                            keyFramePosition += (float)animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[i].Duration;
+                        }
+
+                        // Check if we found a key frame entry.
+                        if (keyFrameDataIndex == -1)
+                        {
+                            // Set the key frame index to the last frame entry, and interpolate with the first key frame entry.
+                            keyFrameDataIndex = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData.Length - 1;
+                        }
+
+                        // Compute the current position in the frame.
+                        float framePosition = frame0 - (float)((int)frame0);
+
+                        // Compute the frame vector for the key frame entry for frame0.
+                        KeyFrameData keyFrame = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[keyFrameDataIndex];
+                        Vector4 vCurrentFrame = ComputeCodec6FrameVector(keyFrame);
+
+                        // Check if we need to interpolate with the next key frame, first key frame, or no interpolation is needed.
+                        if (keyFrame.Duration == 0)
+                        {
+                            // Compute the frame vector for the first frame in the animation.
+                            Vector4 vFirstAnimFrame = ComputeCodec6FrameVector(animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0]);
+
+                            // Interpolate with current frame and first frame (wrap around).
+                            return Quaternion.Slerp(new Quaternion(vCurrentFrame), new Quaternion(vFirstAnimFrame), framePosition).ToVector4();
+                        }
+                        else if (framePosition > 0.0f)
+                        {
+                            // Check if there is another frame in the animation, if not interpolate with the first frame.
+                            KeyFrameData nextKeyFrame;
+                            if (frame0 + 1.0f < frame1)
+                                nextKeyFrame = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[keyFrameDataIndex + 1];
+                            else
+                                nextKeyFrame = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0];
+
+                            // Compute the frame vector for the next frame.
+                            Vector4 vNextFrame = ComputeCodec6FrameVector(nextKeyFrame);
+
+                            // Compute the dot product as a reference for vector selection.
+                            float dotProduct = Vector4.Dot(vCurrentFrame, vNextFrame);
+                            if (dotProduct < 0.0f)
+                                vNextFrame = 0.0f - vNextFrame;
+
+                            vNextFrame = ((vNextFrame - vCurrentFrame) * framePosition) + vCurrentFrame;
+                            vNextFrame.Normalize();
+                            return vNextFrame;
+                        }
+                        else
+                        {
+                            // No interpolation needed.
+                            return vCurrentFrame;
+                        }
+                    }
+                default:
+                    {
+                        // Codec not supported.
+                        return defaultValue;
+                    }
+            }
+        }
+
+        private Vector4 ComputeCodec6FrameVector(KeyFrameData keyFrame)
+        {
+            // Calculate the scalar component.
+            float scalar = 1.0f - (keyFrame.Scalar * keyFrame.Scalar);
+            float sqrtResult = (float)Math.Sqrt(1.0f - (scalar * scalar));
+
+            // Compute the sin estimation of each component in the vector.
+            Vector4 vSinEst = keyFrame.Component.SinEst();
+
+            // TODO: verify that x ^ g_XMNegativeZero == -x
+            // Compute the final vector components.
+            Vector4 vKeyFrame = new Vector4(
+                -(vSinEst.X * vSinEst.W * sqrtResult),
+                vSinEst.Y * sqrtResult,
+                vSinEst.Z * vSinEst.W * sqrtResult,
+                scalar);
+
+            // Check the key frame flags and flip x/y/z as needed.
+            if ((keyFrame.Flags & 2) != 0)
+                vKeyFrame.X = -vKeyFrame.X;
+            if ((keyFrame.Flags & 4) != 0)
+                vKeyFrame.Y = -vKeyFrame.Y;
+            if ((keyFrame.Flags & 8) != 0)
+                vKeyFrame.Z = -vKeyFrame.Z;
+
+            // Return the vector.
+            return vKeyFrame;
         }
 
         #region IRenderable
@@ -573,30 +988,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
             // Allocate arrays for joint data.
             this.jointBoundingSpheres = new BoundingSphere[this.joints.Length];
-            Color4[] boneMatrixData = new Color4[matrixMapWidth * 4];
-
-            // Check if there is an animation loaded.
-            if (manager.GetMotionList() != null)
-            {
-                // Get the loaded animation.
-                rMotionList animation = manager.GetMotionList();
-
-                // Check if the first keyframe of the first animation is the type we are expecting.
-                if (animation.animations[0].KeyFrames.Length > 0 && animation.animations[0].KeyFrames[0].Codec == 2 && animation.animations[0].KeyFrames[0].Usage == 4)
-                {
-                    // Compute the animation matrix.
-                    //Matrix animMatrix = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component * DirectXExtensions.MatrixFromVectors(this.jointTranslations[0].Translation).TranslationVector;
-
-                    // Set the translation matrix for the root bone to the rest position.
-                    this.jointTranslations[0].Translation[3].X = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component.X;
-                    this.jointTranslations[0].Translation[3].Y = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component.Y;
-                    this.jointTranslations[0].Translation[3].Z = animation.animations[0].KeyFrames[0].KeyFrameData[0].Component.Z;
-                }
-                else
-                {
-
-                }
-            }
+            this.animatedJoints = new AnimatedJoint[this.joints.Length];
+            this.boneMatrixData = new Color4[matrixMapWidth * 4];
 
             // Loop through all the joints and initialize resources for each one.
             for (int i = 0; i < this.joints.Length; i++)
@@ -609,12 +1002,31 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     return false;
                 }
 
-                // Copy the translation matrix into the bone matrix buffer.
-                Matrix jointMatrix = Matrix.Identity;// GetJointTransformation(this.joints[i].Index);
-                boneMatrixData[i * 4] = new Color4(jointMatrix.Column1);
-                boneMatrixData[i * 4 + 1] = new Color4(jointMatrix.Column2);
-                boneMatrixData[i * 4 + 2] = new Color4(jointMatrix.Column3);
-                boneMatrixData[i * 4 + 3] = new Color4(jointMatrix.Column4);
+                // Setup the animated joint.
+                this.animatedJoints[i].JointNumber = this.joints[i].Index;
+                this.animatedJoints[i].ParentIndex = this.joints[i].ParentIndex;
+                this.animatedJoints[i].Length = this.joints[i].Length;
+                this.animatedJoints[i].Translation = new Vector4(this.joints[i].Offset.X, this.joints[i].Offset.Y, this.joints[i].Offset.Z, 1.0f);
+                this.animatedJoints[i].Rotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
+                this.animatedJoints[i].Scale = new Vector4(1.0f);
+                this.animatedJoints[i].SRTMatrix = this.jointTranslations[i].SRTMatrix;
+            }
+
+            // Check if there is an animation loaded.
+            if (manager.GetMotionList() != null)
+            {
+                // Get the loaded animation.
+                rMotionList animation = manager.GetMotionList();
+
+                // Set the selected animation.
+                int selectedAnimation = 0;
+                manager.GetTime().SelectedAnimation = selectedAnimation;
+                manager.GetTime().AnimationFrameRate = 15.0f;
+                manager.GetTime().AnimationTimePerFrame = 1.0f / manager.GetTime().AnimationFrameRate;
+                manager.GetTime().AnimationTotalTime = manager.GetTime().AnimationTimePerFrame * animation.animations[selectedAnimation].FrameCount;
+                manager.GetTime().AnimationCurrentTime = 0.0f;
+                manager.GetTime().AnimationFrameCount = animation.animations[selectedAnimation].FrameCount;
+                manager.GetTime().AnimationCurrentFrame = 0.0f;
             }
 
             {
@@ -631,7 +1043,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Create the texture and update it's pixel buffer with the matrix data.
                 this.boneMapMatrix = new Texture2D(device, desc);
-                device.ImmediateContext.UpdateSubresource(boneMatrixData, this.boneMapMatrix, rowPitch:16 * 4);
 
                 // Create the shader resource view that will bind this texture.
                 this.boneMapMatrixShaderView = new ShaderResourceView(device, this.boneMapMatrix);
@@ -643,7 +1054,38 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
         public override bool DrawFrame(IRenderManager manager, Device device)
         {
-            // TODO: Update shader constants before we call the shader DrawFrame routine.
+            // Check if there is an animation loaded and if so update.
+            rMotionList animation = manager.GetMotionList();
+            if (animation != null)
+            {
+                // Update the current animation frame counter.
+                manager.GetTime().AnimationCurrentTime += manager.GetTime().TimeDelta;
+                manager.GetTime().AnimationCurrentFrame = manager.GetTime().AnimationCurrentTime / manager.GetTime().AnimationTimePerFrame;
+
+                // Check if we need to reset the frame counters.
+                if (manager.GetTime().AnimationCurrentTime > manager.GetTime().AnimationTotalTime)
+                {
+                    // Reset the frame and time counters.
+                    manager.GetTime().AnimationCurrentTime = 0.0f; // manager.GetTime().AnimationTotalTime;
+                    manager.GetTime().AnimationCurrentFrame = manager.GetTime().AnimationCurrentTime / manager.GetTime().AnimationTimePerFrame;
+                }
+
+                // Update animation data for all joints.
+                UpdateAnimationData(manager, device, animation);
+            }
+
+            // Loop through all of the joints and update the bone matrix data.
+            for (int i = 0; i < this.animatedJoints.Length; i++)
+            {
+                // Copy the translation matrix into the bone matrix buffer.
+                boneMatrixData[i * 4] = new Color4(this.animatedJoints[i].SRTMatrix.Row1);
+                boneMatrixData[i * 4 + 1] = new Color4(this.animatedJoints[i].SRTMatrix.Row2);
+                boneMatrixData[i * 4 + 2] = new Color4(this.animatedJoints[i].SRTMatrix.Row3);
+                boneMatrixData[i * 4 + 3] = new Color4(this.animatedJoints[i].SRTMatrix.Row4);
+            }
+
+            // Update the bone matrix map texture.
+            device.ImmediateContext.UpdateSubresource(this.boneMatrixData, this.boneMapMatrix, rowPitch: 16 * 4);
 
             // Set the primitive type.
             device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;

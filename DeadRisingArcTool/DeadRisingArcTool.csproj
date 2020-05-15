@@ -242,6 +242,7 @@
     </Content>
     <Content Include="IDA\DumpObjectInfo.py" />
     <Content Include="IDA\ObjectTypes.txt" />
+    <Content Include="IDA\SSEHelper.py" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
   <ItemGroup>
