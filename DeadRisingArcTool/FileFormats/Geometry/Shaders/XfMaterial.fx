@@ -264,12 +264,4 @@ float3x4 getWorldMatrix4wtFromTex(
 	return wmat;
 }
 
-float4 getBoneTranslation(
-	int4		boneIndices0 : BLENDINDICES0)
-{
-	float4   ofs = ((float4)boneIndices0 + gXfMatrixMapFactor.x) * gXfMatrixMapFactor.z;
-	float    _line = gXfMatrixMapFactor.y;
-	float4	uv = float4(ofs.x, _line, 0, 0);
-}
-
 #endif

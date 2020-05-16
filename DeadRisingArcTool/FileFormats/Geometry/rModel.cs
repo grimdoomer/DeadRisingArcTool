@@ -139,7 +139,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     // sizeof = 0x50
     public struct Primitive
     {
-        /* 0x00 */ public short Unk1;
+        /* 0x00 */ public short GroupID;
 	    /* 0x02 */ public short	MaterialIndex;
 	    /* 0x04 */ public byte Enabled;
 	    /* 0x05 */ public byte Unk3;
@@ -227,7 +227,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private AnimatedJoint[] animatedJoints;
 
         private Vector4 modelPosition = new Vector4(0.0f);
-        private Vector4 modelRotation = new Vector4(1.0f, 0.0f, 0.0f, 0.0f);
+        private Vector4 modelRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
         private Vector4 modelScale = new Vector4(1.0f);
 
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
@@ -428,7 +428,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             {
                 // Read the primitive data.
                 model.primitives[i] = new Primitive();
-                model.primitives[i].Unk1 = reader.ReadInt16();
+                model.primitives[i].GroupID = reader.ReadInt16();
                 model.primitives[i].MaterialIndex = reader.ReadInt16();
                 model.primitives[i].Enabled = reader.ReadByte();
                 model.primitives[i].Unk3 = reader.ReadByte();
@@ -494,21 +494,21 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 return this.joints[index].Offset + this.baseTranslation.ToVector3();
         }
 
-        //private Matrix GetJointTransformation(int index)
-        //{
-        //    // Check if this joint has a parent and caclulate the correct transformation matric.
-        //    if (this.joints[index].ParentIndex != 255)
-        //        return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation) * GetJointTransformation(this.joints[index].ParentIndex);
-        //    else
-        //        return DirectXExtensions.MatrixFromVectors(this.jointTranslations[index].Translation);
-        //}
+        private Matrix GetJointTransformation(int index)
+        {
+            // Check if this joint has a parent and caclulate the correct transformation matric.
+            if (this.animatedJoints[index].ParentIndex != 255)
+                return this.animatedJoints[index].SRTMatrix * GetJointTransformation(this.animatedJoints[index].ParentIndex);
+            else
+                return this.animatedJoints[index].SRTMatrix;
+        }
 
         private void UpdateAnimationData(IRenderManager manager, Device device, rMotionList animation)
         {
             // Loop and initialize the animation vectors for every joint in the mesh.
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
-                this.animatedJoints[i].InterpolatedRotation = new Vector4(1.0f, 0.0f, 0.0f, 0.0f);
+                this.animatedJoints[i].InterpolatedRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
                 this.animatedJoints[i].InterpolatedTranslation = new Vector4(this.animatedJoints[i].Translation.ToVector3(), 0.0f);
                 this.animatedJoints[i].InterpolatedScale = new Vector4(1.0f);
             }
@@ -535,7 +535,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                         {
                             // Joint rotation.
                             this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedRotation = InterpolateKeyFrame(animation, animIndex, i, 
-                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(1.0f, 0.0f, 0.0f, 0.0f));
+                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
                             break;
                         }
                     case 1:
@@ -624,7 +624,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
             // Setup root node animation matrix.
             Matrix rootNodeMatrix = Matrix.RotationQuaternion(this.modelRotation.ToQuaternion());
-            rootNodeMatrix.Row4 = new Vector4(this.modelPosition.ToVector3(), 1.0f);
+            rootNodeMatrix.Row4 = new Vector4(this.joints[0].Offset, 1.0f); // this.modelPosition.ToVector3(), 1.0f);
 
             // Loop through all joints and compute the final animation vectors.
             Vector4 parentJointPosition = new Vector4(0.0f);
@@ -658,7 +658,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             }
 
                             // Transform the root joint's position by the to-parent matrix.
-                            parentJointPosition = Vector4.Transform(rootNodeMatrix.Row4, parentMatrix);
+                            parentJointPosition = Vector4.Transform(parentMatrix.Row4, rootNodeMatrix);
                             break;
                         }
                     case 20:
@@ -686,9 +686,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 this.animatedJoints[i].Scale = this.animatedJoints[i].InterpolatedScale;
 
                 // Calculate the final SRT matrix for the joint.
-                this.animatedJoints[i].SRTMatrix = Matrix.RotationQuaternion(this.animatedJoints[i].Rotation.ToQuaternion());
-                this.animatedJoints[i].SRTMatrix.ScaleVector = this.animatedJoints[i].Scale.ToVector3();
-                this.animatedJoints[i].SRTMatrix.TranslationVector = this.animatedJoints[i].Translation.ToVector3();
+                this.animatedJoints[i].SRTMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, this.animatedJoints[i].Scale.ToVector3(),
+                    this.animatedJoints[i].Translation.ToVector3(), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
+
+                //this.animatedJoints[i].SRTMatrix = Matrix.RotationQuaternion(this.animatedJoints[i].Rotation.ToQuaternion());
+                //this.animatedJoints[i].SRTMatrix.Column1 *= this.animatedJoints[i].Scale;
+                //this.animatedJoints[i].SRTMatrix.Column2 *= this.animatedJoints[i].Scale;
+                //this.animatedJoints[i].SRTMatrix.Column3 *= this.animatedJoints[i].Scale;
+                //this.animatedJoints[i].SRTMatrix.Column4 = this.animatedJoints[i].Translation;
+                //this.animatedJoints[i].SRTMatrix.ScaleVector = this.animatedJoints[i].Scale.ToVector3();
+                //this.animatedJoints[i].SRTMatrix.TranslationVector = this.animatedJoints[i].Translation.ToVector3();
             }
         }
 
@@ -1006,7 +1013,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 this.animatedJoints[i].JointNumber = this.joints[i].Index;
                 this.animatedJoints[i].ParentIndex = this.joints[i].ParentIndex;
                 this.animatedJoints[i].Length = this.joints[i].Length;
-                this.animatedJoints[i].Translation = new Vector4(this.joints[i].Offset.X, this.joints[i].Offset.Y, this.joints[i].Offset.Z, 1.0f);
+
+                Vector3 jointPosition = GetJointPosition(i);
+                this.animatedJoints[i].Translation = new Vector4(jointPosition.X, jointPosition.Y, jointPosition.Z, 1.0f);
                 this.animatedJoints[i].Rotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
                 this.animatedJoints[i].Scale = new Vector4(1.0f);
                 this.animatedJoints[i].SRTMatrix = this.jointTranslations[i].SRTMatrix;
@@ -1058,6 +1067,31 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             rMotionList animation = manager.GetMotionList();
             if (animation != null)
             {
+                // Get the input manager and check for animation button input.
+                InputManager input = manager.GetInputManager();
+                if (input.ButtonPressed(InputAction.NextAnimation) == true || input.ButtonPressed(InputAction.PreviousAnimation) == true)
+                {
+                    // Handle input accordingly.
+                    if (input.ButtonPressed(InputAction.NextAnimation) == true)
+                    {
+                        // Increment or wrap the selected animation index.
+                        if (++manager.GetTime().SelectedAnimation >= animation.animations.Length)
+                            manager.GetTime().SelectedAnimation = 0;
+                    }
+                    else
+                    {
+                        // Decrement or wrap the selected animation index.
+                        if (--manager.GetTime().SelectedAnimation < 0)
+                            manager.GetTime().SelectedAnimation = animation.animations.Length - 1;
+                    }
+
+                    // Reset position and time counters.
+                    manager.GetTime().AnimationTotalTime = manager.GetTime().AnimationTimePerFrame * animation.animations[manager.GetTime().SelectedAnimation].FrameCount;
+                    manager.GetTime().AnimationCurrentTime = 0.0f;
+                    manager.GetTime().AnimationFrameCount = animation.animations[manager.GetTime().SelectedAnimation].FrameCount;
+                    manager.GetTime().AnimationCurrentFrame = 0.0f;
+                }
+
                 // Update the current animation frame counter.
                 manager.GetTime().AnimationCurrentTime += manager.GetTime().TimeDelta;
                 manager.GetTime().AnimationCurrentFrame = manager.GetTime().AnimationCurrentTime / manager.GetTime().AnimationTimePerFrame;
@@ -1066,7 +1100,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 if (manager.GetTime().AnimationCurrentTime > manager.GetTime().AnimationTotalTime)
                 {
                     // Reset the frame and time counters.
-                    manager.GetTime().AnimationCurrentTime = 0.0f; // manager.GetTime().AnimationTotalTime;
+                    manager.GetTime().AnimationCurrentTime = 0.0f;
                     manager.GetTime().AnimationCurrentFrame = manager.GetTime().AnimationCurrentTime / manager.GetTime().AnimationTimePerFrame;
                 }
 
@@ -1078,10 +1112,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
                 // Copy the translation matrix into the bone matrix buffer.
-                boneMatrixData[i * 4] = new Color4(this.animatedJoints[i].SRTMatrix.Row1);
-                boneMatrixData[i * 4 + 1] = new Color4(this.animatedJoints[i].SRTMatrix.Row2);
-                boneMatrixData[i * 4 + 2] = new Color4(this.animatedJoints[i].SRTMatrix.Row3);
-                boneMatrixData[i * 4 + 3] = new Color4(this.animatedJoints[i].SRTMatrix.Row4);
+                Matrix SRTMatrix = GetJointTransformation(i);
+                boneMatrixData[i * 4] = new Color4(SRTMatrix.Row1);
+                boneMatrixData[i * 4 + 1] = new Color4(SRTMatrix.Row2);
+                boneMatrixData[i * 4 + 2] = new Color4(SRTMatrix.Row3);
+                boneMatrixData[i * 4 + 3] = new Color4(SRTMatrix.Row4);
             }
 
             // Update the bone matrix map texture.
@@ -1187,7 +1222,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             for (int i = 0; i < this.jointBoundingSpheres.Length; i++)
             {
                 // Draw the bounding sphere.
-                this.jointBoundingSpheres[i].DrawFrame(manager, device);
+                //this.jointBoundingSpheres[i].DrawFrame(manager, device);
             }
 
             // Done rendering.

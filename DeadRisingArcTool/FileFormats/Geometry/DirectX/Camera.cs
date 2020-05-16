@@ -1,5 +1,5 @@
 ﻿using SharpDX;
-using SharpDX.DirectInput;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,19 +9,11 @@ using System.Windows.Forms;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
-    public class Camera : IDisposable
+    public class Camera : IRenderable
     {
-        public DirectInput directInput;
-        public Keyboard Keyboard;
-        private Mouse mouse;
-        //public Controller XboxControler;
-
         public float radius = 1.0f;
         public float Speed { get; set; } = 1.0f;
         public float SpeedModifier { get; set; } = 0.002f;
-
-        public int oldx = 0;
-        public int oldy = 0;
 
 
         float moveLeftRight = 0.0f;
@@ -60,16 +52,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             }
         }
 
-        public Camera(Control form)
+        public Camera()
         {
-            // Initialize Keyboard
-            directInput = new DirectInput();
-            Keyboard = new Keyboard(directInput);
-            Keyboard.SetCooperativeLevel(form.Handle, CooperativeLevel.Foreground | CooperativeLevel.NonExclusive);
-
-            this.mouse = new Mouse(directInput);
-            mouse.SetCooperativeLevel(form.Handle, CooperativeLevel.Foreground | CooperativeLevel.NonExclusive);
-
             // Setup Camera vectors with default values.
             this.position = new Vector3(0.0f, 0.0f, -5.0f);
             this.lookAt = new Vector3(0.0f, 0.0f, 0.0f);
@@ -78,95 +62,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             ComputePosition();
         }
 
-        public void move()
-        {
-            // Aquire Devices
-            try
-            {
-                Keyboard.Acquire();
-                this.mouse.Acquire();
-            }
-            catch
-            {
-                return;
-            }
-
-            // Get Keyboard State
-            Keyboard.Poll();
-            KeyboardState KState = this.Keyboard.GetCurrentState();
-            foreach (Key kk in KState.PressedKeys)
-            {
-                switch (kk.ToString())
-                {
-                    case "W":
-                        //this.moveBackForward += this.speed;
-                        this.position += this.camForward * this.Speed;
-                        break;
-                    case "S":
-                        //this.moveBackForward -= this.speed;
-                        this.position += this.camBackward * this.Speed;
-                        break;
-                    case "A":
-                        this.position += this.camLeft * this.Speed;
-                        //this.moveLeftRight -= this.speed;
-                        break;
-                    case "D":
-                        this.position += this.camRight * this.Speed;
-                        //this.moveLeftRight += this.speed;
-                        break;
-                    case "Z":
-                        this.position += DefaultUp * this.Speed;
-                        //this.position.Z -= this.speed;
-                        break;
-                    case "X":
-                        this.position += DefaultDown * this.Speed;
-                        //this.position.Z += this.speed;
-                        break;
-                    case "Equals":
-                    case "Add":
-                        Speed += SpeedModifier;
-                        if (Speed < 0) { Speed = 0.002f; }
-                        break;
-                    case "Minus":
-                    case "Subtract":
-                        Speed -= SpeedModifier;
-                        if (Speed < 0) { Speed = 0.002f; }
-                        break;
-                }
-            }
-
-            this.mouse.Poll();
-            MouseState mouseState = this.mouse.GetCurrentState();
-
-            // If the left mouse button is held down adjust rotation.
-            if (mouseState.Buttons[0] == true)
-            {
-                change(mouseState.X, mouseState.Y);
-            }
-
-            ComputePosition();
-
-        }
-        public void change(int x, int y)
-        {
-
-            //int tempx = oldx - x;
-            //int tempy = oldy - y;
-
-            this.camYaw += -x * 0.005f;     // Flip x direction for RH coordinate system
-            this.camPitch += y * 0.005f;
-
-
-            //ComputePosition();
-            //oldx = x;
-            //oldy = y;
-        }
-
-        public void Dispose()
-        {
-            Keyboard = null;
-        }
-        public void ComputePosition()
+        private void ComputePosition()
         {
             // Update the direction we are looking in.
             Matrix camRotation = Matrix.RotationYawPitchRoll(camYaw, camPitch, 0.0f);
@@ -183,10 +79,62 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.camLeft = Vector3.TransformCoordinate(DefaultLeft, camRotation);
         }
 
+        #region IRenderable
 
-        public static float DegreesToRadian(float degree)
+        public bool InitializeGraphics(IRenderManager manager, Device device)
         {
-            return (float)(degree * (Math.PI / 180.0f));
+            return true;
         }
+
+        public bool DrawFrame(IRenderManager manager, Device device)
+        {
+            // Get the input manager.
+            InputManager input = manager.GetInputManager();
+
+            // Update camera position.
+            if (input.ButtonPressed(InputAction.MoveForward) == true || input.ButtonHeld(InputAction.MoveForward) == true)
+                this.position += this.camForward * this.Speed;
+            if (input.ButtonPressed(InputAction.MoveBackward) == true || input.ButtonHeld(InputAction.MoveBackward) == true)
+                this.position += this.camBackward * this.Speed;
+            if (input.ButtonPressed(InputAction.StrafeLeft) == true || input.ButtonHeld(InputAction.StrafeLeft) == true)
+                this.position += this.camLeft * this.Speed;
+            if (input.ButtonPressed(InputAction.StrafeRight) == true || input.ButtonHeld(InputAction.StrafeRight) == true)
+                this.position += this.camRight * this.Speed;
+            if (input.ButtonPressed(InputAction.MoveUp) == true || input.ButtonHeld(InputAction.MoveUp) == true)
+                this.position += DefaultUp * this.Speed;
+            if (input.ButtonPressed(InputAction.MoveDown) == true || input.ButtonHeld(InputAction.MoveDown) == true)
+                this.position += DefaultDown * this.Speed;
+
+            // Update camera speed.
+            if (input.ButtonPressed(InputAction.CamSpeedIncrease) == true || input.ButtonHeld(InputAction.CamSpeedIncrease) == true)
+            {
+                Speed += SpeedModifier;
+                if (Speed < 0) { Speed = 0.002f; }
+            }
+            if (input.ButtonPressed(InputAction.CamSpeedDecrease) == true || input.ButtonHeld(InputAction.CamSpeedDecrease) == true)
+            {
+                Speed -= SpeedModifier;
+                if (Speed < 0) { Speed = 0.002f; }
+            }
+
+            // Check for mouse movement.
+            if (input.ButtonPressed(InputAction.LeftClick) == true || input.ButtonHeld(InputAction.LeftClick) == true)
+            {
+                // Update camera rotation.
+                this.camYaw += -input.MousePosition[0] * 0.005f;     // Flip x direction for RH coordinate system
+                this.camPitch += input.MousePosition[1] * 0.005f;
+            }
+
+            // Update camera vectors.
+            ComputePosition();
+
+            return true;
+        }
+
+        public void CleanupGraphics(IRenderManager manager, Device device)
+        {
+        }
+
+        #endregion
     }
 }

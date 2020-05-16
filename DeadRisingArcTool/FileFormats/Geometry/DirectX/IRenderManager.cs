@@ -38,5 +38,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         rMotionList GetMotionList();
 
         RenderTime GetTime();
+
+        /// <summary>
+        /// Gets the input manager instance for querying device input
+        /// </summary>
+        /// <returns></returns>
+        InputManager GetInputManager();
     }
 }

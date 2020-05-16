@@ -84,6 +84,9 @@ namespace DeadRisingArcTool.Forms
         Matrix projectionMatrix;
         Matrix worldGround;
 
+        // Input manager.
+        InputManager inputManager = null;
+
         // Built in shader collection.
         BuiltInShaderCollection shaderCollection = null;
 
@@ -211,6 +214,11 @@ namespace DeadRisingArcTool.Forms
             return this.renderTime;
         }
 
+        public InputManager GetInputManager()
+        {
+            return this.inputManager;
+        }
+
         #endregion
 
         private void InitializeD3D()
@@ -229,7 +237,7 @@ namespace DeadRisingArcTool.Forms
             SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, desc, out this.device, out this.swapChain);
 
             // Setup the projection matrix.
-            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 400000.0f);
+            this.projectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 400000.0f);
             this.worldGround = Matrix.Identity;
 
             // Create our output texture for rendering.
@@ -256,9 +264,13 @@ namespace DeadRisingArcTool.Forms
             rasterStateDesc.IsDepthClipEnabled = true;
             this.rasterState = new RasterizerState(this.device, rasterStateDesc);
 
+            // Initialize the input manager.
+            this.inputManager = new InputManager(this.Handle);
+            this.inputManager.InitializeGraphics(this, this.device);
+
             // Initialize the shader collection.
             this.shaderCollection = new BuiltInShaderCollection();
-            if (this.shaderCollection.InitializeGraphics(this, device) == false)
+            if (this.shaderCollection.InitializeGraphics(this, this.device) == false)
             {
                 // Failed to initialize shaders.
             }
@@ -267,7 +279,8 @@ namespace DeadRisingArcTool.Forms
             this.shaderConstantBuffer = SharpDX.Direct3D11.Buffer.Create(this.device, BindFlags.ConstantBuffer, ref this.shaderConsts, ShaderConstants.kSizeOf);
 
             // Create the camera.
-            this.camera = new Camera(this);
+            this.camera = new Camera();
+            this.camera.InitializeGraphics(this, this.device);
         }
 
         private void InitializeModelData()
@@ -286,8 +299,6 @@ namespace DeadRisingArcTool.Forms
 
                 if (fileEntry != null)
                     this.modelAnimation = arcFile.GetArcFileAsResource<rMotionList>(fileEntry.FileName);
-
-                // Setup time constants for the animation we will be playing.
             }
 
             // Loop through all of the datums to render and setup each one for rendering.
@@ -324,14 +335,14 @@ namespace DeadRisingArcTool.Forms
 
         private void Render()
         {
+            // If the form is not visible do not render anything.
+            if (this.Visible == false)
+                return;
+
             // Update the time from the previous frame to the current frame.
             this.renderTime.LastTickCount = this.renderTime.CurrentTickCount;
             this.renderTime.CurrentTickCount = DateTime.Now.Ticks;
             this.renderTime.TimeDelta = (float)(this.renderTime.CurrentTickCount - this.renderTime.LastTickCount) / (float)TimeSpan.TicksPerSecond;
-
-            // If the form is not visible do not render anything.
-            if (this.Visible == false)
-                return;
 
             // Check if the form has resized and if so reset our render state to accomidate the size change.
             if (this.hasResized == true)
@@ -340,8 +351,11 @@ namespace DeadRisingArcTool.Forms
             // Only move the camera if the window is visible.
             if (this.Visible == true && this.Focused == true)
             {
+                // Update input.
+                this.inputManager.DrawFrame(this, this.device);
+
                 // Update the camera.
-                this.camera.move();
+                this.camera.DrawFrame(this, this.device);
             }
 
             // Set our render target to our swapchain buffer.
@@ -434,7 +448,7 @@ namespace DeadRisingArcTool.Forms
             this.renderView = new RenderTargetView(this.device, this.backBuffer);
 
             // Update the projection matrix.
-            this.projectionMatrix = Matrix.PerspectiveFovRH(Camera.DegreesToRadian(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 40000.0f);
+            this.projectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 40000.0f);
         }
     }
 }
