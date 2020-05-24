@@ -34,7 +34,7 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
 	float4		position:				SV_POSITION;
-	float2		texCoordBase:			TEXCOORD0;
+	float3		texCoordBase:			TEXCOORD0;
 	float4		wPosition:				TEXCOORD1;
 };
 
@@ -43,7 +43,7 @@ struct VS_OUTPUT
 //-----------------------------------------------------------------------------
 struct PS_INPUT
 {	
-	float2		texCoordBase:			TEXCOORD0;
+	float3		texCoordBase:			TEXCOORD0;
 	float4		vPosition:				TEXCOORD1;
 };
 
@@ -71,7 +71,9 @@ VS_OUTPUT XfStandardVS(VS_INPUT I)
 	O.position = mul(float4(wp, 1), gXfViewProj);
 
 	//O.wPosition = O.position;
-	O.texCoordBase = I.texCoord0;
+	O.texCoordBase.xy = I.texCoord0.xy;
+
+	O.texCoordBase.z = 1;
 
 	return O;
 }
@@ -90,7 +92,10 @@ float4 XfStandardPS(VS_OUTPUT I) : SV_Target
 	}
 	else*/
 	{
-		return XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
+		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
+		clip(albedo.a * I.texCoordBase.z - 1.0 / 255.0);
+
+		return albedo;
 	}
 }
 

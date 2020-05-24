@@ -13,6 +13,7 @@ using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats;
 using System.Reflection;
 using DeadRisingArcTool.Utilities;
+using DeadRisingArcTool.FileFormats.Geometry.Collada;
 
 namespace DeadRisingArcTool.Controls
 {
@@ -116,14 +117,21 @@ namespace DeadRisingArcTool.Controls
                 {
                     // Check if the field has a hex attribute on it.
                     if (fields[i].GetCustomAttribute<HexAttribute>() != null)
-                        outputString += string.Format("\t{0}:{1}\n", fields[i].Name, int.Parse(value.ToString(), System.Globalization.NumberStyles.Integer).ToString("X"));
+                        outputString += string.Format("\t{0}: {1}\n", fields[i].Name, int.Parse(value.ToString(), System.Globalization.NumberStyles.Integer).ToString("X"));
                     else
-                        outputString += string.Format("\t{0}:{1}\n", fields[i].Name, value.ToString());
+                        outputString += string.Format("\t{0}: {1}\n", fields[i].Name, value.ToString());
                 }
             }
 
             // Return the string.
             return outputString;
+        }
+
+        private void btnExtract_Click(object sender, EventArgs e)
+        {
+            // Extract the model.
+            ColladaExporter.ExportModel((rModel)this.GameResource, "G:\\Dead Rising\\Extract\\model test");
+            MessageBox.Show("Done!");
         }
     }
 }

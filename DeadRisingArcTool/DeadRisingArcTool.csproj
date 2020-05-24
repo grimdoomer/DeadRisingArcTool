@@ -128,6 +128,11 @@
     <Compile Include="FileFormats\Bitmaps\Swizzle.cs" />
     <Compile Include="FileFormats\GameResource.cs" />
     <Compile Include="FileFormats\GameResourceParserAttribute.cs" />
+    <Compile Include="FileFormats\Geometry\Collada\Attributes\ElementNameAttribute.cs" />
+    <Compile Include="FileFormats\Geometry\Collada\Collada.cs" />
+    <Compile Include="FileFormats\Geometry\Collada\ColladaExporter.cs" />
+    <Compile Include="FileFormats\Geometry\Collada\ColladaSerializer.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\BoundingBox.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\BoundingSphere.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\InputManager.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\IRenderable.cs" />
@@ -157,9 +162,7 @@
     <Compile Include="Forms\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\RenderView.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Forms\RenderView.cs" />
     <Compile Include="Forms\RenderView.Designer.cs">
       <DependentUpon>RenderView.cs</DependentUpon>
     </Compile>

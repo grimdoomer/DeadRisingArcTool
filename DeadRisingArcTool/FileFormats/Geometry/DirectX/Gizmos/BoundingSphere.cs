@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+using DeadRisingArcTool.Utilities;
 using SharpDX;
 using SharpDX.Direct3D11;
 
@@ -20,18 +21,27 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         private const int RingSegments = 32;
 
         public Vector3 Position { get; set; }
+        private Vector4 rotation;
+        public Vector4 Rotation
+        {
+            get { return this.rotation; }
+            set { this.rotation = value; this.rotationMatrix = Matrix.RotationQuaternion(new Quaternion(this.rotation)); }
+        }
         public float Radius { get; set; }
         public Color4 Color { get; set; }
+
+        private Matrix rotationMatrix;
         
         private D3DColoredVertex[] vertices;
         private SharpDX.Direct3D11.Buffer vertexBuffer;
 
         private BuiltInShader shader;
 
-        public BoundingSphere(Vector3 position, float radius, Color4 color)
+        public BoundingSphere(Vector3 position, Vector4 rotation, float radius, Color4 color)
         {
             // Initialize fields.
             this.Position = position;
+            this.Rotation = rotation;
             this.Radius = radius;
             this.Color = color;
         }
@@ -66,7 +76,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 
             for (int i = 0; i < RingSegments; i++)
             {
-                Vector3 position = (majorAxis * incrementalCos) + this.Position;
+                Vector3 position = (majorAxis * incrementalCos) + Vector4.Transform(new Vector4(this.Position, 1.0f), this.rotationMatrix).ToVector3();
                 position = (minorAxis * incrementalSin) + position;
 
                 this.vertices[i].Position = position;

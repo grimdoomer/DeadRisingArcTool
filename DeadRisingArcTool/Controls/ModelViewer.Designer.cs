@@ -30,6 +30,7 @@
         {
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.btnRender = new System.Windows.Forms.Button();
+            this.btnExtract = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // textBox1
@@ -55,10 +56,21 @@
             this.btnRender.UseVisualStyleBackColor = true;
             this.btnRender.Click += new System.EventHandler(this.btnRender_Click);
             // 
+            // btnExtract
+            // 
+            this.btnExtract.Location = new System.Drawing.Point(84, 3);
+            this.btnExtract.Name = "btnExtract";
+            this.btnExtract.Size = new System.Drawing.Size(75, 23);
+            this.btnExtract.TabIndex = 2;
+            this.btnExtract.Text = "Extract";
+            this.btnExtract.UseVisualStyleBackColor = true;
+            this.btnExtract.Click += new System.EventHandler(this.btnExtract_Click);
+            // 
             // ModelViewer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnExtract);
             this.Controls.Add(this.btnRender);
             this.Controls.Add(this.textBox1);
             this.Name = "ModelViewer";
@@ -72,5 +84,6 @@
 
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button btnRender;
+        private System.Windows.Forms.Button btnExtract;
     }
 }

@@ -23,10 +23,14 @@ def readString(ea):
 	return str
 	
 
-def processObject(rcxQword, rdxName):
+def processObject(rcxQword, rdxName, objectSize):
 
 	# Print the name of the object.
-	print("Found object: " + readString(rdxName))
+	typeName = readString(rdxName)
+	print("Found object: Size=0x%x Name=%s" % (objectSize, typeName))
+
+	# Name the global DTI variable.
+	#set_name(rcxDword, typeName)
 
 	# Get a list of xrefs to the qword pointer.
 	qwordXrefs = idautils.XrefsTo(rcxQword)
@@ -46,6 +50,7 @@ def main():
 	
 		rdxName = 0
 		rcxQword = 0
+		objectSize = 0
 	
 		# Get the function the xref is in.
 		xrefsFound += 1
@@ -76,6 +81,20 @@ def main():
 				
 					# Get the object name address.
 					rdxName = ins.Operands[1].addr
+
+				elif ins.Operands[0].reg == 9: # r9d
+
+					# Get the object size from the immediate.
+					# lea     r9d, [rax+30h]
+					objectSize = ins.Operands[1].addr
+
+			elif ins.get_canon_mnem() == "mov":
+
+				# Check if we are loading r9.
+				if ins.Operands[0].reg == 9:
+
+					# Get the object size from the instruction immediate.
+					objectSize = ins.Operands[1].value
 			
 			# Next instruction.
 			rip += insSize
@@ -88,7 +107,7 @@ def main():
 			continue
 			
 		# Process the object.
-		processObject(rcxQword, rdxName)
+		processObject(rcxQword, rdxName, objectSize)
 		
 	# Print the total number of xrefs and failed xref attempts.
 	print("Xrefs found: %d" % xrefsFound)

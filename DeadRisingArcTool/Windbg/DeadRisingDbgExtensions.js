@@ -1,6 +1,7 @@
 //"use strict";
 
 /*
+	.load jsprovider
 	.scriptload "D:\Visual Studio 2015\DeadRisingArcTool\DeadRisingArcTool\Windbg\DeadRisingDbgExtensions.js"
 	dx @$myScript = Debugger.State.Scripts.DeadRisingDbgExtensions.Contents
 	dx @$myScript.dumpVertexDecl()
@@ -158,6 +159,46 @@ function dumpVertexDecl()
 		// Print formatted info to console.
 		host.diagnostics.debugLog("\t", SemanticName, "\t\t", SemanticIndex, "\t", DXGI_FORMAT[Format], 
 			"\t", InputSlot, "\t", AlignedByteOffset, "\t", InputSlotClassification, "\t", InstanceDataStepRate, "\n")
+	}
+	
+	// Print new line for spacing.
+	host.diagnostics.debugLog("\n");
+}
+
+//function getModuleAddress()
+//{
+//	// Why the cock fucking suck doesn't this work?
+//	var modules = host.currentProcess.Modules.Where(function (k) { return k.Name == "Snatcher.exe"; });
+//	var mod = modules.First();
+//	return mod.BaseAddress;
+//}
+
+function convertModuleAddress(address)
+{
+	// I don't have to explain myself here.
+	return address - 0x850000;
+}
+
+function dumpShaderIds()
+{
+	var rsi = host.memory.readMemoryValues(convertModuleAddress(0x141D179A0), 1, 8)[0]; //host.currentThread.Registers.User.rsi;
+	var shaderCount = host.memory.readMemoryValues(rsi + 0xB29C, 1, 4)[0];
+	
+	// Loop and print the shader info.
+	host.diagnostics.debugLog("Found ", shaderCount.toString(), " shaders:\n");
+	for (i = 0; i < shaderCount; i++)
+	{
+		// Read the shader name and id.
+		var shaderNameAddress = host.memory.readMemoryValues(rsi + 0x62A0 + (i * 0x18), 1, 8)[0];
+		var shaderId = host.memory.readMemoryValues(rsi + 0x62A0 + (i * 0x18) + 8, 1, 4)[0];
+		
+		var shaderName = "null";
+		if (shaderNameAddress != 0)
+			shaderName = host.memory.readString(shaderNameAddress);
+		
+		
+		// Print the shader.
+		host.diagnostics.debugLog(shaderName, " = 0x", shaderId.toString(16), "\n");
 	}
 	
 	// Print new line for spacing.

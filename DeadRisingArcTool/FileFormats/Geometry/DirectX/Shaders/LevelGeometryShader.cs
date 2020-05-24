@@ -35,7 +35,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             samplerDesc.Filter = Filter.Anisotropic;
             samplerDesc.MipLodBias = 0;
             samplerDesc.MaximumAnisotropy = 3;
-            this.VertexSampleStates = new SamplerState[] { new SamplerState(device, samplerDesc) };
+            this.PixelSampleStates = new SamplerState[] { new SamplerState(device, samplerDesc) };
 
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
             this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, new InputElement[]
@@ -76,7 +76,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             samplerDesc.Filter = Filter.Anisotropic;
             samplerDesc.MipLodBias = 0;
             samplerDesc.MaximumAnisotropy = 3;
-            this.VertexSampleStates = new SamplerState[] { new SamplerState(device, samplerDesc) };
+            this.PixelSampleStates = new SamplerState[] { new SamplerState(device, samplerDesc) };
 
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
             this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, new InputElement[]

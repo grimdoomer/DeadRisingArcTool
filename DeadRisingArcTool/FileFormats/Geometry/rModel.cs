@@ -14,10 +14,68 @@ using System.Text;
 using System.Threading.Tasks;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using BoundingSphere = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingSphere;
+using BoundingBox = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingBox;
 using System.Collections;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
+    public enum ShaderId : uint
+    {
+        tXfScreenClear = 0x17796f56,
+        tXfScreenCopy = 0xcab2a170,
+        tXfYUY2Copy = 0xfe9a5edf,
+        tXfRGBICopy = 0x3e5389ee,
+        tXfRGBICubeCopy = 0x26461f2a,
+        tXfSubPixelCopy = 0x48e2d4bb,
+        tXfReductionZCopy = 0x96f834af,
+        tXfMaterialDebug = 0x3b810b10,
+        tXfMaterialZPass = 0xaa626ffb,
+        tXfMaterialVelocity = 0x97471581,
+        tXfMaterialShadowReceiver = 0x53ae7416,
+        tXfMaterialShadowCaster = 0x30b6bdb8,
+        tXfMaterialStandard = 0x88367c19,
+        tXfFilterStandard = 0x640e8a05,
+        tXfFilterBloom = 0x2d5767f8,
+        tXfFilterDOF = 0x185168f1,
+        tXfFilterTVNoise = 0x2e1ad607,
+        tXfFilterVolumeNoise = 0xaf9cb5e1,
+        tXfFilterRadialBlur = 0x2bb2716a,
+        tXfFilterFeedbackBlur = 0xf4db0ad3,
+        tXfFilterToneMap = 0xe8b68a03,
+        tXfFilterGaussianBlur = 0xf7c48941,
+        tXfFilterMotionBlur = 0x5ce1a976,
+        tXfFilterMerge = 0x9d1670d5,
+        tXfFilterImagePlane = 0x414e40d3,
+        tXfFilterColorCorrect = 0x2b6ec81b,
+        tXfFilterFXAA = 0x35bf832f,
+        tXfResolveDepth = 0xd5b6d6b3,
+        //null = 0xe41f5dd1
+        //null = 0xcc11f30d
+        //null = 0x493a954c
+        //null = 0x1fe78683
+        tXfPrimStandard = 0xed2827cf,
+        tXfEnvmapCubicBlur = 0x312cb4e1,
+        tXfEnvmapBlend = 0xe5f39d43,
+        //null = 0xfb4f06ed
+        tXfMaterialSky = 0x399a88f9,
+        tXfAdhesionPart = 0x5eecea3d,
+        //null = 0x23e98e1c
+        //null = 0x49c0b237
+        //null = 0x5168f29
+        //null = 0x5fa8066f
+        //null = 0xfbc055e4
+        //null = 0x6cd7aba0
+        //null = 0xae243cee
+        //null = 0x83614817
+        //null = 0xc4dd56de
+        //null = 0xef36423a
+        //null = 0x264bf16
+        //null = 0xfbb2f636
+        //null = 0x5a2a6823
+        tXfPrimGpuParticleBatch = 0x2752e134,
+        //null = 0x81f59164
+    }
+
     // sizeof = 0xA0
     public struct rModelHeader
     {
@@ -90,10 +148,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x02 */ public byte Unk2;
         /* 0x03 */ public byte Unk3;
 	    /* 0x04 */ public int Unk4;
-        [Hex]
-	    /* 0x08 */ public int Unk9;
+	    /* 0x08 */ public ShaderId PrimaryShader;
         /* 0x0C */ public int Unk5;
-        [Hex]
         /* 0x10 */ public int Unk6;
         /* 0x14 */ public int Unk7;
         /* 0x18 */ public int Unk8;
@@ -122,7 +178,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x70 */ public float FresnelFactor;
         /* 0x74 */ public float FresnelBias;
         /* 0x78 */ public float SpecularPow;
-        /* 0x7C */ public float EnvmapPower;
+        /* 0x7C */ public float EnvmapPower;    // not sure where I found this name...
         /* 0x80 */ public Vector4 LightMapScale;
         /* 0x90 */ public float DetailFactor;
         /* 0x94 */ public float DetailWrap;
@@ -157,8 +213,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x20 */ public int IndexCount;               // Passed to CDeviceContext::DrawIndexed
 	    /* 0x24 */ public int BaseVertexLocation;       // Passed to CDeviceContext::DrawIndexed
 	    /* 0x28 */ // padding to align vectors
-	    /* 0x30 */ public Vector4 Unk9;
-	    /* 0x40 */ public Vector4 Unk10;
+	    /* 0x30 */ public Vector4 BoundingBoxMin;
+	    /* 0x40 */ public Vector4 BoundingBoxMax;
     }
 
     public struct AnimatedJoint
@@ -215,6 +271,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private rTexture[] gameTextures = null;
         private Texture2D[] dxTextures = null;
         private ShaderResourceView[] shaderResources = null;
+
+        // Primitive data.
+        private BoundingBox[] primitiveBoxes;
 
         // Bone related data.
         private BoundingSphere[] jointBoundingSpheres;
@@ -302,13 +361,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             }
 
             // Check if there are any joints in the model.
+            model.joints = new Joint[model.header.JointCount];
             if (model.header.JointCount > 0)
             {
                 // Seek to the joint data offset.
                 reader.BaseStream.Position = model.header.JointDataOffset;
 
-                // Allocate and read all of the joint meta data.
-                model.joints = new Joint[model.header.JointCount];
+                // Read all of the joint meta data.
                 for (int i = 0; i < model.header.JointCount; i++)
                 {
                     // Read the joint data.
@@ -375,7 +434,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     model.materials[i].Unk2 = reader.ReadByte();
                     model.materials[i].Unk3 = reader.ReadByte();
                     model.materials[i].Unk4 = reader.ReadInt32();
-                    model.materials[i].Unk9 = reader.ReadInt32();
+                    model.materials[i].PrimaryShader = (ShaderId)reader.ReadUInt32();
                     model.materials[i].Unk5 = reader.ReadInt32();
                     model.materials[i].Unk6 = reader.ReadInt32();
                     model.materials[i].Unk7 = reader.ReadInt32();
@@ -446,8 +505,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 model.primitives[i].IndexCount = reader.ReadInt32();
                 model.primitives[i].BaseVertexLocation = reader.ReadInt32();
                 reader.BaseStream.Position += 8;
-                model.primitives[i].Unk9 = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-                model.primitives[i].Unk10 = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                model.primitives[i].BoundingBoxMin = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                model.primitives[i].BoundingBoxMax = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
             }
 
             // Check if there is vertex stream 1 data.
@@ -688,6 +747,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 // Calculate the final SRT matrix for the joint.
                 this.animatedJoints[i].SRTMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, this.animatedJoints[i].Scale.ToVector3(),
                     this.animatedJoints[i].Translation.ToVector3(), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
+
+                // Update the joint bounding sphere.
+                this.jointBoundingSpheres[i].Rotation = this.animatedJoints[i].Rotation;
 
                 //this.animatedJoints[i].SRTMatrix = Matrix.RotationQuaternion(this.animatedJoints[i].Rotation.ToQuaternion());
                 //this.animatedJoints[i].SRTMatrix.Column1 *= this.animatedJoints[i].Scale;
@@ -972,14 +1034,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             BlendStateDescription blendDesc = new BlendStateDescription();
             blendDesc.AlphaToCoverageEnable = false;
             blendDesc.IndependentBlendEnable = false;
-            //blendDesc.RenderTarget[0].IsBlendEnabled = true;
-            //blendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
-            //blendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
-            //blendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
-            //blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
-            //blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.One;
-            //blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Maximum;
-            //blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
             blendDesc.RenderTarget[0].IsBlendEnabled = false;
             blendDesc.RenderTarget[0].SourceBlend = BlendOption.One;
             blendDesc.RenderTarget[0].DestinationBlend = BlendOption.Zero;
@@ -989,6 +1043,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
             blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
             this.transparencyBlendState = new BlendState(device, blendDesc);
+
+            // Allocate the primtive bounding box array and initialize each one.
+            this.primitiveBoxes = new BoundingBox[this.primitives.Length];
+            for (int i = 0; i < this.primitives.Length; i++)
+            {
+                // Initialize the bounding box.
+                this.primitiveBoxes[i] = new BoundingBox(this.primitives[i].BoundingBoxMin, this.primitives[i].BoundingBoxMax, new Color4(0xFFFF0000));
+                if (this.primitiveBoxes[i].InitializeGraphics(manager, device) == false)
+                {
+                    // Failed to initialize the bounding box.
+                    return false;
+                }
+            }
 
             // Compute the width of the matrix map to the next highest power of 2.
             int matrixMapWidth = NextPowerOfTwo(this.joints.Length);
@@ -1001,14 +1068,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Loop through all the joints and initialize resources for each one.
             for (int i = 0; i < this.joints.Length; i++)
             {
-                // Create the bounding sphere for the current joint.
-                this.jointBoundingSpheres[i] = new BoundingSphere(GetJointPosition(i), this.joints[i].Length, new Color4(0xFF00FF00));
-                if (this.jointBoundingSpheres[i].InitializeGraphics(manager, device) == false)
-                {
-                    // Failed to initialize graphics for bounding sphere.
-                    return false;
-                }
-
                 // Setup the animated joint.
                 this.animatedJoints[i].JointNumber = this.joints[i].Index;
                 this.animatedJoints[i].ParentIndex = this.joints[i].ParentIndex;
@@ -1019,6 +1078,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 this.animatedJoints[i].Rotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
                 this.animatedJoints[i].Scale = new Vector4(1.0f);
                 this.animatedJoints[i].SRTMatrix = this.jointTranslations[i].SRTMatrix;
+
+                // Create the bounding sphere for the current joint.
+                this.jointBoundingSpheres[i] = new BoundingSphere(jointPosition, this.animatedJoints[i].Rotation, this.joints[i].Length, new Color4(0xFF00FF00));
+                if (this.jointBoundingSpheres[i].InitializeGraphics(manager, device) == false)
+                {
+                    // Failed to initialize graphics for bounding sphere.
+                    return false;
+                }
             }
 
             // Check if there is an animation loaded.
@@ -1126,7 +1193,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;
 
             // Set alpha blending state.
-            device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState);
+            device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState, new SharpDX.Mathematics.Interop.RawColor4(1.0f, 1.0f, 1.0f, 1.0f));
 
             // Loop through all of the primitives for the model and draw each one.
             for (int i = 0; i < this.primitives.Length; i++)
@@ -1218,11 +1285,18 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
             }
 
+            // Loop and draw the bounding boxes for all the primitives in the mesh.
+            for (int i = 0; i < this.primitiveBoxes.Length; i++)
+            {
+                // Draw the bounding box.
+                //this.primitiveBoxes[i].DrawFrame(manager, device);
+            }
+
             // Loop and draw bounding sphere for all the joints in the mesh.
             for (int i = 0; i < this.jointBoundingSpheres.Length; i++)
             {
                 // Draw the bounding sphere.
-                //this.jointBoundingSpheres[i].DrawFrame(manager, device);
+                this.jointBoundingSpheres[i].DrawFrame(manager, device);
             }
 
             // Done rendering.

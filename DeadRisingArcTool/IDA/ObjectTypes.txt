@@ -1,1266 +1,1266 @@
-Found object: cAreaBase
-Found object: cAreaControl
-Found object: cCameraCtrl
-Found object: cExplodeData
-Found object: cExplodeParts
-Found object: cFootMark
-Found object: cFootParts
-Found object: cFuzzyFuncFallBool
-Found object: cFuzzyFuncGrade
-Found object: cFuzzyFuncRectBool
-Found object: cFuzzyFuncReverseGrade
-Found object: cFuzzyFuncRiseBool
-Found object: cFuzzyFuncTrapezoid
-Found object: cFuzzyFuncTriangle
-Found object: cFuzzyInference
-Found object: cFuzzyMembershipFunc
-Found object: cFuzzyMembershipSpace
-Found object: cGeometrySetOperator::GeometryWork
-Found object: cCapsuleSetStatic
-Found object: cGeomAABBEx
-Found object: cGeomCapsuleEx
-Found object: cGeomSphereEx
-Found object: cGeometrySet
-Found object: cGeometrySetDynamic
-Found object: cGeometrySetOperator
-Found object: cHit
-Found object: ATTACK_PARAM
-Found object: DAMAGE_PARAM
-Found object: HitTree::HitNode
-Found object: HitTree
-Found object: cHitList
-Found object: cInferenceBase
-Found object: cInfluenceMap
-Found object: cInfluenceMapV100
-Found object: cItemStick
-Found object: cItemStickList
-Found object: cMissionCaveEscape
-Found object: cModelContainer
-Found object: cNMMachine::ExpressionQueue
-Found object: cNMProgrammableMachine::ProgrammableBrain
-Found object: cNMBrain
-Found object: cNMExpression
-Found object: cNMExpressionCommonMachine
-Found object: cNMExpressionMultiBranchMachine
-Found object: cNMLink
-Found object: cNMMachine
-Found object: cNMProgrammableMachine
-Found object: cNpcMovementCore
-Found object: cNpcWatchCtrl
-Found object: cObjHitCheck
-Found object: cPathFind::ListNode
-Found object: cPathFind
-Found object: cPathMesh
-Found object: cPathNode
-Found object: cPathPoint
-Found object: cPathTrace
-Found object: cDynamicPathMap
-Found object: cInfluenceObject
-Found object: cPerceptionE3
-Found object: cPhotoRating
-Found object: cMassPointAroundMovement::MassPoint
-Found object: cMassPointAroundMovement::MassPointInfo
-Found object: cPotentialMovement::MassPointInfo
-Found object: cMassPointAroundMovement
-Found object: cPotentialMovement
-Found object: cSprAnm
-Found object: cUnitPropertyContainer
-Found object: cWatchCtrl
-Found object: uOptionControllers
-Found object: uOptionGraphics
-Found object: uOptionSaveSlots
-Found object: a0000
-Found object: a0100
-Found object: a0135
-Found object: a0136
-Found object: a0138
-Found object: a0200
-Found object: a0230
-Found object: a0231
-Found object: a0300
-Found object: a0400
-Found object: a0401
-Found object: a0500
-Found object: a0501
-Found object: a0502
-Found object: a0503
-Found object: a0504
-Found object: a0600
-Found object: a0601
-Found object: a0700
-Found object: a0800
-Found object: a0801
-Found object: a0900
-Found object: a0a00
-Found object: a0b00
-Found object: a0b01
-Found object: a0b02
-Found object: a0b03
-Found object: aTestRoom
-Found object: aTestRoomEnemy
-Found object: aTestRoomScroll
-Found object: uAreaControl
-Found object: sAreaBase
-Found object: sAreaHit
-Found object: sAreaManager
-Found object: sFade
-Found object: sFootMarkManager
-Found object: HavokInfo
-Found object: sHavok
-Found object: HoldGroup
-Found object: sHoldCtrl
-Found object: sInfluenceMapping
-Found object: sItemCtrl
-Found object: sLoadingEffect
-Found object: sMessage
-Found object: sModelLayout
-Found object: sNMFManager::MovementFrameTag
-Found object: sNMFManager
-Found object: sNpcCommunication::CommunicateFrameTag
-Found object: sNpcCommunication
-Found object: cNpcCodePackInformation::Order
-Found object: cNpcCodePackInformation
-Found object: cNpcCodePackOutput
-Found object: cNpcFuncInformation
-Found object: sNpcFuncManager
-Found object: cNpcAppearPoint::AppearPointInfo
-Found object: sNpcManager::ScoopLostCheckerInfo
-Found object: cDamageEmotionNpcInfo
-Found object: cNpcAppearPoint
-Found object: sNpcManager
-Found object: sNpcMarker::MarkerSetContainer
-Found object: sNpcMarker
-Found object: sNpcWordManager::WordInfo
-Found object: sNpcWordManager
-Found object: sPathFind
-Found object: sPictureViewer
-Found object: sScore
-Found object: sSCQManager
-Found object: sSeGenerator
-Found object: sSMManager
-Found object: sSnatcherEffect
-Found object: sSnatcherHavok
-Found object: sSnatcherMain
-Found object: sSnatcherNpcCommunication
-Found object: sSnatcherPad
-Found object: sSnatcherPathFind
-Found object: sSnatcherStream
-Found object: sSnatcherTool
-Found object: sSound
-Found object: sStorage
-Found object: sStream
-Found object: cGametask
-Found object: sTaskManager
-Found object: sZombieManager
-Found object: rAreaHitLayout::LayoutInfo
-Found object: rAreaHitLayout
-Found object: EnemySetSpace
-Found object: rEnemyLayout::LayoutInfo
-Found object: rEnemyLayout
-Found object: rEnemyLayoutXml
-Found object: rEventTimeSchedule::LayoutInfo
-Found object: rEventTimeSchedule
-Found object: rFSMBrain::StateContainer
-Found object: rFSMBrain::TransitionFuncContainer
-Found object: rFSMBrain
-Found object: rFSMBrainXml
-Found object: rHavokConstraintLayout::LayoutInfo
-Found object: rHavokConstraintLayout
-Found object: rHavokLinkCollisionLayout::LayoutInfo
-Found object: rHavokLinkCollisionLayout
-Found object: rHavokVehicleData::TireData
-Found object: rHavokVehicleData
-Found object: rHavokVertexLayout::LayoutInfo
-Found object: rHavokVertexLayout
-Found object: rHkCollision
-Found object: rHkMaterial
-Found object: rItemLayout::LayoutInfo
-Found object: rItemLayout
-Found object: rMapLink::LayoutInfo
-Found object: rMapLink
-Found object: rMarkerLayout::AABBInfo
-Found object: rMarkerLayout::CapsuleInfo
-Found object: rMarkerLayout::LayoutInfo
-Found object: rMarkerLayout::OBBInfo
-Found object: rMarkerLayout::SphereInfo
-Found object: rMarkerLayout
-Found object: rMarkerLayoutXml
-Found object: rMessage
-Found object: rMobLayout::LayoutInfo
-Found object: rMobLayout
-Found object: rModelLayout::LayoutInfo
-Found object: rModelLayout
-Found object: rModelLayoutXml
-Found object: rNMMachine::ExpressionContainer
-Found object: rNMMachine
-Found object: rNMMachineXml
-Found object: nodeData
-Found object: nodeHead
-Found object: nodeLink
-Found object: rRouteNode
-Found object: rRouteNodeXml
-Found object: cScoopList
-Found object: rScoopList
-Found object: cSMAdd
-Found object: photoHitObj
-Found object: rSMAdd
-Found object: rSoundSeg::LayoutInfo
-Found object: rSoundSeg
-Found object: rSoundSegXml
-Found object: rSprAnm
-Found object: rSprLayout
-Found object: sprMap
-Found object: sprMapHead
-Found object: rUBCellList::Cell
-Found object: rUBCellList::CellAxisInfo
-Found object: rUBCell::CellInfo
-Found object: rUBCellList::CellLoginConclusion
-Found object: rUBMembershipSpaceList::MembershipFunc
-Found object: rUBMembershipSpaceList::MembershipFuncTrapezoid
-Found object: rUBMembershipSpaceList::MembershipFuncTriangle
-Found object: rUBMembershipSpaceList::MembershipSpace
-Found object: rUBMembershipSpaceList::MembershipSpaceHolder
-Found object: rUBMembershipSpaceList::MembershipSpaceTrapezoid
-Found object: rUBMembershipSpaceList::MembershipSpaceTriangle
-Found object: rUBCell
-Found object: rUBCellList
-Found object: rUBCellXml
-Found object: rUBMembershipSpaceList
-Found object: uBaseCamera
-Found object: uCockpit
-Found object: uCockpitModel
-Found object: uDebugHitPrim
-Found object: uEm49Hanged
-Found object: uEm49HangedNpc4a
-Found object: uEm49HangedNpc4b
-Found object: uEm49HangedNpc89
-Found object: uEnemy
-Found object: uEnemyLayout
-Found object: uExplodeParts
-Found object: uFade
-Found object: uFlagSetCtrl
-Found object: uFlagSetMessageEnd
-Found object: uHavokHitCheck
-Found object: uHitCheck
-Found object: uHavokModel
-Found object: uItemLight
-Found object: uLoadingEffect
-Found object: uMarkerLayout
-Found object: uMessage
-Found object: uMessageCry
-Found object: uModelLayout
-Found object: uMonitorScreen
-Found object: uNightLight
-Found object: uNpc::DamageEmotionHumanInfo
-Found object: uNpc::TargetZombieInfo
-Found object: cNpcPropertyContainer
-Found object: uNpc
-Found object: uNpc1aPhotoChecker
-Found object: uNpc21SetChecker
-Found object: uNpcEscortEndName
-Found object: uNpcOutsideCtrl
-Found object: uNpcZombieWatcher
-Found object: uOption
-Found object: uPhoto
-Found object: uPhoto::uPhotoFilter
-Found object: uPictureViewerPrim
-Found object: uPilotFish
-Found object: uPlAuto
-Found object: uPlayer
-Found object: uPPDisp
-Found object: uRanking
-Found object: uRestrictLight
-Found object: uResult
-Found object: uSchedulerMessage
-Found object: uScoopLostChecker
-Found object: uScrHitCheck
-Found object: uScrollCollision
-Found object: uScrollCollisionDisp::VertexKeep
-Found object: uScrollCollisionDisp
-Found object: uScrollPrim
-Found object: uScrollPrimCollect
-Found object: uSectioning
-Found object: uSnatcherActorModel
-Found object: uSnatcherDebugDisp
-Found object: cSnatcherModelPropertyContainer
-Found object: uSnatcherModel
-Found object: uSnatcherShadow
-Found object: uStaffRoll
-Found object: uStoreMirror
-Found object: uTestITEM
-Found object: uTestSM
-Found object: uInfoScreen
-Found object: uTimeMessage
-Found object: uZombieSort
-Found object: uEffectForce
-Found object: uEffectForceSphere
-Found object: uSnatcherEffectBaria
-Found object: uSnatcherEffectBlood
-Found object: uSnatcherEffectCamera
-Found object: uSnatcherEffectColl
-Found object: uSnatcherEffectEdit
-Found object: uSnatcherEffectFire
-Found object: uSnatcherEffectGenerator
-Found object: uSnatcherEffectLight
-Found object: uSnatcherEffectMark
-Found object: uSnatcherEffectObj
-Found object: uScroll
-Found object: cSobj
-Found object: uOm116
-Found object: uOm11b
-Found object: uOm11e
-Found object: uOm13c
-Found object: uLowScroll
-Found object: uShopScroll
-Found object: uStoreScroll
-Found object: uAutoDoor
-Found object: uDoor
-Found object: uItem
-Found object: uOm01
-Found object: uOm02
-Found object: uOm04
-Found object: uOm05
-Found object: uOm06
-Found object: uOm08
-Found object: uOm0a
-Found object: uOm0b0
-Found object: uOm0b1
-Found object: uOm0d
-Found object: uOm0f
-Found object: uOm11
-Found object: uOm11_1
-Found object: uOm132
-Found object: uOm13
-Found object: uOm14
-Found object: uOm15
-Found object: uOm17
-Found object: uOm18
-Found object: uOm19
-Found object: uOm1a
-Found object: uOm1b
-Found object: uOm1c
-Found object: uOm1e
-Found object: uOm200
-Found object: uOm205
-Found object: uOm206
-Found object: uOm207
-Found object: uOm208
-Found object: uOm209
-Found object: uOm20
-Found object: uOm20a
-Found object: uOm20b
-Found object: uOm20c
-Found object: uOm20d
-Found object: uOm20e
-Found object: uOm20f
-Found object: uOm210
-Found object: uOm211
-Found object: uOm212
-Found object: uOm213
-Found object: uOm2140
-Found object: uOm2141
-Found object: uOm216
-Found object: uOm217
-Found object: uOm218
-Found object: uOm21
-Found object: uOm21a
-Found object: uOm21e
-Found object: uOm21f
-Found object: uOm220
-Found object: uOm22
-Found object: uOm22d
-Found object: uOm22e0
-Found object: uOm22e1
-Found object: uOm22f
-Found object: uOm234
-Found object: uOm235
-Found object: uOm236
-Found object: uOm237
-Found object: uOm238
-Found object: uOm239
-Found object: uOm23
-Found object: uOm23a
-Found object: uOm24
-Found object: uOm25
-Found object: uOm26
-Found object: uOm27
-Found object: uOm29
-Found object: uOm2a
-Found object: uOm2b
-Found object: uOm2c
-Found object: uOm2d
-Found object: uOm2e
-Found object: uOm2f
-Found object: uOm30
-Found object: uOm31
-Found object: uOm320
-Found object: uOm33
-Found object: uOm34
-Found object: uOm36
-Found object: uOm38
-Found object: uOm39
-Found object: uOm3a
-Found object: uOm3b
-Found object: uOm3c
-Found object: uOm3d
-Found object: uOm3e
-Found object: uOm42
-Found object: uOm43
-Found object: uOm44
-Found object: uOm45
-Found object: uOm46
-Found object: uOm47
-Found object: uOm48
-Found object: uOm49
-Found object: uOm4a
-Found object: uOm4b
-Found object: uOm4c
-Found object: uOm4d
-Found object: uOm4e0
-Found object: uOm4e1
-Found object: uOm4f
-Found object: uOm50
-Found object: uOm51
-Found object: uOm52
-Found object: uOm53
-Found object: uOm54
-Found object: uOm55
-Found object: uOm56
-Found object: uOm58
-Found object: uOm59
-Found object: uOm5a
-Found object: uOm5b
-Found object: uOm60
-Found object: uOm61_1
-Found object: uOm63
-Found object: uOm64
-Found object: uOm65
-Found object: uOm66
-Found object: uOm67
-Found object: uOm68
-Found object: uOm6a
-Found object: uOm6b
-Found object: uOm6c
-Found object: uOm6e
-Found object: uOm71_1
-Found object: uOm73
-Found object: uOm74
-Found object: uOm75
-Found object: uOm76
-Found object: uOm78
-Found object: uOm79
-Found object: uOm7a
-Found object: uOm7b
-Found object: uOm7d
-Found object: uOm7e
-Found object: uOm7f
-Found object: uOm80
-Found object: uOm82
-Found object: uOm85
-Found object: uOm86
-Found object: uOm87
-Found object: uOm88
-Found object: uOm89
-Found object: uOm8a
-Found object: uOm8b
-Found object: uOm8c
-Found object: uOm8f
-Found object: uOm90
-Found object: uOm91
-Found object: uOm92
-Found object: uOm93
-Found object: uOm94
-Found object: uOm96
-Found object: uOm97
-Found object: uOma3
-Found object: uOma5
-Found object: uOma6
-Found object: uOma7
-Found object: uOma8
-Found object: uOma9_1
-Found object: uOmac
-Found object: uOmad_1
-Found object: uOmb1
-Found object: uOmb2
-Found object: uOmb3
-Found object: uOmb4
-Found object: uOmb5
-Found object: uOmb6
-Found object: uOmb7
-Found object: uOmb8
-Found object: uOmb9
-Found object: uOmbc
-Found object: uOmbd
-Found object: uOmbe
-Found object: uOmbf
-Found object: uOmc0
-Found object: uOmc1
-Found object: uOmc2
-Found object: uOmc3
-Found object: uOmc4
-Found object: uOmc4_1
-Found object: uOmc5
-Found object: uOmc6
-Found object: uOmc7
-Found object: uOmc8
-Found object: uOmc9
-Found object: uOmca
-Found object: uOmcb
-Found object: uOmcc
-Found object: uOmcd0
-Found object: uOmcd1
-Found object: uOmce
-Found object: uOmcf
-Found object: uOmd2
-Found object: uOmd3
-Found object: uOmd50
-Found object: uOmd51
-Found object: uOmd6
-Found object: uOmd7
-Found object: uOmd8
-Found object: uOmd9
-Found object: uOmda
-Found object: uOme4
-Found object: uOme5
-Found object: uOme7
-Found object: uOme8
-Found object: uOme9
-Found object: uOmea
-Found object: uOmeb
-Found object: uOmec
-Found object: uOmed
-Found object: uOmef
-Found object: uOmf0
-Found object: uOmf1
-Found object: uOmf2
-Found object: uOmf3
-Found object: uOmf4
-Found object: uOmf5
-Found object: uOmf6
-Found object: uOmf7
-Found object: uOmf8
-Found object: uOmf9
-Found object: uOmfb
-Found object: uOm
-Found object: uOm00
-Found object: uOm0e
-Found object: uOm100
-Found object: uOm101
-Found object: uOm102
-Found object: uOm103
-Found object: uOm104
-Found object: uOm105
-Found object: uOm107
-Found object: cClockSObj
-Found object: uOm108
-Found object: uOm12e
-Found object: uOm13d
-Found object: uOm109
-Found object: uOm10a
-Found object: uOm10c
-Found object: uOm10d
-Found object: uOm10e
-Found object: uOm111
-Found object: uOm112
-Found object: uOm113
-Found object: uOm114
-Found object: uOm115
-Found object: uOm118
-Found object: uOm11c
-Found object: uOm11d
-Found object: uOm11f
-Found object: uOm120
-Found object: uOm121
-Found object: cTurnSObj
-Found object: uOm122
-Found object: uOm124
-Found object: uOm125
-Found object: uOm123
-Found object: uOm127
-Found object: uOm128
-Found object: uOm12a
-Found object: uOm130
-Found object: uOm133
-Found object: uOm134
-Found object: uOm135
-Found object: uOm136
-Found object: uOm137
-Found object: uOm138
-Found object: uOm13a
-Found object: uOm13b
-Found object: uOm13f
-Found object: uOm140
-Found object: uOm141
-Found object: uOm142
-Found object: uOm143
-Found object: uOm144
-Found object: uOm145
-Found object: uOm146
-Found object: uOm147
-Found object: uOm1d
-Found object: uOm1f
-Found object: uOm219
-Found object: uOm21c
-Found object: uOm21d
-Found object: uOm221
-Found object: uOm222
-Found object: uOm222_1
-Found object: uOm223
-Found object: uOm224
-Found object: uOm225
-Found object: uOm226
-Found object: uOm227
-Found object: uOm227_1
-Found object: uOm228
-Found object: uOm229
-Found object: uOm22a
-Found object: uOm233
-Found object: uOm28
-Found object: uOm29_scr
-Found object: uOm3f
-Found object: uOm40
-Found object: uOm5d
-Found object: uOm61
-Found object: cOm71PropertyContainer
-Found object: uOm71
-Found object: cOm72PropertyContainer
-Found object: uOm72
-Found object: uOm77
-Found object: uOm7c
-Found object: uOm81
-Found object: uOm84
-Found object: uOm95
-Found object: uOm9b
-Found object: uOm9f
-Found object: uOma2
-Found object: uOma9
-Found object: uOmaa
-Found object: uOmad
-Found object: uOmaf
-Found object: uOmb2Box
-Found object: uOmb2Cap
-Found object: uOmb2_1
-Found object: uOmba
-Found object: uOmbb
-Found object: uOmbb_1
-Found object: uOmd0
-Found object: uOmd0_1
-Found object: uOmdb
-Found object: uOmdd
-Found object: uOme6
-Found object: uOmfa
-Found object: uOmfc
-Found object: uOmfd
-Found object: uOmfe
-Found object: uOmff
-Found object: uOmff0
-Found object: uOmffe
-Found object: uOmfff
-Found object: uOmShell
-Found object: uOmShellBeamRifle
-Found object: uOmShellBulletGun
-Found object: uOmShellFireExt
-Found object: uOmShellFlare
-Found object: uOmShellGolfball
-Found object: uOmShellHammerMG
-Found object: uOmShellHandgun
-Found object: uOmShellHeliMachine
-Found object: uOmShellHockeypac
-Found object: uOmShellMachinegun
-Found object: uOmShellMainArmament
-Found object: uOmShellNailGun
-Found object: uOmShellP90
-Found object: uOmShellRockBuster
-Found object: uOmShellShotgun
-Found object: uOmShellSniperRifle
-Found object: uOmShellSpit
-Found object: uOmShellSubMachinegun
-Found object: uOmShellSuperSpit
-Found object: uOmShellVulcan
-Found object: uOmShellWaterGun
-Found object: uRestrictSP
-Found object: uVehicleOm9aMg
-Found object: uVehicle
-Found object: uVehicleOm02
-Found object: uVehicleOm09
-Found object: uVehicleOm98
-Found object: uVehicleOm99
-Found object: uVehicleOm9a
-Found object: uVehicleOm9b
-Found object: uVehicleOm9d
-Found object: cPlCostume
-Found object: uCos0
-Found object: uCos1
-Found object: uCos2
-Found object: uCos3
-Found object: uCos4
-Found object: uCos5
-Found object: cGametaskConvert
-Found object: cGametaskDemo
-Found object: cGametaskDolby
-Found object: cGametaskExit
-Found object: cGametaskInit
-Found object: cGametaskLoad
-Found object: cGametaskLogo
-Found object: cGametaskMain
-Found object: cGametaskMovie
-Found object: cGametaskTitle
-Found object: cGametaskWarning
-Found object: uGametaskPrim
-Found object: uEm00
-Found object: uEm01
-Found object: uEm02
-Found object: uEm03
-Found object: uEm04
-Found object: uEm08
-Found object: uEm09
-Found object: uEm0a
-Found object: uEm10
-Found object: cEm11PropertyContainer
-Found object: uEm11
-Found object: uEm40
-Found object: uEm40SubLeadMarker
-Found object: uEm41
-Found object: uEm43
-Found object: uEm43Ctrl
-Found object: uEm44
-Found object: uEm45
-Found object: uEm46
-Found object: uEm47
-Found object: uEm48
-Found object: uEm49
-Found object: uEm4a
-Found object: uEm4a_Npc83
-Found object: uEm4b
-Found object: uEm4d
-Found object: uEm4e
-Found object: uEm4f
-Found object: uEm50
-Found object: uEm53
-Found object: uEm54
-Found object: uEm54Hanged
-Found object: uEm54Hanged_Npc84
-Found object: uEm55
-Found object: uEm56
-Found object: uEm5a
-Found object: cZombiePropertyContainer
-Found object: uZombie
-Found object: cFSMBrain::State
-Found object: cFSMBrain::TransitionFunc
-Found object: cFSMBrain
-Found object: cNpcBaseInfo
-Found object: cNpcCockpitInfo
-Found object: cNpcManageInfo
-Found object: cNpcCollection
-Found object: cNCIdentifier
-Found object: cNpcCommunicateFrame
-Found object: cNpcCommunicateMessage
-Found object: cNpcFriendInfo
-Found object: cNpcFriendList
-Found object: cNpcCodeParamContainerInfo
-Found object: cNpcFuncContainer
-Found object: cNpcParamContainer
-Found object: cNpcMotionControlInfo::EventFunc
-Found object: cNpcMotionAgent::MotionSetInfo
-Found object: cNpcMotionAgent
-Found object: cNpcMotionControlInfo
-Found object: cNpcMotionPlayInfo
-Found object: cNpcMovementProject
-Found object: cLatticeObstacleSensor::IVector
-Found object: cLatticeObstacleSensor::LatticeNode
-Found object: cObjIntersectSensor::ObjectInfo
-Found object: cNpcObstacle::Pole
-Found object: cLatticeObstaclePerception
-Found object: cLatticeObstacleSensor
-Found object: cNpcObstacle
-Found object: cNpcObstacleCylinder
-Found object: cNpcObstacleDisk
-Found object: cObjIntersectSensor
-Found object: cNpcParamManager
-Found object: cPerceptionUnitInfo::InfoContainer
-Found object: cNpcMarkerPerception
-Found object: cNpcPerception
-Found object: cPerceptionUnitInfo
-Found object: cNpcTargetManager::TargetInformation
-Found object: cNpcTargetManager
-Found object: cNpcUnitSyncSet::UnitInformation
-Found object: cNpcUnitSyncSet
-Found object: cNpcView
-Found object: cNpcViewCone
-Found object: cNpcViewSector
-Found object: cNpcWord
-Found object: cParallelEventBrainCore::Event
-Found object: cParallelEventBrainCore::EventRunningInfo
-Found object: cExpressionEventInfoContainer
-Found object: cPEBEventInfoContainer
-Found object: cParallelEventBrainCore
-Found object: cParallelEventExpressionBrain
-Found object: cUBCell::AxisInfo
-Found object: cLogicSpaceVector
-Found object: cUBCell
-Found object: cUBCellManager
-Found object: cUBConclusion
-Found object: cUBConclusionGroup
-Found object: cUBConclusionGroupManager
-Found object: cUBMembershipSpace
-Found object: cUBMembershipSpaceManager
-Found object: cUBMembershipSpaceTrapezoid
-Found object: cUBMembershipSpaceTriangle
-Found object: cUnscriptedBaseData
-Found object: cUBEventInfoContainer::AxisInputInfo
-Found object: cUBEventInfoContainer::AxisInputMembershipSpace
-Found object: cUBInferenceAgent::CellConclusionGroup
-Found object: cUBInferenceAgent::CellConclusionGroupSet
-Found object: cUnscriptedBrain::ExpressionParamSetupFuncContainer
-Found object: cUBConclusionContainer
-Found object: cUBConclusionPlaneExpression
-Found object: cUBEventInfoContainer
-Found object: cUBInferenceAgent
-Found object: cUBMembershipSpaceCrisp
-Found object: cUBMembershipSpaceCrispManager
-Found object: cUBObjectInfoContainer
-Found object: cUBObjectList
-Found object: cUnscriptedBrain
-Found object: cWayPlanBrain::WayGeometry
-Found object: cWayPlanBrain::WayPlan
-Found object: cWayPlanBrain::WayPlanEndChecker
-Found object: cWayPlanBrain::WayPlanEvaluationFunction
-Found object: cWayPlanBrain
-Found object: cWayPlanParamContainer
-Found object: cWayScanner
-Found object: NpcActionParamContainerBase
-Found object: NpcApproachTargetContainer
-Found object: NpcCallAroundActionContainer
-Found object: NpcCatchPlayerActionContainer
-Found object: NpcEmotionActionContainer
-Found object: NpcEventDoneContainer
-Found object: NpcGetAndUseItemActionContainer
-Found object: NpcGiveItemActionContainer
-Found object: NpcHugActionContainer
-Found object: NpcIndicateActionContainer
-Found object: NpcLookAroundActionContainer
-Found object: NpcMoveAwayActionContainer
-Found object: NpcPhysicalActionContainer
-Found object: NpcPlayMotionContainer
-Found object: NpcPlayMotionContainerEx
-Found object: NpcSearchActionContainer
-Found object: NpcSleepActionContainer
-Found object: NpcSpecialActionContainer
-Found object: NpcTalkParamContainer
-Found object: NpcThanksActionContainer
-Found object: NpcWaitActionContainer
-Found object: NpcAttackParamContainer
-Found object: cNpcAppearPointPropertyContainer
-Found object: cNpcDangerLevelCheckerPropertyContainer
-Found object: cNpcSafetyZonePropertyContainer
-Found object: uNpcAppearPoint
-Found object: uNpcDangerLevelChecker
-Found object: uNpcLeadMarker
-Found object: uNpcMarkerHumanEntity
-Found object: uNpcMarkerHumanEntityTime
-Found object: uNpcMarkerSingleTime
-Found object: uNpcMarkerZombieSet
-Found object: uNpcSafetyZone
-Found object: uNpc::PhysicalStatus
-Found object: NpcTransitionCheckBulletRestContainer
-Found object: NpcTransitionCheckDamageContainer
-Found object: NpcTransitionCheckDangerLevelContainer
-Found object: NpcTransitionCheckFreeFlagContainer
-Found object: NpcTransitionCheckFriendInfoContainer
-Found object: NpcTransitionCheckItemContainer
-Found object: NpcTransitionCheckLiveStateContainer
-Found object: NpcTransitionCheckPlayerTalkEx
-Found object: NpcTransitionCheckVitalContainer
-Found object: NpcTransitionFindSpecifyHumanContainer
-Found object: NpcTransitionPlayerGiveItemEx
-Found object: NpcTransitionReceiveMessageContainer
-Found object: NpcTransitionSituationChangeContainer
-Found object: uEm43Sufferer
-Found object: uNpc20
-Found object: uEm44Sufferer
-Found object: uNpc40
-Found object: uNpc42
-Found object: uNpc44
-Found object: uNpc46
-Found object: uEm45Sufferer
-Found object: uNpc52
-Found object: uEm4bSufferer
-Found object: uNpc56
-Found object: uNpc57
-Found object: uNpc59
-Found object: uNpc5a
-Found object: uNpc00
-Found object: uNpc01
-Found object: uNpc02
-Found object: uNpc03
-Found object: uNpc04
-Found object: uNpc05
-Found object: uNpc06
-Found object: uNpc07
-Found object: uNpc08
-Found object: uNpc09
-Found object: uNpc0a
-Found object: uNpc0b
-Found object: uNpc0c
-Found object: uNpc0d
-Found object: uNpc0e
-Found object: uNpc0f
-Found object: uNpc10
-Found object: uNpc11
-Found object: uNpc12
-Found object: uNpc13
-Found object: uNpc14
-Found object: uNpc15
-Found object: uNpc16
-Found object: uNpc17
-Found object: uNpc18
-Found object: uNpc19
-Found object: uNpc1a
-Found object: uNpc1b
-Found object: uNpc1d
-Found object: uNpc1e
-Found object: uNpc1f
-Found object: uNpc21
-Found object: uNpc2a
-Found object: uNpc2b
-Found object: uNpc2c
-Found object: uNpc2d
-Found object: uNpc30
-Found object: uNpc31
-Found object: uNpc33
-Found object: uNpc34
-Found object: uNpc45
-Found object: uNpc4c
-Found object: uNpc4d
-Found object: uNpc4e
-Found object: uNpc4f
-Found object: uNpc50
-Found object: uNpc54
-Found object: uNpc54_Ryde
-Found object: uNpc70
-Found object: cNpc80PropertyContainer
-Found object: uNpc80
-Found object: cNpc81PropertyContainer
-Found object: uNpc81
-Found object: cNpc82PropertyContainer
-Found object: uNpc82
-Found object: cNpc83PropertyContainer
-Found object: uNpc83
-Found object: cNpc84PropertyContainer
-Found object: uNpc84
-Found object: cNpc85PropertyContainer
-Found object: uNpc85
-Found object: cNpc86PropertyContainer
-Found object: uNpc86
-Found object: cNpc87PropertyContainer
-Found object: uNpc87
-Found object: cNpc88PropertyContainer
-Found object: uNpc88
-Found object: uNpc8a
-Found object: uNpc8b
-Found object: uNpc8c
-Found object: uNpc8e
-Found object: cNpc90PropertyContainer
-Found object: uNpc90
-Found object: cNpc91PropertyContainer
-Found object: uNpc91
-Found object: cNpc92PropertyContainer
-Found object: uNpc92
-Found object: cNpc93PropertyContainer
-Found object: uNpc93
-Found object: cNpc94PropertyContainer
-Found object: uNpc94
-Found object: cNpc95PropertyContainer
-Found object: uNpc95
-Found object: cNpc96PropertyContainer
-Found object: uNpc96
-Found object: cNpc97PropertyContainer
-Found object: uNpc97
-Found object: cNpc98PropertyContainer
-Found object: uNpc98
-Found object: cNpc9cPropertyContainer
-Found object: uNpc9c
-Found object: uNpc9d
-Found object: uNpc9e
-Found object: uNpcMarker::Link
-Found object: cNpcMarkerModelJointPropertyContainer
-Found object: cNpcMarkerSinglePropertyContainer
-Found object: uNpcMarker
-Found object: uNpcMarkerModelJoint
-Found object: uNpcMarkerSingle
-Found object: uNpcSufferer
-Found object: cHoldGroupButcherHang
-Found object: cHoldGroupCaveFence
-Found object: cHoldGroupCultBomber
-Found object: cHoldGroupCultPickUp
-Found object: cHoldGroupDrillup
-Found object: cHoldEvNpc83
-Found object: cHoldGroupFaceCrasher
-Found object: cHoldGroupFryingpan
-Found object: cHoldGroupGerman
-Found object: cHoldGroupGiantSwing
-Found object: cHoldGroupGiveShoulder
-Found object: cHoldGunshop
-Found object: cHoldGroupLiftUp
-Found object: cHoldGroupMobZombie
-Found object: cHoldGroupNeckSlash
-Found object: cHoldGroupNpcCatchPl
-Found object: cHoldGroupNpcHug
-Found object: cHoldGroupNpcZombie
-Found object: cHoldGroupPiggyBack
-Found object: cHoldGroupPullup
-Found object: cHoldGroupRopethrow
-Found object: cHoldGroupSadist
-Found object: cHoldGroupSadistPl
-Found object: cHoldGroupSergeant
-Found object: cHoldGroupSickleCut
-Found object: cHoldGroupSleeper
-Found object: cHoldGroupViscerachop
-Found object: cHoldGroupZombiClimb
-Found object: uEventGamePl::Constraint
-Found object: uEventGamePl::cBlood
-Found object: uEventGamePl
-Found object: uEventNpcDemo
-Found object: uEventOm95
-Found object: uEventPl::Constraint
-Found object: uEventPl::cBlood
-Found object: uEventPl
-Found object: uEventSlow
-Found object: uEventSM::cBlood
-Found object: uEventSM
-Found object: uEvh000
-Found object: uEvh001
-Found object: uEvh002
-Found object: uEvh003
-Found object: uEvh004
-Found object: uEvh005
-Found object: uEvh006
-Found object: uEvh007
-Found object: uEvh008
-Found object: uEvh009
-Found object: uEvh
-Found object: uEvItem
-Found object: uEvNpc83
-Found object: uEvo000
-Found object: uEvo001
-Found object: uEvo002
-Found object: uEvo003
-Found object: uEvo004
-Found object: uEvo005
-Found object: uEvo006
-Found object: uEvo
-Found object: uEvo2a
-Found object: uEvZombie
-Found object: uNpcDeadObj
-Found object: uNpcDeadZombie
-Found object: cBackUpParamEm44
-Found object: cBackUpParamEm45
-Found object: cBackUpParamEm49
-Found object: cBackUpParamEm
-Found object: cBackUpParamVehicle
-Found object: cBackUpParamPl
-Found object: sSnatcherStorage
-Found object: cDebugCapsule
-Found object: cDrawRangeTool
-Found object: uOmdd_1
-Found object: MtObject
-Found object: MtArray
-Found object: MtHeapArray
-Found object: MtFile::FileInfo
-Found object: MtFile
-Found object: MtGeomConvex
-Found object: MtGeometry
-Found object: MtGeomSphere
-Found object: MtGeomCapsule
-Found object: MtGeomAABB
-Found object: MtCollisionTree
-Found object: MtCollisionTree::Node
-Found object: MtRegistry
-Found object: MtGeomTriangle
-Found object: MtAllocator
-Found object: MtBlockAllocator
-Found object: MtDefaultAllocator
-Found object: MtHeapAllocator
-Found object: MtClipboardStream
-Found object: MtFileStream
-Found object: MtMemoryCachedStream
-Found object: MtMemoryStream
-Found object: MtStream
-Found object: MtGeomOBB
-Found object: sUnit::MoveLine
-Found object: sUnit
-Found object: cResource
-Found object: uSchedulerEdit
-Found object: sCollision::Collider
-Found object: sCollision::List
-Found object: sCollision::Node
-Found object: sCollision::NodeList
-Found object: sCollision
-Found object: sResource::DecompressStream
-Found object: sResource::TypeInfo
-Found object: sResource
-Found object: uCoord
-Found object: uActorModel::Constraint
-Found object: uActorModel::EffectEmitter
-Found object: uActorModel
-Found object: uModel2Light
-Found object: uModelGlass
-Found object: uModelSky
-Found object: rNulls
-Found object: cSystem
-Found object: sMain
-Found object: r2Texture
-Found object: rRenderTargetTexture
-Found object: rTexture
-Found object: cUnit
-Found object: rSchedulerXml::BoolTrack
-Found object: rSchedulerXml::FloatTrack
-Found object: rSchedulerXml::IntTrack
-Found object: rSchedulerXml::BoolTrack::Key
-Found object: rSchedulerXml::FloatTrack::Key
-Found object: rSchedulerXml::IntTrack::Key
-Found object: rSchedulerXml::RefTrack::Key
-Found object: rSchedulerXml::ResourceTrack::Key
-Found object: rSchedulerXml::VectorTrack::Key
-Found object: rSchedulerXml::ParamTrack::KeyBase
-Found object: rSchedulerXml::ObjectTrack
-Found object: rSchedulerXml::ParamTrack
-Found object: rSchedulerXml::RefTrack
-Found object: rSchedulerXml::ResourceTrack
-Found object: rSchedulerXml::RootTrack
-Found object: rSchedulerXml::SystemTrack
-Found object: rSchedulerXml::Track
-Found object: rSchedulerXml::UnitTrack
-Found object: rSchedulerXml::VectorTrack
-Found object: rScheduler
-Found object: rSchedulerXml
-Found object: rCollision
-Found object: rModelInfoXml::Cluster
-Found object: rModelInfoXml::Material
-Found object: rModel
-Found object: rModelInfoXml
-Found object: rArchive::CompressStream
-Found object: rArchive::DecompressStream
-Found object: rArchive
-Found object: sSoundSystem
-Found object: sPad::Map
-Found object: sPad::Pad
-Found object: sPad
-Found object: sToolBase
-Found object: sRender::Pass
-Found object: sRender::TempTexture
-Found object: sRender
-Found object: uColorSpaceFilter
-Found object: uCrossFadeFilter
-Found object: uDOFFilter
-Found object: uDirectionalGlowFilter
-Found object: uFeedbackBlurFilter
-Found object: uFilter
-Found object: uHSVFilter
-Found object: uHazeFilter
-Found object: uImagePlaneFilter
-Found object: uLevelCorrectFilter
-Found object: uMotionBlurFilter
-Found object: uNoiseFogFilter
-Found object: uRadialBlurFilter
-Found object: uTVNoiseFilter
-Found object: uToneCurveFilter
-Found object: uToneMapFilter
-Found object: uVolumeNoiseFilter
-Found object: sCamera::Viewport
-Found object: sCamera
-Found object: sEffect
-Found object: cTrans::CubeTexture
-Found object: cTrans::Element
-Found object: cTrans::IndexBuffer
-Found object: cTrans::Technique
-Found object: cTrans::Texture
-Found object: cTrans::TextureBase
-Found object: cTrans::VertexBuffer
-Found object: cTrans::VertexDecl
-Found object: cTrans::VolumeTexture
-Found object: cTrans
-Found object: sPrim
-Found object: sShader::ParameterDesc
-Found object: sShader::TechniqueDesc
-Found object: sShader
-Found object: rEffectSetData
-Found object: rEffectSetDataList
-Found object: uBackLight
-Found object: uCubeMapLight
-Found object: uHemiSphereLight
-Found object: uInfiniteLight
-Found object: uLight
-Found object: uPointLight
-Found object: uSpotLight
-Found object: uModel::Constraint
-Found object: uModel::Joint
-Found object: uModel::Motion
-Found object: uModel::RenderInfo
-Found object: uModel
-Found object: rShader
-Found object: rModelMontage
-Found object: rMotionList
-Found object: rEffectAnimation
-Found object: rEffectStrip
-Found object: rFacialPattern
-Found object: rFacialAnimation
-Found object: rClothXml::Chain
-Found object: rClothXml::Constraint
-Found object: rClothXml::Index
-Found object: rCloth
-Found object: rClothXml
-Found object: sGpuParticle
-Found object: uAdhesion
-Found object: uOceanWater
-Found object: uWater
-Found object: uMovie
-Found object: uMirror
-Found object: uMotionCamera
-Found object: rCameraListXml::CameraInfo
-Found object: rCameraList
-Found object: rCameraListXml
-Found object: uFacial
-Found object: uEnvMap
-Found object: uFreeCamera
-Found object: uCapsuleShadowLight
-Found object: uPointShadowLight
-Found object: uShadowLight
-Found object: uSpotShadowLight
-Found object: sLight
-Found object: uLightShaft
-Found object: sCapture
-Found object: uShadow
-Found object: uInteractiveWater
-Found object: uFlowingWater
-Found object: uGridEnvLight
-Found object: sEffectVFR
-Found object: rSoundAst
-Found object: rSoundCdp
-Found object: rSoundRrd
-Found object: rSoundSeq
-Found object: rSoundSnd
-Found object: rSoundWed
-Found object: sTool
-Found object: uCamera
-Found object: uCloth::Chain
-Found object: uCloth
-Found object: uEffect
-Found object: uEffectEdit
-Found object: uEffectEditPointLight
-Found object: uEffectGenerator
-Found object: rMovie
-Found object: rMovieInterMediate
-Found object: cArea
-Found object: rGridEnvLight
-Found object: rEffectAnim
-Found object: rEffectList
-Found object: uEffectVFR
-Found object: sArea::AreaInfo
-Found object: sArea
-Found object: MtGeomRay
-Found object: MtFCurve::Key
-Found object: MtFCurve
+Found object: Size=0x60 Name=cAreaBase
+Found object: Size=0x3030 Name=cAreaControl
+Found object: Size=0x390 Name=cCameraCtrl
+Found object: Size=0xd0 Name=cExplodeData
+Found object: Size=0x1a30 Name=cExplodeParts
+Found object: Size=0x150 Name=cFootMark
+Found object: Size=0x50 Name=cFootParts
+Found object: Size=0x10 Name=cFuzzyFuncFallBool
+Found object: Size=0x10 Name=cFuzzyFuncGrade
+Found object: Size=0x10 Name=cFuzzyFuncRectBool
+Found object: Size=0x10 Name=cFuzzyFuncReverseGrade
+Found object: Size=0x10 Name=cFuzzyFuncRiseBool
+Found object: Size=0x18 Name=cFuzzyFuncTrapezoid
+Found object: Size=0x18 Name=cFuzzyFuncTriangle
+Found object: Size=0x18 Name=cFuzzyInference
+Found object: Size=0x8 Name=cFuzzyMembershipFunc
+Found object: Size=0x28 Name=cFuzzyMembershipSpace
+Found object: Size=0x18 Name=cGeometrySetOperator::GeometryWork
+Found object: Size=0x20 Name=cCapsuleSetStatic
+Found object: Size=0x50 Name=cGeomAABBEx
+Found object: Size=0x60 Name=cGeomCapsuleEx
+Found object: Size=0x40 Name=cGeomSphereEx
+Found object: Size=0x8 Name=cGeometrySet
+Found object: Size=0x28 Name=cGeometrySetDynamic
+Found object: Size=0x38 Name=cGeometrySetOperator
+Found object: Size=0x58 Name=cHit
+Found object: Size=0x70 Name=ATTACK_PARAM
+Found object: Size=0xc0 Name=DAMAGE_PARAM
+Found object: Size=0x60 Name=HitTree::HitNode
+Found object: Size=0x68 Name=HitTree
+Found object: Size=0x40 Name=cHitList
+Found object: Size=0x18 Name=cInferenceBase
+Found object: Size=0x8 Name=cInfluenceMap
+Found object: Size=0xa0 Name=cInfluenceMapV100
+Found object: Size=0x18 Name=cItemStick
+Found object: Size=0x68 Name=cItemStickList
+Found object: Size=0xb0 Name=cMissionCaveEscape
+Found object: Size=0x40 Name=cModelContainer
+Found object: Size=0x38 Name=cNMMachine::ExpressionQueue
+Found object: Size=0x20 Name=cNMProgrammableMachine::ProgrammableBrain
+Found object: Size=0x20 Name=cNMBrain
+Found object: Size=0x70 Name=cNMExpression
+Found object: Size=0x98 Name=cNMExpressionCommonMachine
+Found object: Size=0x98 Name=cNMExpressionMultiBranchMachine
+Found object: Size=0x20 Name=cNMLink
+Found object: Size=0x168 Name=cNMMachine
+Found object: Size=0x188 Name=cNMProgrammableMachine
+Found object: Size=0x70 Name=cNpcMovementCore
+Found object: Size=0x100 Name=cNpcWatchCtrl
+Found object: Size=0x20 Name=cObjHitCheck
+Found object: Size=0x28 Name=cPathFind::ListNode
+Found object: Size=0xd0 Name=cPathFind
+Found object: Size=0x40 Name=cPathMesh
+Found object: Size=0x90 Name=cPathNode
+Found object: Size=0x70 Name=cPathPoint
+Found object: Size=0x140 Name=cPathTrace
+Found object: Size=0xb0 Name=cDynamicPathMap
+Found object: Size=0x50 Name=cInfluenceObject
+Found object: Size=0x48 Name=cPerceptionE3
+Found object: Size=0x27c10 Name=cPhotoRating
+Found object: Size=0x18 Name=cMassPointAroundMovement::MassPoint
+Found object: Size=0x60 Name=cMassPointAroundMovement::MassPointInfo
+Found object: Size=0x40 Name=cPotentialMovement::MassPointInfo
+Found object: Size=0x60 Name=cMassPointAroundMovement
+Found object: Size=0x30 Name=cPotentialMovement
+Found object: Size=0x88 Name=cSprAnm
+Found object: Size=0x8 Name=cUnitPropertyContainer
+Found object: Size=0xa0 Name=cWatchCtrl
+Found object: Size=0xe8 Name=uOptionControllers
+Found object: Size=0x138 Name=uOptionGraphics
+Found object: Size=0x1b0 Name=uOptionSaveSlots
+Found object: Size=0x3040 Name=a0000
+Found object: Size=0x3100 Name=a0100
+Found object: Size=0x3080 Name=a0135
+Found object: Size=0x3080 Name=a0136
+Found object: Size=0x80 Name=a0138
+Found object: Size=0x30b0 Name=a0200
+Found object: Size=0x3070 Name=a0230
+Found object: Size=0x3080 Name=a0231
+Found object: Size=0x30b0 Name=a0300
+Found object: Size=0x30d0 Name=a0400
+Found object: Size=0xc0 Name=a0401
+Found object: Size=0x3070 Name=a0500
+Found object: Size=0x3070 Name=a0501
+Found object: Size=0x70 Name=a0502
+Found object: Size=0x30b0 Name=a0503
+Found object: Size=0xa0 Name=a0504
+Found object: Size=0x30d0 Name=a0600
+Found object: Size=0xb0 Name=a0601
+Found object: Size=0x30a0 Name=a0700
+Found object: Size=0xd0 Name=a0800
+Found object: Size=0xe0 Name=a0801
+Found object: Size=0x3090 Name=a0900
+Found object: Size=0x3090 Name=a0a00
+Found object: Size=0x150 Name=a0b00
+Found object: Size=0x150 Name=a0b01
+Found object: Size=0xc0 Name=a0b02
+Found object: Size=0xa0 Name=a0b03
+Found object: Size=0x60 Name=aTestRoom
+Found object: Size=0x3070 Name=aTestRoomEnemy
+Found object: Size=0x70 Name=aTestRoomScroll
+Found object: Size=0x28 Name=uAreaControl
+Found object: Size=0x50 Name=sAreaBase
+Found object: Size=0x20be0 Name=sAreaHit
+Found object: Size=0xa5c0 Name=sAreaManager
+Found object: Size=0x50 Name=sFade
+Found object: Size=0x1df0 Name=sFootMarkManager
+Found object: Size=0x40 Name=HavokInfo
+Found object: Size=0x121230 Name=sHavok
+Found object: Size=0xd0 Name=HoldGroup
+Found object: Size=0x138 Name=sHoldCtrl
+Found object: Size=0x70 Name=sInfluenceMapping
+Found object: Size=0x1470 Name=sItemCtrl
+Found object: Size=0x58 Name=sLoadingEffect
+Found object: Size=0x6d10 Name=sMessage
+Found object: Size=0x48 Name=sModelLayout
+Found object: Size=0x20 Name=sNMFManager::MovementFrameTag
+Found object: Size=0x50 Name=sNMFManager
+Found object: Size=0x20 Name=sNpcCommunication::CommunicateFrameTag
+Found object: Size=0x50 Name=sNpcCommunication
+Found object: Size=0x18 Name=cNpcCodePackInformation::Order
+Found object: Size=0x30 Name=cNpcCodePackInformation
+Found object: Size=0x50 Name=cNpcCodePackOutput
+Found object: Size=0x40 Name=cNpcFuncInformation
+Found object: Size=0x78 Name=sNpcFuncManager
+Found object: Size=0x30 Name=cNpcAppearPoint::AppearPointInfo
+Found object: Size=0x10 Name=sNpcManager::ScoopLostCheckerInfo
+Found object: Size=0x38 Name=cDamageEmotionNpcInfo
+Found object: Size=0x30 Name=cNpcAppearPoint
+Found object: Size=0x11610 Name=sNpcManager
+Found object: Size=0x18 Name=sNpcMarker::MarkerSetContainer
+Found object: Size=0x58 Name=sNpcMarker
+Found object: Size=0x18 Name=sNpcWordManager::WordInfo
+Found object: Size=0x70 Name=sNpcWordManager
+Found object: Size=0x70 Name=sPathFind
+Found object: Size=0x9c0 Name=sPictureViewer
+Found object: Size=0x4f0 Name=sScore
+Found object: Size=0x158 Name=sSCQManager
+Found object: Size=0x1a0 Name=sSeGenerator
+Found object: Size=0x80d0 Name=sSMManager
+Found object: Size=0x8bf0 Name=sSnatcherEffect
+Found object: Size=0x18e8d0 Name=sSnatcherHavok
+Found object: Size=0x21110 Name=sSnatcherMain
+Found object: Size=0x50 Name=sSnatcherNpcCommunication
+Found object: Size=0x1bcd8 Name=sSnatcherPad
+Found object: Size=0xb0 Name=sSnatcherPathFind
+Found object: Size=0x920 Name=sSnatcherStream
+Found object: Size=0x22d0 Name=sSnatcherTool
+Found object: Size=0x9d0 Name=sSound
+Found object: Size=0xa0 Name=sStorage
+Found object: Size=0x8e0 Name=sStream
+Found object: Size=0x40 Name=cGametask
+Found object: Size=0x2f088 Name=sTaskManager
+Found object: Size=0x64e8 Name=sZombieManager
+Found object: Size=0x780 Name=rAreaHitLayout::LayoutInfo
+Found object: Size=0x70 Name=rAreaHitLayout
+Found object: Size=0x190 Name=EnemySetSpace
+Found object: Size=0x1a0 Name=rEnemyLayout::LayoutInfo
+Found object: Size=0x88 Name=rEnemyLayout
+Found object: Size=0x88 Name=rEnemyLayoutXml
+Found object: Size=0x20 Name=rEventTimeSchedule::LayoutInfo
+Found object: Size=0x70 Name=rEventTimeSchedule
+Found object: Size=0x40 Name=rFSMBrain::StateContainer
+Found object: Size=0x28 Name=rFSMBrain::TransitionFuncContainer
+Found object: Size=0x98 Name=rFSMBrain
+Found object: Size=0x98 Name=rFSMBrainXml
+Found object: Size=0xe0 Name=rHavokConstraintLayout::LayoutInfo
+Found object: Size=0x70 Name=rHavokConstraintLayout
+Found object: Size=0x70 Name=rHavokLinkCollisionLayout::LayoutInfo
+Found object: Size=0x70 Name=rHavokLinkCollisionLayout
+Found object: Size=0x80 Name=rHavokVehicleData::TireData
+Found object: Size=0x1b0 Name=rHavokVehicleData
+Found object: Size=0x20 Name=rHavokVertexLayout::LayoutInfo
+Found object: Size=0x70 Name=rHavokVertexLayout
+Found object: Size=0x78 Name=rHkCollision
+Found object: Size=0x70 Name=rHkMaterial
+Found object: Size=0x3f0 Name=rItemLayout::LayoutInfo
+Found object: Size=0x70 Name=rItemLayout
+Found object: Size=0x88 Name=rMapLink::LayoutInfo
+Found object: Size=0x70 Name=rMapLink
+Found object: Size=0x30 Name=rMarkerLayout::AABBInfo
+Found object: Size=0x40 Name=rMarkerLayout::CapsuleInfo
+Found object: Size=0x260 Name=rMarkerLayout::LayoutInfo
+Found object: Size=0x60 Name=rMarkerLayout::OBBInfo
+Found object: Size=0x30 Name=rMarkerLayout::SphereInfo
+Found object: Size=0x78 Name=rMarkerLayout
+Found object: Size=0x80 Name=rMarkerLayoutXml
+Found object: Size=0x70 Name=rMessage
+Found object: Size=0x2150 Name=rMobLayout::LayoutInfo
+Found object: Size=0x70 Name=rMobLayout
+Found object: Size=0x60 Name=rModelLayout::LayoutInfo
+Found object: Size=0x78 Name=rModelLayout
+Found object: Size=0x80 Name=rModelLayoutXml
+Found object: Size=0x20 Name=rNMMachine::ExpressionContainer
+Found object: Size=0x98 Name=rNMMachine
+Found object: Size=0x98 Name=rNMMachineXml
+Found object: Size=0x140 Name=nodeData
+Found object: Size=0x28 Name=nodeHead
+Found object: Size=0x10 Name=nodeLink
+Found object: Size=0x98 Name=rRouteNode
+Found object: Size=0x98 Name=rRouteNodeXml
+Found object: Size=0xb0 Name=cScoopList
+Found object: Size=0x70 Name=rScoopList
+Found object: Size=0x290 Name=cSMAdd
+Found object: Size=0xa0 Name=photoHitObj
+Found object: Size=0x2f0 Name=rSMAdd
+Found object: Size=0x180 Name=rSoundSeg::LayoutInfo
+Found object: Size=0x70 Name=rSoundSeg
+Found object: Size=0x70 Name=rSoundSegXml
+Found object: Size=0x68 Name=rSprAnm
+Found object: Size=0x78 Name=rSprLayout
+Found object: Size=0x68 Name=sprMap
+Found object: Size=0x10 Name=sprMapHead
+Found object: Size=0x38 Name=rUBCellList::Cell
+Found object: Size=0x18 Name=rUBCellList::CellAxisInfo
+Found object: Size=0x178 Name=rUBCell::CellInfo
+Found object: Size=0x10 Name=rUBCellList::CellLoginConclusion
+Found object: Size=0x8 Name=rUBMembershipSpaceList::MembershipFunc
+Found object: Size=0x18 Name=rUBMembershipSpaceList::MembershipFuncTrapezoid
+Found object: Size=0x18 Name=rUBMembershipSpaceList::MembershipFuncTriangle
+Found object: Size=0x20 Name=rUBMembershipSpaceList::MembershipSpace
+Found object: Size=0x10 Name=rUBMembershipSpaceList::MembershipSpaceHolder
+Found object: Size=0x28 Name=rUBMembershipSpaceList::MembershipSpaceTrapezoid
+Found object: Size=0x28 Name=rUBMembershipSpaceList::MembershipSpaceTriangle
+Found object: Size=0x70 Name=rUBCell
+Found object: Size=0x70 Name=rUBCellList
+Found object: Size=0x70 Name=rUBCellXml
+Found object: Size=0x70 Name=rUBMembershipSpaceList
+Found object: Size=0x150 Name=uBaseCamera
+Found object: Size=0x4340 Name=uCockpit
+Found object: Size=0xd60 Name=uCockpitModel
+Found object: Size=0x28 Name=uDebugHitPrim
+Found object: Size=0x13b0 Name=uEm49Hanged
+Found object: Size=0x13b0 Name=uEm49HangedNpc4a
+Found object: Size=0x13b0 Name=uEm49HangedNpc4b
+Found object: Size=0x13b0 Name=uEm49HangedNpc89
+Found object: Size=0x13e0 Name=uEnemy
+Found object: Size=0xda0 Name=uEnemyLayout
+Found object: Size=0x1ab0 Name=uExplodeParts
+Found object: Size=0x30 Name=uFade
+Found object: Size=0x30 Name=uFlagSetCtrl
+Found object: Size=0x38 Name=uFlagSetMessageEnd
+Found object: Size=0x14070 Name=uHavokHitCheck
+Found object: Size=0x28 Name=uHitCheck
+Found object: Size=0xd60 Name=uHavokModel
+Found object: Size=0x80 Name=uItemLight
+Found object: Size=0x80 Name=uLoadingEffect
+Found object: Size=0x200 Name=uMarkerLayout
+Found object: Size=0x410 Name=uMessage
+Found object: Size=0x30 Name=uMessageCry
+Found object: Size=0xd80 Name=uModelLayout
+Found object: Size=0x130 Name=uMonitorScreen
+Found object: Size=0xb0 Name=uNightLight
+Found object: Size=0x38 Name=uNpc::DamageEmotionHumanInfo
+Found object: Size=0x18 Name=uNpc::TargetZombieInfo
+Found object: Size=0x28 Name=cNpcPropertyContainer
+Found object: Size=0x2f40 Name=uNpc
+Found object: Size=0x28 Name=uNpc1aPhotoChecker
+Found object: Size=0x28 Name=uNpc21SetChecker
+Found object: Size=0x30 Name=uNpcEscortEndName
+Found object: Size=0x58 Name=uNpcOutsideCtrl
+Found object: Size=0x48 Name=uNpcZombieWatcher
+Found object: Size=0x158 Name=uOption
+Found object: Size=0x27e50 Name=uPhoto
+Found object: Size=0x70 Name=uPhoto::uPhotoFilter
+Found object: Size=0x90 Name=uPictureViewerPrim
+Found object: Size=0x17e0 Name=uPilotFish
+Found object: Size=0x740 Name=uPlAuto
+Found object: Size=0x2530 Name=uPlayer
+Found object: Size=0x5a0 Name=uPPDisp
+Found object: Size=0x7b0 Name=uRanking
+Found object: Size=0x70 Name=uRestrictLight
+Found object: Size=0x2a0 Name=uResult
+Found object: Size=0xd8 Name=uSchedulerMessage
+Found object: Size=0x30 Name=uScoopLostChecker
+Found object: Size=0xd0 Name=uScrHitCheck
+Found object: Size=0x50 Name=uScrollCollision
+Found object: Size=0x50 Name=uScrollCollisionDisp::VertexKeep
+Found object: Size=0xb0 Name=uScrollCollisionDisp
+Found object: Size=0x3de0 Name=uScrollPrim
+Found object: Size=0xd90 Name=uScrollPrimCollect
+Found object: Size=0x200 Name=uSectioning
+Found object: Size=0xdf0 Name=uSnatcherActorModel
+Found object: Size=0xa0 Name=uSnatcherDebugDisp
+Found object: Size=0x18 Name=cSnatcherModelPropertyContainer
+Found object: Size=0x1390 Name=uSnatcherModel
+Found object: Size=0x160 Name=uSnatcherShadow
+Found object: Size=0x1d10 Name=uStaffRoll
+Found object: Size=0x58 Name=uStoreMirror
+Found object: Size=0x13a0 Name=uTestITEM
+Found object: Size=0x14c0 Name=uTestSM
+Found object: Size=0x28 Name=uInfoScreen
+Found object: Size=0x3a8 Name=uTimeMessage
+Found object: Size=0x28 Name=uZombieSort
+Found object: Size=0x30 Name=uEffectForce
+Found object: Size=0x50 Name=uEffectForceSphere
+Found object: Size=0x130 Name=uSnatcherEffectBaria
+Found object: Size=0x1e0 Name=uSnatcherEffectBlood
+Found object: Size=0x1e0 Name=uSnatcherEffectCamera
+Found object: Size=0x1b0 Name=uSnatcherEffectColl
+Found object: Size=0x1a0 Name=uSnatcherEffectEdit
+Found object: Size=0x1b0 Name=uSnatcherEffectFire
+Found object: Size=0x140 Name=uSnatcherEffectGenerator
+Found object: Size=0x1b0 Name=uSnatcherEffectLight
+Found object: Size=0x60 Name=uSnatcherEffectMark
+Found object: Size=0xa0 Name=uSnatcherEffectObj
+Found object: Size=0xd90 Name=uScroll
+Found object: Size=0x13d0 Name=cSobj
+Found object: Size=0x13d0 Name=uOm116
+Found object: Size=0x13d0 Name=uOm11b
+Found object: Size=0x13d0 Name=uOm11e
+Found object: Size=0x13d0 Name=uOm13c
+Found object: Size=0xdc0 Name=uLowScroll
+Found object: Size=0xdc0 Name=uShopScroll
+Found object: Size=0xdb0 Name=uStoreScroll
+Found object: Size=0x1400 Name=uAutoDoor
+Found object: Size=0x1480 Name=uDoor
+Found object: Size=0x3740 Name=uItem
+Found object: Size=0x3740 Name=uOm01
+Found object: Size=0x3750 Name=uOm02
+Found object: Size=0x3740 Name=uOm04
+Found object: Size=0x3740 Name=uOm05
+Found object: Size=0x3740 Name=uOm06
+Found object: Size=0x3740 Name=uOm08
+Found object: Size=0x3740 Name=uOm0a
+Found object: Size=0x3740 Name=uOm0b0
+Found object: Size=0x3740 Name=uOm0b1
+Found object: Size=0x3740 Name=uOm0d
+Found object: Size=0x3740 Name=uOm0f
+Found object: Size=0x3740 Name=uOm11
+Found object: Size=0x3740 Name=uOm11_1
+Found object: Size=0x3740 Name=uOm132
+Found object: Size=0x3740 Name=uOm13
+Found object: Size=0x3740 Name=uOm14
+Found object: Size=0x3740 Name=uOm15
+Found object: Size=0x3760 Name=uOm17
+Found object: Size=0x3740 Name=uOm18
+Found object: Size=0x3740 Name=uOm19
+Found object: Size=0x3740 Name=uOm1a
+Found object: Size=0x3740 Name=uOm1b
+Found object: Size=0x3740 Name=uOm1c
+Found object: Size=0x3740 Name=uOm1e
+Found object: Size=0x3740 Name=uOm200
+Found object: Size=0x3740 Name=uOm205
+Found object: Size=0x3740 Name=uOm206
+Found object: Size=0x3740 Name=uOm207
+Found object: Size=0x3740 Name=uOm208
+Found object: Size=0x3740 Name=uOm209
+Found object: Size=0x3740 Name=uOm20
+Found object: Size=0x3740 Name=uOm20a
+Found object: Size=0x3740 Name=uOm20b
+Found object: Size=0x3740 Name=uOm20c
+Found object: Size=0x3740 Name=uOm20d
+Found object: Size=0x3740 Name=uOm20e
+Found object: Size=0x3740 Name=uOm20f
+Found object: Size=0x3740 Name=uOm210
+Found object: Size=0x3740 Name=uOm211
+Found object: Size=0x3740 Name=uOm212
+Found object: Size=0x3740 Name=uOm213
+Found object: Size=0x3740 Name=uOm2140
+Found object: Size=0x3740 Name=uOm2141
+Found object: Size=0x3740 Name=uOm216
+Found object: Size=0x3740 Name=uOm217
+Found object: Size=0x3740 Name=uOm218
+Found object: Size=0x3740 Name=uOm21
+Found object: Size=0x3740 Name=uOm21a
+Found object: Size=0x3740 Name=uOm21e
+Found object: Size=0x3740 Name=uOm21f
+Found object: Size=0x3740 Name=uOm220
+Found object: Size=0x3740 Name=uOm22
+Found object: Size=0x3740 Name=uOm22d
+Found object: Size=0x3740 Name=uOm22e0
+Found object: Size=0x3740 Name=uOm22e1
+Found object: Size=0x3740 Name=uOm22f
+Found object: Size=0x3740 Name=uOm234
+Found object: Size=0x3740 Name=uOm235
+Found object: Size=0x3740 Name=uOm236
+Found object: Size=0x3740 Name=uOm237
+Found object: Size=0x3740 Name=uOm238
+Found object: Size=0x3740 Name=uOm239
+Found object: Size=0x3740 Name=uOm23
+Found object: Size=0x3740 Name=uOm23a
+Found object: Size=0x3740 Name=uOm24
+Found object: Size=0x3740 Name=uOm25
+Found object: Size=0x3740 Name=uOm26
+Found object: Size=0x3740 Name=uOm27
+Found object: Size=0x3740 Name=uOm29
+Found object: Size=0x3740 Name=uOm2a
+Found object: Size=0x3740 Name=uOm2b
+Found object: Size=0x3740 Name=uOm2c
+Found object: Size=0x3740 Name=uOm2d
+Found object: Size=0x3740 Name=uOm2e
+Found object: Size=0x3740 Name=uOm2f
+Found object: Size=0x3740 Name=uOm30
+Found object: Size=0x3740 Name=uOm31
+Found object: Size=0x3740 Name=uOm320
+Found object: Size=0x3740 Name=uOm33
+Found object: Size=0x3740 Name=uOm34
+Found object: Size=0x3740 Name=uOm36
+Found object: Size=0x3740 Name=uOm38
+Found object: Size=0x3740 Name=uOm39
+Found object: Size=0x3740 Name=uOm3a
+Found object: Size=0x3740 Name=uOm3b
+Found object: Size=0x3740 Name=uOm3c
+Found object: Size=0x3740 Name=uOm3d
+Found object: Size=0x3740 Name=uOm3e
+Found object: Size=0x3740 Name=uOm42
+Found object: Size=0x3740 Name=uOm43
+Found object: Size=0x3740 Name=uOm44
+Found object: Size=0x3740 Name=uOm45
+Found object: Size=0x3740 Name=uOm46
+Found object: Size=0x3740 Name=uOm47
+Found object: Size=0x3740 Name=uOm48
+Found object: Size=0x3740 Name=uOm49
+Found object: Size=0x3740 Name=uOm4a
+Found object: Size=0x3740 Name=uOm4b
+Found object: Size=0x3740 Name=uOm4c
+Found object: Size=0x3740 Name=uOm4d
+Found object: Size=0x3740 Name=uOm4e0
+Found object: Size=0x3740 Name=uOm4e1
+Found object: Size=0x3740 Name=uOm4f
+Found object: Size=0x3740 Name=uOm50
+Found object: Size=0x3740 Name=uOm51
+Found object: Size=0x3740 Name=uOm52
+Found object: Size=0x3740 Name=uOm53
+Found object: Size=0x3740 Name=uOm54
+Found object: Size=0x3740 Name=uOm55
+Found object: Size=0x3740 Name=uOm56
+Found object: Size=0x3740 Name=uOm58
+Found object: Size=0x3740 Name=uOm59
+Found object: Size=0x3740 Name=uOm5a
+Found object: Size=0x3740 Name=uOm5b
+Found object: Size=0x3760 Name=uOm60
+Found object: Size=0x3750 Name=uOm61_1
+Found object: Size=0x3740 Name=uOm63
+Found object: Size=0x3740 Name=uOm64
+Found object: Size=0x3740 Name=uOm65
+Found object: Size=0x3740 Name=uOm66
+Found object: Size=0x3740 Name=uOm67
+Found object: Size=0x3740 Name=uOm68
+Found object: Size=0x3740 Name=uOm6a
+Found object: Size=0x3740 Name=uOm6b
+Found object: Size=0x3740 Name=uOm6c
+Found object: Size=0x3740 Name=uOm6e
+Found object: Size=0x3740 Name=uOm71_1
+Found object: Size=0x3770 Name=uOm73
+Found object: Size=0x3740 Name=uOm74
+Found object: Size=0x3740 Name=uOm75
+Found object: Size=0x3740 Name=uOm76
+Found object: Size=0x3740 Name=uOm78
+Found object: Size=0x3740 Name=uOm79
+Found object: Size=0x3740 Name=uOm7a
+Found object: Size=0x3740 Name=uOm7b
+Found object: Size=0x3740 Name=uOm7d
+Found object: Size=0x3740 Name=uOm7e
+Found object: Size=0x3740 Name=uOm7f
+Found object: Size=0x3740 Name=uOm80
+Found object: Size=0x3740 Name=uOm82
+Found object: Size=0x3740 Name=uOm85
+Found object: Size=0x3740 Name=uOm86
+Found object: Size=0x3740 Name=uOm87
+Found object: Size=0x3740 Name=uOm88
+Found object: Size=0x3740 Name=uOm89
+Found object: Size=0x3740 Name=uOm8a
+Found object: Size=0x3740 Name=uOm8b
+Found object: Size=0x3740 Name=uOm8c
+Found object: Size=0x3740 Name=uOm8f
+Found object: Size=0x3740 Name=uOm90
+Found object: Size=0x3740 Name=uOm91
+Found object: Size=0x3740 Name=uOm92
+Found object: Size=0x3740 Name=uOm93
+Found object: Size=0x3740 Name=uOm94
+Found object: Size=0x3740 Name=uOm96
+Found object: Size=0x3740 Name=uOm97
+Found object: Size=0x3740 Name=uOma3
+Found object: Size=0x3740 Name=uOma5
+Found object: Size=0x3740 Name=uOma6
+Found object: Size=0x3740 Name=uOma7
+Found object: Size=0x3750 Name=uOma8
+Found object: Size=0x3750 Name=uOma9_1
+Found object: Size=0x3740 Name=uOmac
+Found object: Size=0x3740 Name=uOmad_1
+Found object: Size=0x3740 Name=uOmb1
+Found object: Size=0x3740 Name=uOmb2
+Found object: Size=0x3750 Name=uOmb3
+Found object: Size=0x3740 Name=uOmb4
+Found object: Size=0x3740 Name=uOmb5
+Found object: Size=0x3740 Name=uOmb6
+Found object: Size=0x3740 Name=uOmb7
+Found object: Size=0x3740 Name=uOmb8
+Found object: Size=0x3740 Name=uOmb9
+Found object: Size=0x3740 Name=uOmbc
+Found object: Size=0x3740 Name=uOmbd
+Found object: Size=0x3740 Name=uOmbe
+Found object: Size=0x3740 Name=uOmbf
+Found object: Size=0x3740 Name=uOmc0
+Found object: Size=0x3740 Name=uOmc1
+Found object: Size=0x3740 Name=uOmc2
+Found object: Size=0x3740 Name=uOmc3
+Found object: Size=0x3740 Name=uOmc4
+Found object: Size=0x3740 Name=uOmc4_1
+Found object: Size=0x3740 Name=uOmc5
+Found object: Size=0x3740 Name=uOmc6
+Found object: Size=0x3740 Name=uOmc7
+Found object: Size=0x3740 Name=uOmc8
+Found object: Size=0x3740 Name=uOmc9
+Found object: Size=0x3740 Name=uOmca
+Found object: Size=0x3740 Name=uOmcb
+Found object: Size=0x3740 Name=uOmcc
+Found object: Size=0x3740 Name=uOmcd0
+Found object: Size=0x3740 Name=uOmcd1
+Found object: Size=0x3740 Name=uOmce
+Found object: Size=0x3740 Name=uOmcf
+Found object: Size=0x3740 Name=uOmd2
+Found object: Size=0x3740 Name=uOmd3
+Found object: Size=0x3740 Name=uOmd50
+Found object: Size=0x3740 Name=uOmd51
+Found object: Size=0x3740 Name=uOmd6
+Found object: Size=0x3740 Name=uOmd7
+Found object: Size=0x3740 Name=uOmd8
+Found object: Size=0x3740 Name=uOmd9
+Found object: Size=0x3740 Name=uOmda
+Found object: Size=0x3740 Name=uOme4
+Found object: Size=0x3740 Name=uOme5
+Found object: Size=0x3740 Name=uOme7
+Found object: Size=0x3740 Name=uOme8
+Found object: Size=0x3740 Name=uOme9
+Found object: Size=0x3740 Name=uOmea
+Found object: Size=0x3740 Name=uOmeb
+Found object: Size=0x3740 Name=uOmec
+Found object: Size=0x3740 Name=uOmed
+Found object: Size=0x3740 Name=uOmef
+Found object: Size=0x3740 Name=uOmf0
+Found object: Size=0x3740 Name=uOmf1
+Found object: Size=0x3740 Name=uOmf2
+Found object: Size=0x3740 Name=uOmf3
+Found object: Size=0x3740 Name=uOmf4
+Found object: Size=0x3740 Name=uOmf5
+Found object: Size=0x3740 Name=uOmf6
+Found object: Size=0x3740 Name=uOmf7
+Found object: Size=0x3740 Name=uOmf8
+Found object: Size=0x3740 Name=uOmf9
+Found object: Size=0x3740 Name=uOmfb
+Found object: Size=0x13d0 Name=uOm
+Found object: Size=0x13d0 Name=uOm00
+Found object: Size=0x13e0 Name=uOm0e
+Found object: Size=0x13d0 Name=uOm100
+Found object: Size=0x13d0 Name=uOm101
+Found object: Size=0x17d0 Name=uOm102
+Found object: Size=0x17d0 Name=uOm103
+Found object: Size=0x1400 Name=uOm104
+Found object: Size=0x1480 Name=uOm105
+Found object: Size=0x1430 Name=uOm107
+Found object: Size=0x13e0 Name=cClockSObj
+Found object: Size=0x13e0 Name=uOm108
+Found object: Size=0x13e0 Name=uOm12e
+Found object: Size=0x13e0 Name=uOm13d
+Found object: Size=0x13e0 Name=uOm109
+Found object: Size=0x13e0 Name=uOm10a
+Found object: Size=0x1410 Name=uOm10c
+Found object: Size=0x1480 Name=uOm10d
+Found object: Size=0x1480 Name=uOm10e
+Found object: Size=0x1480 Name=uOm111
+Found object: Size=0x1480 Name=uOm112
+Found object: Size=0x1480 Name=uOm113
+Found object: Size=0x1480 Name=uOm114
+Found object: Size=0x1480 Name=uOm115
+Found object: Size=0x1480 Name=uOm118
+Found object: Size=0x1480 Name=uOm11c
+Found object: Size=0x1480 Name=uOm11d
+Found object: Size=0x14b0 Name=uOm11f
+Found object: Size=0x13d0 Name=uOm120
+Found object: Size=0x13d0 Name=uOm121
+Found object: Size=0x13e0 Name=cTurnSObj
+Found object: Size=0x13e0 Name=uOm122
+Found object: Size=0x13e0 Name=uOm124
+Found object: Size=0x13e0 Name=uOm125
+Found object: Size=0x1400 Name=uOm123
+Found object: Size=0x1440 Name=uOm127
+Found object: Size=0x13e0 Name=uOm128
+Found object: Size=0x1400 Name=uOm12a
+Found object: Size=0x13d0 Name=uOm130
+Found object: Size=0x1480 Name=uOm133
+Found object: Size=0x1480 Name=uOm134
+Found object: Size=0x1480 Name=uOm135
+Found object: Size=0x1480 Name=uOm136
+Found object: Size=0x1480 Name=uOm137
+Found object: Size=0x1480 Name=uOm138
+Found object: Size=0x1480 Name=uOm13a
+Found object: Size=0x2e10 Name=uOm13b
+Found object: Size=0x1400 Name=uOm13f
+Found object: Size=0x13e0 Name=uOm140
+Found object: Size=0x13d0 Name=uOm141
+Found object: Size=0x13d0 Name=uOm142
+Found object: Size=0x1480 Name=uOm143
+Found object: Size=0x1480 Name=uOm144
+Found object: Size=0x1480 Name=uOm145
+Found object: Size=0x1400 Name=uOm146
+Found object: Size=0x1480 Name=uOm147
+Found object: Size=0x1420 Name=uOm1d
+Found object: Size=0x13e0 Name=uOm1f
+Found object: Size=0x13e0 Name=uOm219
+Found object: Size=0x1410 Name=uOm21c
+Found object: Size=0x1440 Name=uOm21d
+Found object: Size=0x13e0 Name=uOm221
+Found object: Size=0x1400 Name=uOm222
+Found object: Size=0x13d0 Name=uOm222_1
+Found object: Size=0x1410 Name=uOm223
+Found object: Size=0x1410 Name=uOm224
+Found object: Size=0x1410 Name=uOm225
+Found object: Size=0x1410 Name=uOm226
+Found object: Size=0x13f0 Name=uOm227
+Found object: Size=0x1410 Name=uOm227_1
+Found object: Size=0x1410 Name=uOm228
+Found object: Size=0x1430 Name=uOm229
+Found object: Size=0x13f0 Name=uOm22a
+Found object: Size=0x1450 Name=uOm233
+Found object: Size=0x13e0 Name=uOm28
+Found object: Size=0x13d0 Name=uOm29_scr
+Found object: Size=0x2e20 Name=uOm3f
+Found object: Size=0x13e0 Name=uOm40
+Found object: Size=0x17d0 Name=uOm5d
+Found object: Size=0x1420 Name=uOm61
+Found object: Size=0x20 Name=cOm71PropertyContainer
+Found object: Size=0x1430 Name=uOm71
+Found object: Size=0x20 Name=cOm72PropertyContainer
+Found object: Size=0x1420 Name=uOm72
+Found object: Size=0x13d0 Name=uOm77
+Found object: Size=0x13e0 Name=uOm7c
+Found object: Size=0x13e0 Name=uOm81
+Found object: Size=0x13e0 Name=uOm84
+Found object: Size=0x13e0 Name=uOm95
+Found object: Size=0x1710 Name=uOm9b
+Found object: Size=0x1480 Name=uOm9f
+Found object: Size=0x13e0 Name=uOma2
+Found object: Size=0x13d0 Name=uOma9
+Found object: Size=0x13d0 Name=uOmaa
+Found object: Size=0x13d0 Name=uOmad
+Found object: Size=0x13e0 Name=uOmaf
+Found object: Size=0x13d0 Name=uOmb2Box
+Found object: Size=0x13d0 Name=uOmb2Cap
+Found object: Size=0x13d0 Name=uOmb2_1
+Found object: Size=0x13e0 Name=uOmba
+Found object: Size=0x1670 Name=uOmbb
+Found object: Size=0x13f0 Name=uOmbb_1
+Found object: Size=0x1430 Name=uOmd0
+Found object: Size=0x13d0 Name=uOmd0_1
+Found object: Size=0x2e20 Name=uOmdb
+Found object: Size=0x13e0 Name=uOmdd
+Found object: Size=0x1410 Name=uOme6
+Found object: Size=0x13e0 Name=uOmfa
+Found object: Size=0x1410 Name=uOmfc
+Found object: Size=0x13d0 Name=uOmfd
+Found object: Size=0x2e40 Name=uOmfe
+Found object: Size=0x13e0 Name=uOmff
+Found object: Size=0x13d0 Name=uOmff0
+Found object: Size=0x1430 Name=uOmffe
+Found object: Size=0x13e0 Name=uOmfff
+Found object: Size=0x1420 Name=uOmShell
+Found object: Size=0x1420 Name=uOmShellBeamRifle
+Found object: Size=0x1420 Name=uOmShellBulletGun
+Found object: Size=0x1420 Name=uOmShellFireExt
+Found object: Size=0x1420 Name=uOmShellFlare
+Found object: Size=0x1420 Name=uOmShellGolfball
+Found object: Size=0x1420 Name=uOmShellHammerMG
+Found object: Size=0x1420 Name=uOmShellHandgun
+Found object: Size=0x1420 Name=uOmShellHeliMachine
+Found object: Size=0x1420 Name=uOmShellHockeypac
+Found object: Size=0x1420 Name=uOmShellMachinegun
+Found object: Size=0x1420 Name=uOmShellMainArmament
+Found object: Size=0x1420 Name=uOmShellNailGun
+Found object: Size=0x1420 Name=uOmShellP90
+Found object: Size=0x1420 Name=uOmShellRockBuster
+Found object: Size=0x1420 Name=uOmShellShotgun
+Found object: Size=0x1420 Name=uOmShellSniperRifle
+Found object: Size=0x1430 Name=uOmShellSpit
+Found object: Size=0x1420 Name=uOmShellSubMachinegun
+Found object: Size=0x1430 Name=uOmShellSuperSpit
+Found object: Size=0x1420 Name=uOmShellVulcan
+Found object: Size=0x1430 Name=uOmShellWaterGun
+Found object: Size=0x1470 Name=uRestrictSP
+Found object: Size=0x13e0 Name=uVehicleOm9aMg
+Found object: Size=0x32a0 Name=uVehicle
+Found object: Size=0x13f0 Name=uVehicleOm02
+Found object: Size=0x3380 Name=uVehicleOm09
+Found object: Size=0x3390 Name=uVehicleOm98
+Found object: Size=0x37c0 Name=uVehicleOm99
+Found object: Size=0x3700 Name=uVehicleOm9a
+Found object: Size=0x3320 Name=uVehicleOm9b
+Found object: Size=0x32c0 Name=uVehicleOm9d
+Found object: Size=0x1450 Name=cPlCostume
+Found object: Size=0x1450 Name=uCos0
+Found object: Size=0x1450 Name=uCos1
+Found object: Size=0x1450 Name=uCos2
+Found object: Size=0x1450 Name=uCos3
+Found object: Size=0x1450 Name=uCos4
+Found object: Size=0x14a0 Name=uCos5
+Found object: Size=0x198 Name=cGametaskConvert
+Found object: Size=0x88 Name=cGametaskDemo
+Found object: Size=0x58 Name=cGametaskDolby
+Found object: Size=0x40 Name=cGametaskExit
+Found object: Size=0x88 Name=cGametaskInit
+Found object: Size=0x40 Name=cGametaskLoad
+Found object: Size=0x68 Name=cGametaskLogo
+Found object: Size=0x9c20 Name=cGametaskMain
+Found object: Size=0x70 Name=cGametaskMovie
+Found object: Size=0x1f8 Name=cGametaskTitle
+Found object: Size=0xa0 Name=cGametaskWarning
+Found object: Size=0x28 Name=uGametaskPrim
+Found object: Size=0x1710 Name=uEm00
+Found object: Size=0x1710 Name=uEm01
+Found object: Size=0x1710 Name=uEm02
+Found object: Size=0x1710 Name=uEm03
+Found object: Size=0x1710 Name=uEm04
+Found object: Size=0x1710 Name=uEm08
+Found object: Size=0x1710 Name=uEm09
+Found object: Size=0x1710 Name=uEm0a
+Found object: Size=0x1730 Name=uEm10
+Found object: Size=0x20 Name=cEm11PropertyContainer
+Found object: Size=0x1420 Name=uEm11
+Found object: Size=0x19a0 Name=uEm40
+Found object: Size=0xc0 Name=uEm40SubLeadMarker
+Found object: Size=0x15e0 Name=uEm41
+Found object: Size=0x1860 Name=uEm43
+Found object: Size=0x718 Name=uEm43Ctrl
+Found object: Size=0x15e0 Name=uEm44
+Found object: Size=0x16b0 Name=uEm45
+Found object: Size=0x1920 Name=uEm46
+Found object: Size=0x16b0 Name=uEm47
+Found object: Size=0x16d0 Name=uEm48
+Found object: Size=0x1740 Name=uEm49
+Found object: Size=0x15d0 Name=uEm4a
+Found object: Size=0x1390 Name=uEm4a_Npc83
+Found object: Size=0x16a0 Name=uEm4b
+Found object: Size=0x1440 Name=uEm4d
+Found object: Size=0x1780 Name=uEm4e
+Found object: Size=0x1430 Name=uEm4f
+Found object: Size=0x14e0 Name=uEm50
+Found object: Size=0x21b0 Name=uEm53
+Found object: Size=0x16e0 Name=uEm54
+Found object: Size=0x13a0 Name=uEm54Hanged
+Found object: Size=0x13b0 Name=uEm54Hanged_Npc84
+Found object: Size=0x1540 Name=uEm55
+Found object: Size=0x1420 Name=uEm56
+Found object: Size=0x1900 Name=uEm5a
+Found object: Size=0x28 Name=cZombiePropertyContainer
+Found object: Size=0x1710 Name=uZombie
+Found object: Size=0xc8 Name=cFSMBrain::State
+Found object: Size=0x98 Name=cFSMBrain::TransitionFunc
+Found object: Size=0xb0 Name=cFSMBrain
+Found object: Size=0xd0 Name=cNpcBaseInfo
+Found object: Size=0x18 Name=cNpcCockpitInfo
+Found object: Size=0xe0 Name=cNpcManageInfo
+Found object: Size=0x30 Name=cNpcCollection
+Found object: Size=0x18 Name=cNCIdentifier
+Found object: Size=0x50 Name=cNpcCommunicateFrame
+Found object: Size=0x50 Name=cNpcCommunicateMessage
+Found object: Size=0x28 Name=cNpcFriendInfo
+Found object: Size=0x18 Name=cNpcFriendList
+Found object: Size=0x18 Name=cNpcCodeParamContainerInfo
+Found object: Size=0x40 Name=cNpcFuncContainer
+Found object: Size=0x10 Name=cNpcParamContainer
+Found object: Size=0x28 Name=cNpcMotionControlInfo::EventFunc
+Found object: Size=0x28 Name=cNpcMotionAgent::MotionSetInfo
+Found object: Size=0x130 Name=cNpcMotionAgent
+Found object: Size=0x48 Name=cNpcMotionControlInfo
+Found object: Size=0x38 Name=cNpcMotionPlayInfo
+Found object: Size=0x48 Name=cNpcMovementProject
+Found object: Size=0x18 Name=cLatticeObstacleSensor::IVector
+Found object: Size=0x80 Name=cLatticeObstacleSensor::LatticeNode
+Found object: Size=0x150 Name=cObjIntersectSensor::ObjectInfo
+Found object: Size=0x80 Name=cNpcObstacle::Pole
+Found object: Size=0xc0 Name=cLatticeObstaclePerception
+Found object: Size=0xc0 Name=cLatticeObstacleSensor
+Found object: Size=0x80 Name=cNpcObstacle
+Found object: Size=0xa0 Name=cNpcObstacleCylinder
+Found object: Size=0x90 Name=cNpcObstacleDisk
+Found object: Size=0xd0 Name=cObjIntersectSensor
+Found object: Size=0x28 Name=cNpcParamManager
+Found object: Size=0x18 Name=cPerceptionUnitInfo::InfoContainer
+Found object: Size=0x38 Name=cNpcMarkerPerception
+Found object: Size=0x8 Name=cNpcPerception
+Found object: Size=0x28 Name=cPerceptionUnitInfo
+Found object: Size=0x40 Name=cNpcTargetManager::TargetInformation
+Found object: Size=0x18 Name=cNpcTargetManager
+Found object: Size=0x18 Name=cNpcUnitSyncSet::UnitInformation
+Found object: Size=0x20 Name=cNpcUnitSyncSet
+Found object: Size=0x60 Name=cNpcView
+Found object: Size=0x70 Name=cNpcViewCone
+Found object: Size=0xf0 Name=cNpcViewSector
+Found object: Size=0x10 Name=cNpcWord
+Found object: Size=0xe8 Name=cParallelEventBrainCore::Event
+Found object: Size=0x20 Name=cParallelEventBrainCore::EventRunningInfo
+Found object: Size=0x40 Name=cExpressionEventInfoContainer
+Found object: Size=0x10 Name=cPEBEventInfoContainer
+Found object: Size=0x78 Name=cParallelEventBrainCore
+Found object: Size=0x78 Name=cParallelEventExpressionBrain
+Found object: Size=0x20 Name=cUBCell::AxisInfo
+Found object: Size=0x18 Name=cLogicSpaceVector
+Found object: Size=0x30 Name=cUBCell
+Found object: Size=0x28 Name=cUBCellManager
+Found object: Size=0x58 Name=cUBConclusion
+Found object: Size=0xb0 Name=cUBConclusionGroup
+Found object: Size=0x28 Name=cUBConclusionGroupManager
+Found object: Size=0x30 Name=cUBMembershipSpace
+Found object: Size=0x28 Name=cUBMembershipSpaceManager
+Found object: Size=0x38 Name=cUBMembershipSpaceTrapezoid
+Found object: Size=0x38 Name=cUBMembershipSpaceTriangle
+Found object: Size=0x58 Name=cUnscriptedBaseData
+Found object: Size=0x28 Name=cUBEventInfoContainer::AxisInputInfo
+Found object: Size=0x38 Name=cUBEventInfoContainer::AxisInputMembershipSpace
+Found object: Size=0x38 Name=cUBInferenceAgent::CellConclusionGroup
+Found object: Size=0x30 Name=cUBInferenceAgent::CellConclusionGroupSet
+Found object: Size=0x58 Name=cUnscriptedBrain::ExpressionParamSetupFuncContainer
+Found object: Size=0x48 Name=cUBConclusionContainer
+Found object: Size=0x88 Name=cUBConclusionPlaneExpression
+Found object: Size=0xd8 Name=cUBEventInfoContainer
+Found object: Size=0x88 Name=cUBInferenceAgent
+Found object: Size=0x20 Name=cUBMembershipSpaceCrisp
+Found object: Size=0x18 Name=cUBMembershipSpaceCrispManager
+Found object: Size=0x18 Name=cUBObjectInfoContainer
+Found object: Size=0x20 Name=cUBObjectList
+Found object: Size=0x100 Name=cUnscriptedBrain
+Found object: Size=0x20 Name=cWayPlanBrain::WayGeometry
+Found object: Size=0x50 Name=cWayPlanBrain::WayPlan
+Found object: Size=0x50 Name=cWayPlanBrain::WayPlanEndChecker
+Found object: Size=0x50 Name=cWayPlanBrain::WayPlanEvaluationFunction
+Found object: Size=0x140 Name=cWayPlanBrain
+Found object: Size=0x18 Name=cWayPlanParamContainer
+Found object: Size=0x120 Name=cWayScanner
+Found object: Size=0xb0 Name=NpcActionParamContainerBase
+Found object: Size=0xd0 Name=NpcApproachTargetContainer
+Found object: Size=0xc8 Name=NpcCallAroundActionContainer
+Found object: Size=0xb8 Name=NpcCatchPlayerActionContainer
+Found object: Size=0xc8 Name=NpcEmotionActionContainer
+Found object: Size=0x20 Name=NpcEventDoneContainer
+Found object: Size=0xd0 Name=NpcGetAndUseItemActionContainer
+Found object: Size=0xc8 Name=NpcGiveItemActionContainer
+Found object: Size=0xc8 Name=NpcHugActionContainer
+Found object: Size=0xc8 Name=NpcIndicateActionContainer
+Found object: Size=0xc0 Name=NpcLookAroundActionContainer
+Found object: Size=0xd8 Name=NpcMoveAwayActionContainer
+Found object: Size=0xf0 Name=NpcPhysicalActionContainer
+Found object: Size=0xe0 Name=NpcPlayMotionContainer
+Found object: Size=0xe8 Name=NpcPlayMotionContainerEx
+Found object: Size=0xc8 Name=NpcSearchActionContainer
+Found object: Size=0xb8 Name=NpcSleepActionContainer
+Found object: Size=0xd0 Name=NpcSpecialActionContainer
+Found object: Size=0xc0 Name=NpcTalkParamContainer
+Found object: Size=0xc8 Name=NpcThanksActionContainer
+Found object: Size=0xc0 Name=NpcWaitActionContainer
+Found object: Size=0xc8 Name=NpcAttackParamContainer
+Found object: Size=0x10 Name=cNpcAppearPointPropertyContainer
+Found object: Size=0x10 Name=cNpcDangerLevelCheckerPropertyContainer
+Found object: Size=0x8 Name=cNpcSafetyZonePropertyContainer
+Found object: Size=0xb0 Name=uNpcAppearPoint
+Found object: Size=0xd0 Name=uNpcDangerLevelChecker
+Found object: Size=0xb0 Name=uNpcLeadMarker
+Found object: Size=0xc0 Name=uNpcMarkerHumanEntity
+Found object: Size=0xd0 Name=uNpcMarkerHumanEntityTime
+Found object: Size=0xb0 Name=uNpcMarkerSingleTime
+Found object: Size=0xc0 Name=uNpcMarkerZombieSet
+Found object: Size=0xa0 Name=uNpcSafetyZone
+Found object: Size=0x40 Name=uNpc::PhysicalStatus
+Found object: Size=0x18 Name=NpcTransitionCheckBulletRestContainer
+Found object: Size=0x20 Name=NpcTransitionCheckDamageContainer
+Found object: Size=0x30 Name=NpcTransitionCheckDangerLevelContainer
+Found object: Size=0x28 Name=NpcTransitionCheckFreeFlagContainer
+Found object: Size=0x38 Name=NpcTransitionCheckFriendInfoContainer
+Found object: Size=0x30 Name=NpcTransitionCheckItemContainer
+Found object: Size=0x30 Name=NpcTransitionCheckLiveStateContainer
+Found object: Size=0x28 Name=NpcTransitionCheckPlayerTalkEx
+Found object: Size=0x38 Name=NpcTransitionCheckVitalContainer
+Found object: Size=0x60 Name=NpcTransitionFindSpecifyHumanContainer
+Found object: Size=0x28 Name=NpcTransitionPlayerGiveItemEx
+Found object: Size=0x30 Name=NpcTransitionReceiveMessageContainer
+Found object: Size=0x18 Name=NpcTransitionSituationChangeContainer
+Found object: Size=0x2fa0 Name=uEm43Sufferer
+Found object: Size=0x2fc0 Name=uNpc20
+Found object: Size=0x2fa0 Name=uEm44Sufferer
+Found object: Size=0x2fa0 Name=uNpc40
+Found object: Size=0x2fa0 Name=uNpc42
+Found object: Size=0x2fa0 Name=uNpc44
+Found object: Size=0x2fa0 Name=uNpc46
+Found object: Size=0x2fa0 Name=uEm45Sufferer
+Found object: Size=0x2fa0 Name=uNpc52
+Found object: Size=0x2fc0 Name=uEm4bSufferer
+Found object: Size=0x2fc0 Name=uNpc56
+Found object: Size=0x2fc0 Name=uNpc57
+Found object: Size=0x2fc0 Name=uNpc59
+Found object: Size=0x2fc0 Name=uNpc5a
+Found object: Size=0x2f40 Name=uNpc00
+Found object: Size=0x2f40 Name=uNpc01
+Found object: Size=0x2f50 Name=uNpc02
+Found object: Size=0x2f40 Name=uNpc03
+Found object: Size=0x2f40 Name=uNpc04
+Found object: Size=0x2f50 Name=uNpc05
+Found object: Size=0x2f40 Name=uNpc06
+Found object: Size=0x2f40 Name=uNpc07
+Found object: Size=0x2f50 Name=uNpc08
+Found object: Size=0x2f50 Name=uNpc09
+Found object: Size=0x2f40 Name=uNpc0a
+Found object: Size=0x2f40 Name=uNpc0b
+Found object: Size=0x2f40 Name=uNpc0c
+Found object: Size=0x2f40 Name=uNpc0d
+Found object: Size=0x2f50 Name=uNpc0e
+Found object: Size=0x2f50 Name=uNpc0f
+Found object: Size=0x2f50 Name=uNpc10
+Found object: Size=0x2f40 Name=uNpc11
+Found object: Size=0x2f40 Name=uNpc12
+Found object: Size=0x2f40 Name=uNpc13
+Found object: Size=0x2f40 Name=uNpc14
+Found object: Size=0x2f40 Name=uNpc15
+Found object: Size=0x2f40 Name=uNpc16
+Found object: Size=0x2f40 Name=uNpc17
+Found object: Size=0x2f40 Name=uNpc18
+Found object: Size=0x2f40 Name=uNpc19
+Found object: Size=0x2f40 Name=uNpc1a
+Found object: Size=0x2f40 Name=uNpc1b
+Found object: Size=0x2f40 Name=uNpc1d
+Found object: Size=0x2f50 Name=uNpc1e
+Found object: Size=0x2f40 Name=uNpc1f
+Found object: Size=0x2f40 Name=uNpc21
+Found object: Size=0x2f40 Name=uNpc2a
+Found object: Size=0x2f40 Name=uNpc2b
+Found object: Size=0x2f40 Name=uNpc2c
+Found object: Size=0x2f40 Name=uNpc2d
+Found object: Size=0x2f40 Name=uNpc30
+Found object: Size=0x2f40 Name=uNpc31
+Found object: Size=0x2f40 Name=uNpc33
+Found object: Size=0x2f40 Name=uNpc34
+Found object: Size=0x2f50 Name=uNpc45
+Found object: Size=0x2f40 Name=uNpc4c
+Found object: Size=0x2f40 Name=uNpc4d
+Found object: Size=0x2f40 Name=uNpc4e
+Found object: Size=0x2f40 Name=uNpc4f
+Found object: Size=0x2f40 Name=uNpc50
+Found object: Size=0x2f40 Name=uNpc54
+Found object: Size=0x1390 Name=uNpc54_Ryde
+Found object: Size=0x2f90 Name=uNpc70
+Found object: Size=0x30 Name=cNpc80PropertyContainer
+Found object: Size=0x2f50 Name=uNpc80
+Found object: Size=0x30 Name=cNpc81PropertyContainer
+Found object: Size=0x2f50 Name=uNpc81
+Found object: Size=0x30 Name=cNpc82PropertyContainer
+Found object: Size=0x2f50 Name=uNpc82
+Found object: Size=0x30 Name=cNpc83PropertyContainer
+Found object: Size=0x2f50 Name=uNpc83
+Found object: Size=0x30 Name=cNpc84PropertyContainer
+Found object: Size=0x2f50 Name=uNpc84
+Found object: Size=0x30 Name=cNpc85PropertyContainer
+Found object: Size=0x2f50 Name=uNpc85
+Found object: Size=0x30 Name=cNpc86PropertyContainer
+Found object: Size=0x2f50 Name=uNpc86
+Found object: Size=0x30 Name=cNpc87PropertyContainer
+Found object: Size=0x2f50 Name=uNpc87
+Found object: Size=0x30 Name=cNpc88PropertyContainer
+Found object: Size=0x2f50 Name=uNpc88
+Found object: Size=0x2f40 Name=uNpc8a
+Found object: Size=0x2f50 Name=uNpc8b
+Found object: Size=0x1390 Name=uNpc8c
+Found object: Size=0x1390 Name=uNpc8e
+Found object: Size=0x30 Name=cNpc90PropertyContainer
+Found object: Size=0x2f50 Name=uNpc90
+Found object: Size=0x30 Name=cNpc91PropertyContainer
+Found object: Size=0x2f50 Name=uNpc91
+Found object: Size=0x30 Name=cNpc92PropertyContainer
+Found object: Size=0x2f50 Name=uNpc92
+Found object: Size=0x30 Name=cNpc93PropertyContainer
+Found object: Size=0x2f50 Name=uNpc93
+Found object: Size=0x30 Name=cNpc94PropertyContainer
+Found object: Size=0x2f50 Name=uNpc94
+Found object: Size=0x30 Name=cNpc95PropertyContainer
+Found object: Size=0x2f50 Name=uNpc95
+Found object: Size=0x30 Name=cNpc96PropertyContainer
+Found object: Size=0x2f50 Name=uNpc96
+Found object: Size=0x30 Name=cNpc97PropertyContainer
+Found object: Size=0x2f50 Name=uNpc97
+Found object: Size=0x30 Name=cNpc98PropertyContainer
+Found object: Size=0x2f50 Name=uNpc98
+Found object: Size=0x30 Name=cNpc9cPropertyContainer
+Found object: Size=0x2f50 Name=uNpc9c
+Found object: Size=0x1390 Name=uNpc9d
+Found object: Size=0x1390 Name=uNpc9e
+Found object: Size=0x18 Name=uNpcMarker::Link
+Found object: Size=0x8 Name=cNpcMarkerModelJointPropertyContainer
+Found object: Size=0x8 Name=cNpcMarkerSinglePropertyContainer
+Found object: Size=0xa0 Name=uNpcMarker
+Found object: Size=0xb0 Name=uNpcMarkerModelJoint
+Found object: Size=0xa0 Name=uNpcMarkerSingle
+Found object: Size=0x2f80 Name=uNpcSufferer
+Found object: Size=0xd0 Name=cHoldGroupButcherHang
+Found object: Size=0xd0 Name=cHoldGroupCaveFence
+Found object: Size=0xe0 Name=cHoldGroupCultBomber
+Found object: Size=0xd0 Name=cHoldGroupCultPickUp
+Found object: Size=0xe0 Name=cHoldGroupDrillup
+Found object: Size=0xe0 Name=cHoldEvNpc83
+Found object: Size=0xd0 Name=cHoldGroupFaceCrasher
+Found object: Size=0xe0 Name=cHoldGroupFryingpan
+Found object: Size=0xd0 Name=cHoldGroupGerman
+Found object: Size=0xe0 Name=cHoldGroupGiantSwing
+Found object: Size=0xe0 Name=cHoldGroupGiveShoulder
+Found object: Size=0xe0 Name=cHoldGunshop
+Found object: Size=0xf0 Name=cHoldGroupLiftUp
+Found object: Size=0x3a0 Name=cHoldGroupMobZombie
+Found object: Size=0xd0 Name=cHoldGroupNeckSlash
+Found object: Size=0xf0 Name=cHoldGroupNpcCatchPl
+Found object: Size=0xd0 Name=cHoldGroupNpcHug
+Found object: Size=0xd0 Name=cHoldGroupNpcZombie
+Found object: Size=0xe0 Name=cHoldGroupPiggyBack
+Found object: Size=0xd0 Name=cHoldGroupPullup
+Found object: Size=0xe0 Name=cHoldGroupRopethrow
+Found object: Size=0xe0 Name=cHoldGroupSadist
+Found object: Size=0xd0 Name=cHoldGroupSadistPl
+Found object: Size=0xd0 Name=cHoldGroupSergeant
+Found object: Size=0xd0 Name=cHoldGroupSickleCut
+Found object: Size=0xd0 Name=cHoldGroupSleeper
+Found object: Size=0xd0 Name=cHoldGroupViscerachop
+Found object: Size=0xd0 Name=cHoldGroupZombiClimb
+Found object: Size=0x18 Name=uEventGamePl::Constraint
+Found object: Size=0x50 Name=uEventGamePl::cBlood
+Found object: Size=0x1660 Name=uEventGamePl
+Found object: Size=0x13e0 Name=uEventNpcDemo
+Found object: Size=0x13e0 Name=uEventOm95
+Found object: Size=0x18 Name=uEventPl::Constraint
+Found object: Size=0x60 Name=uEventPl::cBlood
+Found object: Size=0x1690 Name=uEventPl
+Found object: Size=0x348 Name=uEventSlow
+Found object: Size=0x60 Name=uEventSM::cBlood
+Found object: Size=0x2140 Name=uEventSM
+Found object: Size=0x1390 Name=uEvh000
+Found object: Size=0x1390 Name=uEvh001
+Found object: Size=0x1390 Name=uEvh002
+Found object: Size=0x1390 Name=uEvh003
+Found object: Size=0x1390 Name=uEvh004
+Found object: Size=0x1390 Name=uEvh005
+Found object: Size=0x1390 Name=uEvh006
+Found object: Size=0x1390 Name=uEvh007
+Found object: Size=0x1390 Name=uEvh008
+Found object: Size=0x1390 Name=uEvh009
+Found object: Size=0x1390 Name=uEvh
+Found object: Size=0x13e0 Name=uEvItem
+Found object: Size=0x1390 Name=uEvNpc83
+Found object: Size=0x1390 Name=uEvo000
+Found object: Size=0x1390 Name=uEvo001
+Found object: Size=0x1390 Name=uEvo002
+Found object: Size=0x1390 Name=uEvo003
+Found object: Size=0x1390 Name=uEvo004
+Found object: Size=0x1390 Name=uEvo005
+Found object: Size=0x1390 Name=uEvo006
+Found object: Size=0x1390 Name=uEvo
+Found object: Size=0x13e0 Name=uEvo2a
+Found object: Size=0xd60 Name=uEvZombie
+Found object: Size=0x16a0 Name=uNpcDeadObj
+Found object: Size=0x13b0 Name=uNpcDeadZombie
+Found object: Size=0x8 Name=cBackUpParamEm44
+Found object: Size=0x8 Name=cBackUpParamEm45
+Found object: Size=0x8 Name=cBackUpParamEm49
+Found object: Size=0x8 Name=cBackUpParamEm
+Found object: Size=0x90 Name=cBackUpParamVehicle
+Found object: Size=0x10 Name=cBackUpParamPl
+Found object: Size=0x430 Name=sSnatcherStorage
+Found object: Size=0x80 Name=cDebugCapsule
+Found object: Size=0x170 Name=cDrawRangeTool
+Found object: Size=0x13e0 Name=uOmdd_1
+Found object: Size=0x8 Name=MtObject
+Found object: Size=0x20 Name=MtArray
+Found object: Size=0x20 Name=MtHeapArray
+Found object: Size=0x48 Name=MtFile::FileInfo
+Found object: Size=0x148 Name=MtFile
+Found object: Size=0x20 Name=MtGeomConvex
+Found object: Size=0x10 Name=MtGeometry
+Found object: Size=0x30 Name=MtGeomSphere
+Found object: Size=0x50 Name=MtGeomCapsule
+Found object: Size=0x40 Name=MtGeomAABB
+Found object: Size=0x68 Name=MtCollisionTree
+Found object: Size=0x50 Name=MtCollisionTree::Node
+Found object: Size=0x218 Name=MtRegistry
+Found object: Size=0x50 Name=MtGeomTriangle
+Found object: Size=0x50 Name=MtAllocator
+Found object: Size=0x70 Name=MtBlockAllocator
+Found object: Size=0x50 Name=MtDefaultAllocator
+Found object: Size=0x78 Name=MtHeapAllocator
+Found object: Size=0x30 Name=MtClipboardStream
+Found object: Size=0x10 Name=MtFileStream
+Found object: Size=0x30 Name=MtMemoryCachedStream
+Found object: Size=0x20 Name=MtMemoryStream
+Found object: Size=0x8 Name=MtStream
+Found object: Size=0x70 Name=MtGeomOBB
+Found object: Size=0x28 Name=sUnit::MoveLine
+Found object: Size=0x538 Name=sUnit
+Found object: Size=0x60 Name=cResource
+Found object: Size=0x48 Name=uSchedulerEdit
+Found object: Size=0x10 Name=sCollision::Collider
+Found object: Size=0x28 Name=sCollision::List
+Found object: Size=0x50 Name=sCollision::Node
+Found object: Size=0xc0 Name=sCollision::NodeList
+Found object: Size=0x450 Name=sCollision
+Found object: Size=0x78 Name=sResource::DecompressStream
+Found object: Size=0x20 Name=sResource::TypeInfo
+Found object: Size=0x24458 Name=sResource
+Found object: Size=0xf0 Name=uCoord
+Found object: Size=0x18 Name=uActorModel::Constraint
+Found object: Size=0x80 Name=uActorModel::EffectEmitter
+Found object: Size=0xde0 Name=uActorModel
+Found object: Size=0xd70 Name=uModel2Light
+Found object: Size=0xd60 Name=uModelGlass
+Found object: Size=0xd80 Name=uModelSky
+Found object: Size=0x70 Name=rNulls
+Found object: Size=0x38 Name=cSystem
+Found object: Size=0x20248 Name=sMain
+Found object: Size=0x140 Name=r2Texture
+Found object: Size=0x130 Name=rRenderTargetTexture
+Found object: Size=0x120 Name=rTexture
+Found object: Size=0x28 Name=cUnit
+Found object: Size=0xa8 Name=rSchedulerXml::BoolTrack
+Found object: Size=0xa8 Name=rSchedulerXml::FloatTrack
+Found object: Size=0xa8 Name=rSchedulerXml::IntTrack
+Found object: Size=0x20 Name=rSchedulerXml::BoolTrack::Key
+Found object: Size=0x20 Name=rSchedulerXml::FloatTrack::Key
+Found object: Size=0x20 Name=rSchedulerXml::IntTrack::Key
+Found object: Size=0x20 Name=rSchedulerXml::RefTrack::Key
+Found object: Size=0x20 Name=rSchedulerXml::ResourceTrack::Key
+Found object: Size=0x30 Name=rSchedulerXml::VectorTrack::Key
+Found object: Size=0x18 Name=rSchedulerXml::ParamTrack::KeyBase
+Found object: Size=0x98 Name=rSchedulerXml::ObjectTrack
+Found object: Size=0xa8 Name=rSchedulerXml::ParamTrack
+Found object: Size=0xa8 Name=rSchedulerXml::RefTrack
+Found object: Size=0xa8 Name=rSchedulerXml::ResourceTrack
+Found object: Size=0x50 Name=rSchedulerXml::RootTrack
+Found object: Size=0x58 Name=rSchedulerXml::SystemTrack
+Found object: Size=0x48 Name=rSchedulerXml::Track
+Found object: Size=0x60 Name=rSchedulerXml::UnitTrack
+Found object: Size=0xa8 Name=rSchedulerXml::VectorTrack
+Found object: Size=0x60 Name=rScheduler
+Found object: Size=0xc0 Name=rSchedulerXml
+Found object: Size=0xe8 Name=rCollision
+Found object: Size=0x28 Name=rModelInfoXml::Cluster
+Found object: Size=0x90 Name=rModelInfoXml::Material
+Found object: Size=0x130 Name=rModel
+Found object: Size=0x1b0 Name=rModelInfoXml
+Found object: Size=0x1068 Name=rArchive::CompressStream
+Found object: Size=0xa0 Name=rArchive::DecompressStream
+Found object: Size=0x78 Name=rArchive
+Found object: Size=0x200 Name=sSoundSystem
+Found object: Size=0x240 Name=sPad::Map
+Found object: Size=0x678 Name=sPad::Pad
+Found object: Size=0x1bcd8 Name=sPad
+Found object: Size=0x2270 Name=sToolBase
+Found object: Size=0x90 Name=sRender::Pass
+Found object: Size=0x20 Name=sRender::TempTexture
+Found object: Size=0x2f500 Name=sRender
+Found object: Size=0xa0 Name=uColorSpaceFilter
+Found object: Size=0x48 Name=uCrossFadeFilter
+Found object: Size=0x90 Name=uDOFFilter
+Found object: Size=0x90 Name=uDirectionalGlowFilter
+Found object: Size=0x70 Name=uFeedbackBlurFilter
+Found object: Size=0x38 Name=uFilter
+Found object: Size=0x48 Name=uHSVFilter
+Found object: Size=0xc0 Name=uHazeFilter
+Found object: Size=0x80 Name=uImagePlaneFilter
+Found object: Size=0x90 Name=uLevelCorrectFilter
+Found object: Size=0x78 Name=uMotionBlurFilter
+Found object: Size=0xd0 Name=uNoiseFogFilter
+Found object: Size=0xc0 Name=uRadialBlurFilter
+Found object: Size=0xe0 Name=uTVNoiseFilter
+Found object: Size=0x40 Name=uToneCurveFilter
+Found object: Size=0x3c0 Name=uToneMapFilter
+Found object: Size=0xd0 Name=uVolumeNoiseFilter
+Found object: Size=0x4e0 Name=sCamera::Viewport
+Found object: Size=0x2770 Name=sCamera
+Found object: Size=0x8af0 Name=sEffect
+Found object: Size=0x380 Name=cTrans::CubeTexture
+Found object: Size=0x18 Name=cTrans::Element
+Found object: Size=0x30 Name=cTrans::IndexBuffer
+Found object: Size=0x28 Name=cTrans::Technique
+Found object: Size=0x108 Name=cTrans::Texture
+Found object: Size=0x70 Name=cTrans::TextureBase
+Found object: Size=0x30 Name=cTrans::VertexBuffer
+Found object: Size=0x30 Name=cTrans::VertexDecl
+Found object: Size=0x70 Name=cTrans::VolumeTexture
+Found object: Size=0x4b80 Name=cTrans
+Found object: Size=0x6118 Name=sPrim
+Found object: Size=0x30 Name=sShader::ParameterDesc
+Found object: Size=0x18 Name=sShader::TechniqueDesc
+Found object: Size=0xb560 Name=sShader
+Found object: Size=0xa0 Name=rEffectSetData
+Found object: Size=0xa0 Name=rEffectSetDataList
+Found object: Size=0xd0 Name=uBackLight
+Found object: Size=0xe0 Name=uCubeMapLight
+Found object: Size=0x60 Name=uHemiSphereLight
+Found object: Size=0x50 Name=uInfiniteLight
+Found object: Size=0x40 Name=uLight
+Found object: Size=0x80 Name=uPointLight
+Found object: Size=0xc0 Name=uSpotLight
+Found object: Size=0x8 Name=uModel::Constraint
+Found object: Size=0xa0 Name=uModel::Joint
+Found object: Size=0x150 Name=uModel::Motion
+Found object: Size=0x50 Name=uModel::RenderInfo
+Found object: Size=0xd50 Name=uModel
+Found object: Size=0x70 Name=rShader
+Found object: Size=0x68 Name=rModelMontage
+Found object: Size=0x68 Name=rMotionList
+Found object: Size=0x90 Name=rEffectAnimation
+Found object: Size=0x80 Name=rEffectStrip
+Found object: Size=0x68 Name=rFacialPattern
+Found object: Size=0x68 Name=rFacialAnimation
+Found object: Size=0x80 Name=rClothXml::Chain
+Found object: Size=0x50 Name=rClothXml::Constraint
+Found object: Size=0x10 Name=rClothXml::Index
+Found object: Size=0x78 Name=rCloth
+Found object: Size=0xa0 Name=rClothXml
+Found object: Size=0xa0 Name=sGpuParticle
+Found object: Size=0xc0 Name=uAdhesion
+Found object: Size=0x1f0 Name=uOceanWater
+Found object: Size=0x30 Name=uWater
+Found object: Size=0xb0 Name=uMovie
+Found object: Size=0x150 Name=uMirror
+Found object: Size=0x130 Name=uMotionCamera
+Found object: Size=0x18 Name=rCameraListXml::CameraInfo
+Found object: Size=0x68 Name=rCameraList
+Found object: Size=0x1868 Name=rCameraListXml
+Found object: Size=0x60 Name=uFacial
+Found object: Size=0x110 Name=uEnvMap
+Found object: Size=0x100 Name=uFreeCamera
+Found object: Size=0x90 Name=uCapsuleShadowLight
+Found object: Size=0x70 Name=uPointShadowLight
+Found object: Size=0x30 Name=uShadowLight
+Found object: Size=0xb0 Name=uSpotShadowLight
+Found object: Size=0x4040 Name=sLight
+Found object: Size=0xf0 Name=uLightShaft
+Found object: Size=0xc8 Name=sCapture
+Found object: Size=0x160 Name=uShadow
+Found object: Size=0x280 Name=uInteractiveWater
+Found object: Size=0x140 Name=uFlowingWater
+Found object: Size=0x50 Name=uGridEnvLight
+Found object: Size=0x8a00 Name=sEffectVFR
+Found object: Size=0x68 Name=rSoundAst
+Found object: Size=0x68 Name=rSoundCdp
+Found object: Size=0x68 Name=rSoundRrd
+Found object: Size=0x68 Name=rSoundSeq
+Found object: Size=0x68 Name=rSoundSnd
+Found object: Size=0x68 Name=rSoundWed
+Found object: Size=0x2270 Name=sTool
+Found object: Size=0xd0 Name=uCamera
+Found object: Size=0x90 Name=uCloth::Chain
+Found object: Size=0x58 Name=uCloth
+Found object: Size=0x60 Name=uEffect
+Found object: Size=0x120 Name=uEffectEdit
+Found object: Size=0xb0 Name=uEffectEditPointLight
+Found object: Size=0x130 Name=uEffectGenerator
+Found object: Size=0x90 Name=rMovie
+Found object: Size=0x90 Name=rMovieInterMediate
+Found object: Size=0x40 Name=cArea
+Found object: Size=0xe0 Name=rGridEnvLight
+Found object: Size=0x70 Name=rEffectAnim
+Found object: Size=0x70 Name=rEffectList
+Found object: Size=0x170 Name=uEffectVFR
+Found object: Size=0x38 Name=sArea::AreaInfo
+Found object: Size=0x7088 Name=sArea
+Found object: Size=0x10 Name=MtGeomRay
+Found object: Size=0x30 Name=MtFCurve::Key
+Found object: Size=0x30 Name=MtFCurve
 Xrefs found: 1265
 Xrefs null: 1
 Xrefs failed: 1
