@@ -18,7 +18,13 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CommandManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="MtFramework\sResource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc\TypeInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MtFramework\Graphics\rModel.cpp">
@@ -35,6 +41,9 @@
     <ClInclude Include="Detours\inc\syelog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CommandManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="MtFramework\sResource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -44,13 +53,10 @@
     <ClInclude Include="MtFramework\MtDTI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Misc\TypeInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="DRDebugger.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Lua\sol.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Lua\HelperFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MtFramework\Graphics\rModel.h">

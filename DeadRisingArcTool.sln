@@ -8,11 +8,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IO", "IO\IO.csproj", "{13A4CE71-96C0-4553-B899-AF6C524FD3C9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DRDebugger", "DRDebugger\DRDebugger.vcxproj", "{C14CC7F0-0A62-4987-98EE-34A844F196D9}"
-	ProjectSection(ProjectDependencies) = postProject
-		{9836F007-8D3F-483F-B1EB-31F21221C774} = {9836F007-8D3F-483F-B1EB-31F21221C774}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VanillaLua", "VanillaLua\VanillaLua.vcxproj", "{9836F007-8D3F-483F-B1EB-31F21221C774}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,17 +54,6 @@ Global
 		{C14CC7F0-0A62-4987-98EE-34A844F196D9}.Release|x64.Build.0 = Release|x64
 		{C14CC7F0-0A62-4987-98EE-34A844F196D9}.Release|x86.ActiveCfg = Release|Win32
 		{C14CC7F0-0A62-4987-98EE-34A844F196D9}.Release|x86.Build.0 = Release|Win32
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Debug|Any CPU.Build.0 = Debug|x64
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Debug|x64.ActiveCfg = Debug|x64
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Debug|x64.Build.0 = Debug|x64
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Debug|x86.ActiveCfg = Debug|Win32
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Debug|x86.Build.0 = Debug|Win32
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Release|Any CPU.ActiveCfg = Release|Win32
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Release|x64.ActiveCfg = Release|x64
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Release|x64.Build.0 = Release|x64
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Release|x86.ActiveCfg = Release|Win32
-		{9836F007-8D3F-483F-B1EB-31F21221C774}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
