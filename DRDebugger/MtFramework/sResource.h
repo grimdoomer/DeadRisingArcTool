@@ -4,8 +4,7 @@
 
 #pragma once
 #include <Windows.h>
-#include "CommandManager.h"
-#include "Misc/TypeInfo.h"
+#include "DRDebugger.h"
 
 // sizeof = 0x60
 struct cResource
@@ -19,21 +18,6 @@ struct cResource
 	/* 0x58 */ ULONGLONG	mID;
 };
 static_assert(sizeof(cResource) == 0x60, "cResource struct has incorrect size");
-
-const TypeInfo cResourceTypeInfo =
-{
-	"cResource", sizeof(cResource),
-	{
-		{ FieldType_Pointer, "*vtable", FIELD_OFFSET(cResource, vtable), sizeof(void*), nullptr },
-		{ FieldType_String, "mPath", FIELD_OFFSET(cResource, mPath), sizeof(char), (void*)64 },
-		{ FieldType_Number, "mRefCount", FIELD_OFFSET(cResource, mRefCount), sizeof(DWORD), nullptr },
-		{ FieldType_Number, "mAttr", FIELD_OFFSET(cResource, mAttr), sizeof(DWORD), nullptr },
-		{ FieldType_Number, "mState", FIELD_OFFSET(cResource, mState), sizeof(DWORD), nullptr },
-		{ FieldType_Number, "mSize", FIELD_OFFSET(cResource, mSize), sizeof(DWORD), nullptr },
-		{ FieldType_Number, "mID", FIELD_OFFSET(cResource, mID), sizeof(ULONGLONG), nullptr },
-		{ FieldType_Terminator, nullptr, 0, 0, nullptr }
-	}
-};
 
 // sizeof = 0x24458
 struct sResource
@@ -49,16 +33,20 @@ class sResourceImpl
 protected:
 
 public:
+	static void InitializeLua();
+
 	template<typename T> static T GetGameResourceAsType(void *pTypeDTI, char *psFileName, int dwFlags)
 	{
-		return (T)GetGameResourceAsType(pTypeDTI, psFileName, dwFlags);
+		return (T)GetGameResource(pTypeDTI, psFileName, dwFlags);
 	}
 
-	static cResource* GetGameResourceAsType(void *pTypeDTI, char *psFileName, int dwFlags);
+	static cResource* GetGameResource(void *pTypeDTI, char *psFileName, int dwFlags);
+
+	static cResource* GetGameResourceByIndex(int index);
+
 
 	static void IncrementResourceRefCount(cResource *pResource);
-};
 
-// Table of commands for sResource objects.
-const int g_sResourceCommandsLength = 2;
-extern const CommandEntry g_sResourceCommands[];
+
+	static void PrintLoadedResources(const char *psFilter = nullptr);
+};

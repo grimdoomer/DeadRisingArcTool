@@ -2,16 +2,56 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
-#include <locale>
-#include <codecvt>
 #include <Windows.h>
 #include <shellapi.h>
 #include "DRDebugger.h"
+#include "Lua/HelperFunctions.h"
 #include "Misc/AsmHelpers.h"
 #include "MtFramework/sResource.h"
 
 // Global lua state.
 sol::state g_LuaState;
+
+int LuaExceptionHandler(lua_State* L, sol::optional<const std::exception&> maybe_exception, sol::string_view description)
+{
+	// If an exception was thrown use it for printing.
+	if (maybe_exception)
+	{
+		// Print the exception info.
+		printf("EXCEPTION: %s\n", maybe_exception->what());
+	}
+	else
+	{
+		// Print the error details.
+		std::cout.write(description.data(), description.size());
+	}
+
+	// you must push 1 element onto the stack to be 
+	// transported through as the error object in Lua
+	// note that Lua -- and 99.5% of all Lua users and libraries -- expects a string
+	// so we push a single string (in our case, the description of the error)
+	return sol::stack::push(L, description);
+}
+
+int LoadFileRequire(lua_State* L)
+{
+	// Get the module name.
+	std::string path = sol::stack::get<std::string>(L, 1);
+
+	// Check the module name and handle accordingly.
+	if (path == "inspect")
+	{
+		// Get the inspect code file into a buffer.
+		std::string InspectCode = LuaInspectCodeStr;
+
+		// Load the script buffer.
+		luaL_loadbuffer(L, InspectCode.data(), InspectCode.size(), path.c_str());
+		return 1;
+	}
+
+	sol::stack::push(L, "This is not the module you're looking for!");
+	return 1;
+}
 
 void SetupConsole()
 {
@@ -38,44 +78,22 @@ DWORD __stdcall ProcessConsoleWorker(LPVOID)
 	while (true)
 	{
 		std::string sCommand;
-		std::wstring sCommandUnic;
-		CommandEntry commandInfo;
-		LPWSTR *pArguments;
-		int ArgCount;
 
 		// Get the next command and convert it to unicode for parsing.
 		wprintf(L">");
 		std::getline(std::cin, sCommand);
 
 		// Run the command in the lua engine.
-		sol::protected_function_result result = g_LuaState.script(sCommand.c_str());
-
-		//// Parse the command string.
-		//pArguments = CommandLineToArgvW(sCommandUnic.c_str(), &ArgCount);
-		//if (pArguments != NULL)
-		//{
-		//	// Make sure there is at least one argument to process.
-		//	if (ArgCount == 0)
-		//		goto CommandEnd;
-
-		//	// Check if a command with the specified name exists.
-		//	if (FindCommand(std::wstring(pArguments[0]), &commandInfo) == false)
-		//	{
-		//		// No matching command found.
-		//		wprintf(L"\nUnknown command: %s\n\n", pArguments[0]);
-		//		goto CommandEnd;
-		//	}
-
-		//	// Call the command handler.
-		//	commandInfo.pHandlerFunction(&pArguments[1], ArgCount - 1);
-		//	wprintf(L"\n");
-
-		//CommandEnd:
-		//	// Free the argument buffer.
-		//	LocalFree(pArguments);
-		//}
+		sol::protected_function_result result = g_LuaState.script(sCommand.c_str(), sol::script_pass_on_error);
+		if (result.valid() == false)
+		{
+			// An error occured while parsing the script.
+			sol::error error = result;
+			printf("SCRIPT ERROR: %s\n", error.what());
+		}
 
 		// Sleep and loop.
+		printf("\n");
 		Sleep(50);
 	}
 
@@ -94,20 +112,22 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		// Set the module handle.
 		SnatcherModuleHandle = GetModuleHandle(NULL);
 
-		// Setup the lua environment.
-		g_LuaState.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::io);
-
-		// Register all commands.
-		RegisterCommands(g_CommandManagerCommands, g_CommandManagerCommandsLength);
-		RegisterCommands(g_TypeInfoCommands, g_TypeInfoCommandsLength);
-		RegisterCommands(g_sResourceCommands, g_sResourceCommandsLength);
-
-		// Register all type info.
-		RegisterTypeInfo(&cResourceTypeInfo);
-
 		// Setup the console window.
 		OutputDebugString(L"DRDebugger DllMain\n");
 		SetupConsole();
+
+		// Setup the lua environment.
+		g_LuaState.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::io, sol::lib::package, sol::lib::math, sol::lib::table);
+		g_LuaState.set_exception_handler(&LuaExceptionHandler);
+		g_LuaState.clear_package_loaders();
+		g_LuaState.add_package_loader(LoadFileRequire);
+
+		// Load some helper scripts.
+		g_LuaState.safe_script(LuaHelperFunctionsStr, sol::script_pass_on_error);
+		g_LuaState.safe_script(R"( inspect = require("inspect") )");
+
+		// Register all objects with the lua state.
+		sResourceImpl::InitializeLua();
 
 		// Create a worker thread to process console commands.
 		HANDLE hThread = CreateThread(NULL, NULL, ProcessConsoleWorker, NULL, NULL, NULL);

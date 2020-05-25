@@ -5,14 +5,33 @@
 #include "sResource.h"
 #include <stdio.h>
 #include <string>
-#include <locale>
-#include <codecvt>
 #include "Misc/AsmHelpers.h"
 #include "MtDTI.h"
 
+// sResource singleton instance pointer.
 void *g_sResourceSingletonInst = (void*)0x141CF27F8;
 
-cResource* sResourceImpl::GetGameResourceAsType(void *pTypeDTI, char *psFileName, int dwFlags)
+void sResourceImpl::InitializeLua()
+{
+	// Register cResource:
+	g_LuaState.new_usertype<cResource>("cResource",
+		"vtable", &cResource::vtable,
+		"mPath", &cResource::mPath,
+		"mRefCount", &cResource::mRefCount,
+		"mAttr", &cResource::mAttr,
+		"mState", &cResource::mState,
+		"mSize", &cResource::mSize,
+		"mID", &cResource::mID);
+
+	// Register sResourceImpl:
+	g_LuaState.new_usertype<sResourceImpl>("sResourceImpl",
+		"GetGameResourceAsType", &sResourceImpl::GetGameResource,
+		"GetGameResourceByIndex", &sResourceImpl::GetGameResourceByIndex,
+		"IncrementResourceRefCount", &sResourceImpl::IncrementResourceRefCount,
+		"PrintLoadedResources", sol::overload([]() { sResourceImpl::PrintLoadedResources(); }, [](const char *psFilter) { sResourceImpl::PrintLoadedResources(psFilter); }));
+}
+
+cResource* sResourceImpl::GetGameResource(void *pTypeDTI, char *psFileName, int dwFlags)
 {
 	return (cResource*)ThisPtrCall((void*)0x14063BC60, GetModulePointer<void*>(g_sResourceSingletonInst), pTypeDTI, psFileName, (void*)dwFlags, nullptr);
 }
@@ -22,39 +41,25 @@ void sResourceImpl::IncrementResourceRefCount(cResource *pResource)
 	ThisPtrCall((void*)0x14063B3B0, GetModulePointer<void*>(g_sResourceSingletonInst), pResource, nullptr, nullptr, nullptr);
 }
 
-// Forward declarations for command functions.
-__int64 PrintLoadedResources(WCHAR **argv, int argc);
-__int64 GetResourceByIndex(WCHAR **argv, int argc);
-
-// Table of commands for sResource objects.
-const CommandEntry g_sResourceCommands[g_sResourceCommandsLength] =
-{
-	{ L"list_resources", L"Lists all loaded resources", PrintLoadedResources },
-	{ L"GetResourceByIndex", L"Gets the resource at the specified index", GetResourceByIndex }
-};
-
-__int64 PrintLoadedResources(WCHAR **argv, int argc)
+void sResourceImpl::PrintLoadedResources(const char *psFilter)
 {
 	std::string sFilter;
 	bool bFilterFront = false;
 
-	// Setup the unicode converter.
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> unicConvert;
-
 	// Check if there is a filter argument.
-	if (argc > 0)
+	if (psFilter != nullptr)
 	{
 		// Check if this is a front filter or rear filter.
-		if (argv[0][0] == '*')
+		if (psFilter[0] == '*')
 		{
 			// Rear filter.
-			sFilter = unicConvert.to_bytes(std::wstring(&argv[0][1]));
+			sFilter = &psFilter[1];
 		}
 		else
 		{
 			// Front filter.
-			argv[0][lstrlenW(argv[0]) - 1] = (wchar_t)0;
-			sFilter = unicConvert.to_bytes(std::wstring(argv[0]));
+			sFilter = psFilter;
+			sFilter = sFilter.substr(0, sFilter.size() - 1);
 			bFilterFront = true;
 		}
 	}
@@ -95,24 +100,13 @@ __int64 PrintLoadedResources(WCHAR **argv, int argc)
 
 	// Release the list lock.
 	LeaveCriticalSection((LPCRITICAL_SECTION)(GetModulePointer<__int64>(g_sResourceSingletonInst) + 8));
-
-	return 0;
 }
 
-__int64 GetResourceByIndex(WCHAR **argv, int argc)
+cResource* sResourceImpl::GetGameResourceByIndex(int index)
 {
 	cResource *pResource = nullptr;
 
-	// Make sure there is at least 1 argument to parse.
-	if (argc != 1)
-	{
-		// Invalid command syntax.
-		wprintf(L"Invalid command syntax\n");
-		return 0;
-	}
-
-	// Parse the index argument and make sure it is valid.
-	int index = std::stoi(std::wstring(argv[0]));
+	// Make sure the index argument is valid.
 	if (index < 0 || index >= 8192)
 	{
 		// Index is out of range.
@@ -138,5 +132,5 @@ __int64 GetResourceByIndex(WCHAR **argv, int argc)
 	LeaveCriticalSection((LPCRITICAL_SECTION)(GetModulePointer<__int64>(g_sResourceSingletonInst) + 8));
 
 	// Return the resource.
-	return (__int64)pResource;
+	return pResource;
 }

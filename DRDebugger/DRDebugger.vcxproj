@@ -104,15 +104,16 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SOL_ALL_SAFETIES_ON;_CRT_SECURE_NO_WARNINGS;_DEBUG;DRDEBUGGER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Detours\inc;$(SolutionDir)VanillaLua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)Detours\lib.x64;$(OutputPath);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>detours.lib;lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>detours.lib;vanillalua.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -152,20 +153,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CommandManager.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="Misc\TypeInfo.cpp" />
     <ClCompile Include="MtFramework\sResource.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CommandManager.h" />
     <ClInclude Include="Detours\inc\detours.h" />
     <ClInclude Include="Detours\inc\detver.h" />
     <ClInclude Include="Detours\inc\syelog.h" />
     <ClInclude Include="DRDebugger.h" />
+    <ClInclude Include="Lua\HelperFunctions.h" />
     <ClInclude Include="Lua\sol.hpp" />
     <ClInclude Include="Misc\AsmHelpers.h" />
-    <ClInclude Include="Misc\TypeInfo.h" />
     <ClInclude Include="MtFramework\MtDTI.h" />
     <ClInclude Include="MtFramework\sResource.h" />
   </ItemGroup>
