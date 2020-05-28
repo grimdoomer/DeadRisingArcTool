@@ -299,7 +299,8 @@ function Inspector:putTable(obj, t)
 				self:puts(' = ')
 
 				if type(obj[k]) == "userdata" then
-					self:puts("0x" .. tostring(obj[k]):sub(11))
+					str = tostring(obj[k])
+					self:puts("0x" .. str:sub(str:find(':', 1, true) + 2))
 				else
 					self:puts(tostring(obj[k]))
 				end

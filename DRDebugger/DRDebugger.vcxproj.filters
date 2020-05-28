@@ -21,6 +21,9 @@
     <ClCompile Include="MtFramework\sResource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MtFramework\Graphics\rModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Detours\inc\detours.h">
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Lua\HelperFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MtFramework\Graphics\rModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

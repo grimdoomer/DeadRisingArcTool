@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="MtFramework\Graphics\rModel.cpp" />
     <ClCompile Include="MtFramework\sResource.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +165,7 @@
     <ClInclude Include="Lua\HelperFunctions.h" />
     <ClInclude Include="Lua\sol.hpp" />
     <ClInclude Include="Misc\AsmHelpers.h" />
+    <ClInclude Include="MtFramework\Graphics\rModel.h" />
     <ClInclude Include="MtFramework\MtDTI.h" />
     <ClInclude Include="MtFramework\sResource.h" />
   </ItemGroup>

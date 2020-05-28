@@ -8,6 +8,7 @@
 #include "Lua/HelperFunctions.h"
 #include "Misc/AsmHelpers.h"
 #include "MtFramework/sResource.h"
+#include "MtFramework/Graphics/rModel.h"
 
 // Global lua state.
 sol::state g_LuaState;
@@ -127,7 +128,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		g_LuaState.safe_script(R"( inspect = require("inspect") )");
 
 		// Register all objects with the lua state.
+		Vector3::InitializeLua();
+		Vector4::InitializeLua();
 		sResourceImpl::InitializeLua();
+		rModelImpl::InitializeLua();
 
 		// Create a worker thread to process console commands.
 		HANDLE hThread = CreateThread(NULL, NULL, ProcessConsoleWorker, NULL, NULL, NULL);

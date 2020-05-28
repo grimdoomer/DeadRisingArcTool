@@ -7,6 +7,7 @@
 #include <string>
 #include "Misc/AsmHelpers.h"
 #include "MtDTI.h"
+#include "Graphics/rModel.h"
 
 // sResource singleton instance pointer.
 void *g_sResourceSingletonInst = (void*)0x141CF27F8;
@@ -21,7 +22,9 @@ void sResourceImpl::InitializeLua()
 		"mAttr", &cResource::mAttr,
 		"mState", &cResource::mState,
 		"mSize", &cResource::mSize,
-		"mID", &cResource::mID);
+		"mID", &cResource::mID,
+		
+		"To_rModel", [](const cResource& self) { return (rModel*)&self; });
 
 	// Register sResourceImpl:
 	g_LuaState.new_usertype<sResourceImpl>("sResourceImpl",
