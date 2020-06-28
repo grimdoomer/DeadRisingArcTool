@@ -9,6 +9,9 @@
 #include "DRDebugger.h"
 #include "Misc/AsmHelpers.h"
 #include "MtFramework/sResource.h"
+#include "MtFramework/Graphics/rModel.h"
+#include "MtFramework/Graphics/sRender.h"
+#include "MtFramework/Graphics/sShader.h"
 
 void SetupConsole()
 {
@@ -56,12 +59,20 @@ DWORD __stdcall ProcessConsoleWorker(LPVOID)
 			if (ArgCount == 0)
 				goto CommandEnd;
 
-			// Check if a command with the specified name exists.
-			if (FindCommand(std::wstring(pArguments[0]), &commandInfo) == false)
+			// Check if we are accessing a command or local variable.
+			if (pArguments[0][0] == '$')
 			{
-				// No matching command found.
-				wprintf(L"\nUnknown command: %s\n\n", pArguments[0]);
-				goto CommandEnd;
+
+			}
+			else
+			{
+				// Check if a command with the specified name exists.
+				if (FindCommand(std::wstring(pArguments[0]), &commandInfo) == false)
+				{
+					// No matching command found.
+					wprintf(L"\nUnknown command: %s\n\n", pArguments[0]);
+					goto CommandEnd;
+				}
 			}
 
 			// Call the command handler.
@@ -95,10 +106,19 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		// Register all commands.
 		RegisterCommands(g_CommandManagerCommands, g_CommandManagerCommandsLength);
 		RegisterCommands(g_TypeInfoCommands, g_TypeInfoCommandsLength);
-		RegisterCommands(g_sResourceCommands, g_sResourceCommandsLength);
 
-		// Register all type info.
-		RegisterTypeInfo(&cResourceTypeInfo);
+		// Register built in types.
+		RegisterTypeInfo(&Vector3TypeInfo);
+		RegisterTypeInfo(&Vector4TypeInfo);
+		RegisterTypeInfo(&Matrix4x4TypeInfo);
+
+		// Register types and commands.
+		sResourceImpl::InitializeTypeInfo();
+		rModelImpl::InitializeTypeInfo();
+		sRenderImpl::RegisterTypeInfo();
+		sShaderImpl::RegisterTypeInfo();
+
+		rModelImpl::Test(nullptr);
 
 		// Setup the console window.
 		OutputDebugString(L"DRDebugger DllMain\n");

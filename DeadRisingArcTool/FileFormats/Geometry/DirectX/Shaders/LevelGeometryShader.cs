@@ -40,6 +40,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
             this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, new InputElement[]
                     {
+                        // Id: 0x3259609d
                     new InputElement("POSITION",    0, Format.R32G32B32_Float,      0,  0),
                     new InputElement("NORMAL",      0, Format.R16G16B16A16_SNorm,   12, 0),
                     new InputElement("TANGENT",     0, Format.R16G16B16A16_SNorm,   0,  1),
@@ -81,6 +82,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
             this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, new InputElement[]
                     {
+                        /*
+                            Id: 0x87a34e22
+                                Elem 0: Slot=0 Offset=0 Format=R16G16B16A16_SNORM SemanticName=POSITION Index=0
+                                Elem 1: Slot=0 Offset=8 Format=R8G8B8A8_UINT SemanticName=BLENDINDICES Index=0
+                                Elem 2: Slot=0 Offset=12 Format=R8G8B8A8_UINT SemanticName=BLENDINDICES Index=1
+                                Elem 3: Slot=0 Offset=16 Format=R8G8B8A8_UNORM SemanticName=BLENDWEIGHT Index=0
+                                Elem 4: Slot=0 Offset=20 Format=R8G8B8A8_UNORM SemanticName=BLENDWEIGHT Index=1
+                                Elem 5: Slot=0 Offset=24 Format=R16G16B16A16_SNORM SemanticName=NORMAL Index=0
+                                Elem 6: Slot=0 Offset=32 Format=R16G16_SNORM SemanticName=TEXCOORD Index=0
+                                Elem 7: Slot=1 Offset=0 Format=R16G16B16A16_SNORM SemanticName=TANGENT Index=0
+                                Elem 8: Slot=1 Offset=8 Format=R16G16_SNORM SemanticName=TEXCOORD Index=1
+                        */
+
                     new InputElement("POSITION",        0, Format.R16G16B16A16_SNorm,   0,  0),
                     new InputElement("TEXCOORD",        0, Format.R16G16_SNorm,         24, 0),
                     new InputElement("BLENDWEIGHT",     0, Format.R8G8B8A8_UNorm,       12, 0),

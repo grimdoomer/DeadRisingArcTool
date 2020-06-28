@@ -116,6 +116,12 @@
     <Compile Include="Controls\ModelViewer.Designer.cs">
       <DependentUpon>ModelViewer.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\ShaderEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ShaderEditor.Designer.cs">
+      <DependentUpon>ShaderEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\TextEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -137,6 +143,7 @@
     <Compile Include="FileFormats\Geometry\DirectX\InputManager.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\IRenderable.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\IRenderManager.cs" />
+    <Compile Include="FileFormats\Geometry\rShader.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShaderCollection.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShader.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\LevelGeometryShader.cs" />
@@ -182,6 +189,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\ModelViewer.resx">
       <DependentUpon>ModelViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ShaderEditor.resx">
+      <DependentUpon>ShaderEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\TextEditor.resx">
       <DependentUpon>TextEditor.cs</DependentUpon>

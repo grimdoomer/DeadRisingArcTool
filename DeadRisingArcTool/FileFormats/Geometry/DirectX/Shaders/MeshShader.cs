@@ -53,6 +53,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
             this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, new InputElement[]
                     {
+                        // Id: 0x0550228e
                     new InputElement("POSITION",        0, Format.R16G16B16A16_SNorm,   0,  0),
                     new InputElement("NORMAL",          0, Format.R16G16B16A16_SNorm,   16, 0),
                     new InputElement("TANGENT",         0, Format.R16G16B16A16_SNorm,   0,  1),

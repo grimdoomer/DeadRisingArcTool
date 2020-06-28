@@ -110,7 +110,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)Detours\lib.x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -156,6 +156,8 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Misc\TypeInfo.cpp" />
     <ClCompile Include="MtFramework\Graphics\rModel.cpp" />
+    <ClCompile Include="MtFramework\Graphics\sRender.cpp" />
+    <ClCompile Include="MtFramework\Graphics\sShader.cpp" />
     <ClCompile Include="MtFramework\sResource.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -167,7 +169,10 @@
     <ClInclude Include="Misc\AsmHelpers.h" />
     <ClInclude Include="Misc\TypeInfo.h" />
     <ClInclude Include="MtFramework\Graphics\rModel.h" />
+    <ClInclude Include="MtFramework\Graphics\rModelTypeInfo.h" />
+    <ClInclude Include="MtFramework\Graphics\sShader.h" />
     <ClInclude Include="MtFramework\MtDTI.h" />
+    <ClInclude Include="MtFramework\Graphics\sRender.h" />
     <ClInclude Include="MtFramework\sResource.h" />
   </ItemGroup>
   <ItemGroup>

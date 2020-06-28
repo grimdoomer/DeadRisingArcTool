@@ -20,10 +20,7 @@ struct cResource
 };
 static_assert(sizeof(cResource) == 0x60, "cResource struct has incorrect size");
 
-const TypeInfo cResourceTypeInfo =
-{
-	"cResource", sizeof(cResource),
-	{
+TYPE_INFO_BEGIN(cResource,)
 		{ FieldType_Pointer, "*vtable", FIELD_OFFSET(cResource, vtable), sizeof(void*), nullptr },
 		{ FieldType_String, "mPath", FIELD_OFFSET(cResource, mPath), sizeof(char), (void*)64 },
 		{ FieldType_Number, "mRefCount", FIELD_OFFSET(cResource, mRefCount), sizeof(DWORD), nullptr },
@@ -32,8 +29,7 @@ const TypeInfo cResourceTypeInfo =
 		{ FieldType_Number, "mSize", FIELD_OFFSET(cResource, mSize), sizeof(DWORD), nullptr },
 		{ FieldType_Number, "mID", FIELD_OFFSET(cResource, mID), sizeof(ULONGLONG), nullptr },
 		{ FieldType_Terminator, nullptr, 0, 0, nullptr }
-	}
-};
+TYPE_INFO_END()
 
 // sizeof = 0x24458
 struct sResource
@@ -57,8 +53,6 @@ public:
 	static cResource* GetGameResourceAsType(void *pTypeDTI, char *psFileName, int dwFlags);
 
 	static void IncrementResourceRefCount(cResource *pResource);
-};
 
-// Table of commands for sResource objects.
-const int g_sResourceCommandsLength = 2;
-extern const CommandEntry g_sResourceCommands[];
+	static void InitializeTypeInfo();
+};

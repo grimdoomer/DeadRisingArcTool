@@ -19,63 +19,6 @@ using System.Collections;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
-    public enum ShaderId : uint
-    {
-        tXfScreenClear = 0x17796f56,
-        tXfScreenCopy = 0xcab2a170,
-        tXfYUY2Copy = 0xfe9a5edf,
-        tXfRGBICopy = 0x3e5389ee,
-        tXfRGBICubeCopy = 0x26461f2a,
-        tXfSubPixelCopy = 0x48e2d4bb,
-        tXfReductionZCopy = 0x96f834af,
-        tXfMaterialDebug = 0x3b810b10,
-        tXfMaterialZPass = 0xaa626ffb,
-        tXfMaterialVelocity = 0x97471581,
-        tXfMaterialShadowReceiver = 0x53ae7416,
-        tXfMaterialShadowCaster = 0x30b6bdb8,
-        tXfMaterialStandard = 0x88367c19,
-        tXfFilterStandard = 0x640e8a05,
-        tXfFilterBloom = 0x2d5767f8,
-        tXfFilterDOF = 0x185168f1,
-        tXfFilterTVNoise = 0x2e1ad607,
-        tXfFilterVolumeNoise = 0xaf9cb5e1,
-        tXfFilterRadialBlur = 0x2bb2716a,
-        tXfFilterFeedbackBlur = 0xf4db0ad3,
-        tXfFilterToneMap = 0xe8b68a03,
-        tXfFilterGaussianBlur = 0xf7c48941,
-        tXfFilterMotionBlur = 0x5ce1a976,
-        tXfFilterMerge = 0x9d1670d5,
-        tXfFilterImagePlane = 0x414e40d3,
-        tXfFilterColorCorrect = 0x2b6ec81b,
-        tXfFilterFXAA = 0x35bf832f,
-        tXfResolveDepth = 0xd5b6d6b3,
-        //null = 0xe41f5dd1
-        //null = 0xcc11f30d
-        //null = 0x493a954c
-        //null = 0x1fe78683
-        tXfPrimStandard = 0xed2827cf,
-        tXfEnvmapCubicBlur = 0x312cb4e1,
-        tXfEnvmapBlend = 0xe5f39d43,
-        //null = 0xfb4f06ed
-        tXfMaterialSky = 0x399a88f9,
-        tXfAdhesionPart = 0x5eecea3d,
-        //null = 0x23e98e1c
-        //null = 0x49c0b237
-        //null = 0x5168f29
-        //null = 0x5fa8066f
-        //null = 0xfbc055e4
-        //null = 0x6cd7aba0
-        //null = 0xae243cee
-        //null = 0x83614817
-        //null = 0xc4dd56de
-        //null = 0xef36423a
-        //null = 0x264bf16
-        //null = 0xfbb2f636
-        //null = 0x5a2a6823
-        tXfPrimGpuParticleBatch = 0x2752e134,
-        //null = 0x81f59164
-    }
-
     // sizeof = 0xA0
     public struct rModelHeader
     {
@@ -143,16 +86,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     public struct Material
     {
         [Hex]
-        /* 0x00 */ public byte Flags;
-        /* 0x01 */ public byte Unk1;
-        /* 0x02 */ public byte Unk2;
-        /* 0x03 */ public byte Unk3;
-	    /* 0x04 */ public int Unk4;
-	    /* 0x08 */ public ShaderId PrimaryShader;
-        /* 0x0C */ public int Unk5;
-        /* 0x10 */ public int Unk6;
+        /* 0x00 */ public int Flags;            // Upper 5 bits are vertex declaration type (0x14064F550)
+	    /* 0x04 */ public int Unk4;             // Flags for what bitmaps are used/how they are used (0x1406B2167)
+	    /* 0x08 */ public ShaderTechnique ShaderTechnique;     // Gets set to shader technique index at runtime
+        /* 0x0C */ public int Unk5;             // Never read, set on init to shader set index
+        [Hex]
+        /* 0x10 */ public int Unk6;             // Never read, set to cTrans::VertexDecl pointer on init
         /* 0x14 */ public int Unk7;
-        /* 0x18 */ public int Unk8;
+        [Hex]
+        /* 0x18 */ public int Unk8;             // Checked to be non-zero, then set to a cTrans::VertexDecl pointer
         /* 0x1C */ // padding
 	    /* 0x20 */ public int BaseMapTexture;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x24 */ // padding, 0x20 set to 64bit texture object address at runtime
@@ -198,12 +140,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x00 */ public short GroupID;
 	    /* 0x02 */ public short	MaterialIndex;
 	    /* 0x04 */ public byte Enabled;
-	    /* 0x05 */ public byte Unk3;
-	    /* 0x06 */ public byte Unk11;
-        /* 0x07 */ public byte Unk12;
+	    /* 0x05 */ public byte Unk3;                    // Flags related to draw distance clipping (0x1406B8E50)
+	    /* 0x06 */ public byte Unk11;                   // Doesn't seem to be used?
+        /* 0x07 */ public byte Unk12;                   // Doesn't seem to be used?
 	    /* 0x08 */ public byte VertexStride1;
 	    /* 0x09 */ public byte VertexStride2;
-        /* 0x0A */ public byte Unk13;
+        /* 0x0A */ public byte Unk13;                   // Used to enabled/disabled something?
 	    /* 0x0B */ // padding
         /* 0x0C */ public int VertexCount;
         /* 0x10 */ public int StartingVertex;
@@ -429,12 +371,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 {
                     // Read the material data.
                     model.materials[i] = new Material();
-                    model.materials[i].Flags = reader.ReadByte();
-                    model.materials[i].Unk1 = reader.ReadByte();
-                    model.materials[i].Unk2 = reader.ReadByte();
-                    model.materials[i].Unk3 = reader.ReadByte();
+                    model.materials[i].Flags = reader.ReadInt32();
                     model.materials[i].Unk4 = reader.ReadInt32();
-                    model.materials[i].PrimaryShader = (ShaderId)reader.ReadUInt32();
+                    model.materials[i].ShaderTechnique = (ShaderTechnique)reader.ReadUInt32();
                     model.materials[i].Unk5 = reader.ReadInt32();
                     model.materials[i].Unk6 = reader.ReadInt32();
                     model.materials[i].Unk7 = reader.ReadInt32();

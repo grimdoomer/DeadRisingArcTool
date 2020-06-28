@@ -1,5 +1,6 @@
 
 PUBLIC ThisPtrCall
+PUBLIC ThisPtrCallNoFixup
 PUBLIC SnatcherModuleHandle
 
 .data
@@ -37,5 +38,29 @@ PUBLIC SnatcherModuleHandle
 		ret
 
 	ThisPtrCall ENDP
+
+	; __int64 __stdcall ThisPtrCallNoFixup(void *functionPtr, void *thisPtr, void *arg1, void *arg2, void *arg3, void *arg4)
+	ThisPtrCallNoFixup PROC
+
+		; Setup the stack.
+		push	r12
+		push	r14
+
+		; Shift the arguments.
+		mov		r12, rcx
+		mov		rcx, rdx
+		mov		rdx, r8
+		mov		r8, r9
+		mov		r9, [rsp+38h]
+
+		; Call the function.
+		call	r12
+
+		; Restore the stack.
+		pop		r14
+		pop		r12
+		ret
+
+	ThisPtrCallNoFixup ENDP
 
 END

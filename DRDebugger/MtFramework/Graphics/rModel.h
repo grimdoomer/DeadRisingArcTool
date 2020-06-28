@@ -1,11 +1,51 @@
 /*
+	DRDebugger - Open source SDK/debugger for Dead Rising PC
 
+	rModel.h - rModel object definition
+
+	Author - Grimdoomer
 */
 
 #pragma once
-#include <Windows.h>
 #include "DRDebugger.h"
 #include "MtFramework/sResource.h"
+
+// sizeof = 0x18
+struct Joint
+{
+	/* 0x00 */ BYTE Index;
+	/* 0x01 */ BYTE ParentIndex;
+	/* 0x02 */ BYTE pad[6];   // 6 bytes of padding to align floats
+	/* 0x08 */ float Length;
+	/* 0x0C */ Vector3 Offset;
+};
+static_assert(sizeof(Joint) == 0x18, "Joint incorrect struct size");
+
+// sizeof = 0x50
+struct Primitive
+{
+	/* 0x00 */ WORD		GroupID;				// Lower 5 bits = sub part number, upper 11 bits = part number (see uModel->PartsDisp)
+	/* 0x02 */ WORD		MaterialIndex;
+	/* 0x04 */ BYTE		Enabled;
+	/* 0x05 */ BYTE		Unk3;					// Something to do with min/max draw distance clipping
+	/* 0x06 */ BYTE		Unk11;
+	/* 0x07 */ BYTE		Unk12;
+	/* 0x08 */ BYTE		VertexStride1;
+	/* 0x09 */ BYTE		VertexStride2;
+	/* 0x0A */ BYTE		Unk13;
+	/* 0x0B */ // padding
+	/* 0x0C */ DWORD	VertexCount;
+	/* 0x10 */ DWORD	StartingVertex;
+	/* 0x14 */ DWORD	VertexStream1Offset;      // Passed to CDeviceContext::IASetVertexBuffers
+	/* 0x18 */ DWORD	VertexStream2Offset;	  // Passed to CDeviceContext::IASetVertexBuffers
+	/* 0x1C */ DWORD	StartingIndexLocation;    // Passed to CDeviceContext::DrawIndexed
+	/* 0x20 */ DWORD	IndexCount;               // Passed to CDeviceContext::DrawIndexed
+	/* 0x24 */ DWORD	BaseVertexLocation;       // Passed to CDeviceContext::DrawIndexed
+	/* 0x28 */ // padding to align vectors
+	/* 0x30 */ Vector4	BoundingBoxMin;
+	/* 0x40 */ Vector4	BoundingBoxMax;
+};
+static_assert(sizeof(Primitive) == 0x50, "Primitive incorrect struct size");
 
 enum ShaderId : DWORD
 {
@@ -67,16 +107,13 @@ enum ShaderId : DWORD
 // sizeof = 0xD0
 struct Material
 {
-	/* 0x00 */ BYTE		Flags;
-	/* 0x01 */ BYTE		Unk1;
-	/* 0x02 */ BYTE		Unk2;
-	/* 0x03 */ BYTE		Unk3;
-	/* 0x04 */ DWORD	Unk4;
-	/* 0x08 */ ShaderId PrimaryShader;
-	/* 0x0C */ DWORD	Unk5;
-	/* 0x10 */ DWORD	Unk6;
+	/* 0x00 */ DWORD	Flags;				// Upper 5 bits are some sort of shader group id (0x14064F550)
+	/* 0x04 */ DWORD	Unk4;				// Flags for what bitmaps are used/how they are used (0x1406B2167)
+	/* 0x08 */ ShaderId ShaderTechnique;
+	/* 0x0C */ DWORD	Unk5;				// Never read, set on init
+	/* 0x10 */ DWORD	Unk6;				// Never read, set to cTrans::VertexDecl pointer on init
 	/* 0x14 */ DWORD	Unk7;
-	/* 0x18 */ DWORD	Unk8;
+	/* 0x18 */ DWORD	Unk8;				// Checked to be non-zero, then set to a cTrans::VertexDecl pointer
 	/* 0x20 */ void		*BaseMapTexture;	// texture index, subtract 1 (0 indicates null?)
 	/* 0x28 */ void		*NormalMapTexture;	// texture index, subtract 1 (0 indicates null?)
 	/* 0x30 */ void		*MaskMapTexture;	// texture index, subtract 1 (0 indicates null?)
@@ -109,36 +146,44 @@ static_assert(sizeof(Material) == 0xD0, "Material incorrect struct size");
 // sizeof = 0x130
 struct rModel : cResource
 {
-	/* 0x60 */ void		*pJointData1;	// pJoints sizeof element = 24
-	/* 0x68 */ DWORD	JointCount;
-	/* 0x70 */ void		*pJointData2;	// sizeof element = 64
-	/* 0x78 */ void		*pJointData3;	// sizeof element = 64	
-	/* 0x80 */ void		*pPrimitiveData;	// sizeof element = 80
-	/* 0x88 */ DWORD	PrimitiveCount;
-	/* 0x90 */ Material *pMaterials;	// sizeof element = 208	
-	/* 0x98 */ DWORD	MaterialCount;
-	/* 0x9C */ DWORD	PolygonCount;
-	/* 0xA0 */ DWORD	VertexCount;
-	/* 0xA4 */ DWORD	IndiceCount;
-	/* 0xA8 */ DWORD	Count1;
-	/* 0xAC */ DWORD	Count2;
-	/* 0xB0 */ void		*pIndiceManager;	// 0x000000014064F8B4
-	/* 0xB8 */ void		*pVertexManager1;	// 0x000000014064F7BB
-	/* 0xC0 */ void		*pVertexManager2;	// same as above
+	/* 0x60 */ Joint		*pJointData1;
+	/* 0x68 */ DWORD		JointCount;
+	/* 0x70 */ Matrix4x4	*pJointData2;
+	/* 0x78 */ Matrix4x4	*pJointData3;
+	/* 0x80 */ Primitive	*pPrimitiveData;
+	/* 0x88 */ DWORD		PrimitiveCount;
+	/* 0x90 */ Material		*pMaterials;
+	/* 0x98 */ DWORD		MaterialCount;
+	/* 0x9C */ DWORD		PolygonCount;
+	/* 0xA0 */ DWORD		VertexCount;
+	/* 0xA4 */ DWORD		IndiceCount;
+	/* 0xA8 */ DWORD		Count1;
+	/* 0xAC */ DWORD		Count2;
+	/* 0xB0 */ void			*pIndiceManager;	// 0x000000014064F8B4
+	/* 0xB8 */ void			*pVertexManager1;	// 0x000000014064F7BB
+	/* 0xC0 */ void			*pVertexManager2;	// same as above
 	/* 0xD0 */ // bb sphere?
 	BYTE pad[0x18];
-	/* 0xE0 */ Vector4	BoundingBoxMin;
-	/* 0xF0 */ Vector4	BoundingBoxMax;
-	/* 0x100 */ DWORD	MidDist;
-	/* 0x104 */ DWORD	LowDist;
-	/* 0x108 */ DWORD	LightGroup;
-	/* 0x110 */ Vector4	Scale; // BBMax - BBMin
-	/* 0x120 */ Vector4 Unk; // gets set to BBMin at load
+	/* 0xE0 */ Vector4		BoundingBoxMin;
+	/* 0xF0 */ Vector4		BoundingBoxMax;
+	/* 0x100 */ DWORD		MidDist;
+	/* 0x104 */ DWORD		LowDist;
+	/* 0x108 */ DWORD		LightGroup;
+	/* 0x110 */ Vector4		Scale; // BBMax - BBMin
+	/* 0x120 */ Vector4		Unk; // gets set to BBMin at load
 };
 static_assert(sizeof(rModel) == 0x130, "rModel incorrect struct size");
 
 class rModelImpl
 {
 public:
-	static void InitializeLua();
+	static void InitializeTypeInfo();
+
+	static DWORD Test(rModel *pModel)
+	{
+		if (pModel == nullptr)
+			return 0;
+
+		return pModel->Count1 + pModel->Count2;
+	}
 };

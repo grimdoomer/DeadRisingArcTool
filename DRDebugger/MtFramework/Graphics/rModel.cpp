@@ -3,9 +3,13 @@
 */
 
 #include "rModel.h"
+#include "rModelTypeInfo.h"
 
-void rModelImpl::InitializeLua()
+void rModelImpl::InitializeTypeInfo()
 {
-
-	// Register rModelImpl:
+	// Register type info:
+	RegisterTypeInfo(&JointTypeInfo);
+	RegisterTypeInfo(&PrimitiveTypeInfo);
+	RegisterTypeInfo(&MaterialTypeInfo);
+	RegisterTypeInfo(&rModelTypeInfo);
 }

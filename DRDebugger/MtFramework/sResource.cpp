@@ -27,6 +27,7 @@ __int64 PrintLoadedResources(WCHAR **argv, int argc);
 __int64 GetResourceByIndex(WCHAR **argv, int argc);
 
 // Table of commands for sResource objects.
+const int g_sResourceCommandsLength = 2;
 const CommandEntry g_sResourceCommands[g_sResourceCommandsLength] =
 {
 	{ L"list_resources", L"Lists all loaded resources", PrintLoadedResources },
@@ -139,4 +140,13 @@ __int64 GetResourceByIndex(WCHAR **argv, int argc)
 
 	// Return the resource.
 	return (__int64)pResource;
+}
+
+void sResourceImpl::InitializeTypeInfo()
+{
+	// Register types:
+	RegisterTypeInfo(&cResourceTypeInfo);
+
+	// Register commands:
+	RegisterCommands(g_sResourceCommands, g_sResourceCommandsLength);
 }
