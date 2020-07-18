@@ -273,7 +273,6 @@
     <None Include="Resources\object.png" />
     <None Include="Resources\texture.png" />
     <None Include="Resources\file.png" />
-    <None Include="Resources\folder_blue.png" />
     <None Include="Resources\blue_folder.png" />
     <None Include="Resources\folder.png" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
