@@ -5,5 +5,14 @@
     <Setting Name="ArcFolder" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="LoadPatchFiles" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="PatchFileDirectory" Type="System.String" Scope="User">
+      <Value Profile="(Default)">K:\_SteamLibrary\steamapps\common\Dead Rising\nativeWin64\Mods</Value>
+    </Setting>
+    <Setting Name="OverwriteAllDuplicates" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

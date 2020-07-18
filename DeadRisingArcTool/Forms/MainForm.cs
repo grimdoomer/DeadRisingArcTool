@@ -96,21 +96,13 @@ namespace DeadRisingArcTool
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Browse for the game's arc file folder.
-            FolderBrowserDialog fbd = new FolderBrowserDialog();
-            fbd.Description = "Dead Rising arc folder";
+            // Disable the main form.
+            this.Enabled = false;
 
-            // Check if there is a saved file path in the settings file.
-            if (Properties.Settings.Default.ArcFolder != string.Empty)
-                fbd.SelectedPath = Properties.Settings.Default.ArcFolder;
-
-            // Show the dialog.
-            if (fbd.ShowDialog() == DialogResult.OK)
+            // Show the archive select dialog.
+            ArchiveSelectDialog selectDialog = new ArchiveSelectDialog();
+            if (selectDialog.ShowDialog() == DialogResult.OK)
             {
-                // Save the selected folder path for next time.
-                Properties.Settings.Default.ArcFolder = fbd.SelectedPath;
-                Properties.Settings.Default.Save();
-
                 // Setup the background worker.
                 this.asyncWorker = new BackgroundWorker();
                 this.asyncWorker.DoWork += AsyncWorker_LoadArcFolder;
@@ -120,19 +112,23 @@ namespace DeadRisingArcTool
                 this.asyncWorker.WorkerSupportsCancellation = true;
 
                 // Initialize the arc file collection.
-                ArcFileCollection.Instance = new ArcFileCollection(fbd.SelectedPath);
+                ArchiveCollection.Instance = new ArchiveCollection(selectDialog.SelectedFolder);
 
                 // Run the background worker.
-                this.asyncWorker.RunWorkerAsync();
+                this.asyncWorker.RunWorkerAsync(selectDialog.SelectedArchives);
 
                 // Disable the main form and display the loading dialog.
-                this.Enabled = false;
                 this.loadingDialog = new LoadingDialog();
                 if (this.loadingDialog.ShowDialog() == DialogResult.Cancel)
                 {
                     // Cancel the background worker.
                     this.asyncWorker.CancelAsync();
                 }
+            }
+            else
+            {
+                // Re-enable the main form.
+                this.Enabled = true;
             }
         }
 
@@ -166,6 +162,9 @@ namespace DeadRisingArcTool
 
             // Suspend the form layout while we update the tree view.
             this.treeView1.SuspendLayout();
+
+            // Set the tree view image list.
+            this.treeView1.ImageList = ArchiveCollection.Instance.TreeNodeImages;
 
             // Build the tree node graph from the arc file collection.
             TreeNodeCollection treeNodes = (TreeNodeCollection)e.Result;
@@ -207,81 +206,49 @@ namespace DeadRisingArcTool
             // Get the BackgroundWorker instance from the sender object.
             BackgroundWorker worker = (BackgroundWorker)sender;
 
-            // Build a list of arc files to process.
-            string[] arcFiles = FindArcFilesInFolder(ArcFileCollection.Instance.RootDirectory, true, false);
-            if (arcFiles.Length == 0)
-            {
-                // No arc files were found.
-                // TODO: Bubble this up to the UI.
-                e.Result = null;
-                return;
-            }
+            // Get the list of archives to load from the worker argument.
+            Tuple<string, bool>[] archives = (Tuple<string, bool>[])e.Argument;
 
-            // Report the number of arc files to the progress bar.
-            worker.ReportProgress(arcFiles.Length, null);
+            // Report the number of archives to the progress bar.
+            worker.ReportProgress(archives.Length, null);
 
-            // Loop and load each arc file.
-            for (int i = 0; i < arcFiles.Length; i++)
+            // Loop and load each of the archives
+            for (int i = 0; i < archives.Length; i++)
             {
                 // Check if we should cancel the operation.
                 if (e.Cancel == true)
                     return;
 
-                // Report progress on the current arc file.
-                worker.ReportProgress(i, arcFiles[i].Substring(arcFiles[i].LastIndexOf("\\") + 1));
+                // Report progress on the current archive.
+                worker.ReportProgress(i, archives[i].Item1.Substring(archives[i].Item1.LastIndexOf("\\") + 1));
 
-                // Create a new arc file and parse the file table.
-                ArcFile arcFile = new ArcFile(arcFiles[i]);
-                if (arcFile.OpenAndRead() == false)
-                {
-                    // Failed to read the arc file.
-                    // TODO: Bubble this up to the UI, for now just skip.
-                    continue;
-                }
-
-                // Add the arc file to the collection.
-                ArcFileCollection.Instance.AddArcFile(arcFile);
+                // Add the archive to the collection.
+                ArchiveCollection.Instance.AddArchive(archives[i].Item1, archives[i].Item2);
             }
 
             // Build the tree view node collection now so we don't tie up the GUI thread.
-            e.Result = ArcFileCollection.Instance.BuildTreeNodeArray(TreeNodeOrder.FolderPath);
+            e.Result = ArchiveCollection.Instance.BuildTreeNodeArray(TreeNodeOrder.FolderPath);
         }
 
-#endregion
+        #endregion
 
 #region Utilities
 
-        private static string[] FindArcFilesInFolder(string folderPath, bool recursive, bool includeNonArcFiles)
+        /// <summary>
+        /// Gets the DatumIndex for the selected tree node
+        /// </summary>
+        /// <returns>The DatumIndex of the selected tree node or DatumIndex.Unassigned if there is no node selected</returns>
+        private DatumIndex GetSelectedResourceDatum()
         {
-            List<string> filesFound = new List<string>();
-
-            // Get the directory info for the specified folder.
-            DirectoryInfo rootInfo = new DirectoryInfo(folderPath);
-
-            // Loop through all child files in the folder.
-            foreach (FileInfo fileInfo in rootInfo.GetFiles())
+            // Make sure the selected node is valid and has a valid tag.
+            if (this.treeView1.SelectedNode != null && this.treeView1.SelectedNode.Tag != null)
             {
-                // If we are including non-arc files add the child file, otherwise check the file extension.
-                if (includeNonArcFiles == true || fileInfo.Extension.Equals(".arc", StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    // Add the file to the list.
-                    filesFound.Add(fileInfo.FullName);
-                }
+                // Return the tag as a datum index.
+                return (DatumIndex)this.treeView1.SelectedNode.Tag;
             }
 
-            // Check if we should search recursively.
-            if (recursive == true)
-            {
-                // Loop through all child directories.
-                foreach (DirectoryInfo dirInfo in rootInfo.GetDirectories())
-                {
-                    // Add any files found to the list.
-                    filesFound.AddRange(FindArcFilesInFolder(dirInfo.FullName, recursive, includeNonArcFiles));
-                }
-            }
-
-            // Return the list of files found.
-            return filesFound.ToArray();
+            // Return a null datum.
+            return new DatumIndex(DatumIndex.Unassigned);
         }
 
 #endregion
@@ -325,10 +292,10 @@ namespace DeadRisingArcTool
 
             // Get the datum index for the arc file entry.
             DatumIndex datum = (DatumIndex)e.Node.Tag;
-            ArcFileEntry fileEntry = ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].FileEntries[datum.FileIndex];
+            ArchiveFileEntry fileEntry = ArchiveCollection.Instance.Archives[datum.ArchiveIndex].FileEntries[datum.FileIndex];
 
             // Update the properties view.
-            this.lblArcFile.Text = ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].FileName.Substring(ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].FileName.LastIndexOf("\\") + 1);
+            this.lblArcFile.Text = ArchiveCollection.Instance.Archives[datum.ArchiveIndex].FileName.Substring(ArchiveCollection.Instance.Archives[datum.ArchiveIndex].FileName.LastIndexOf("\\") + 1);
             this.lblCompressedSize.Text = fileEntry.CompressedSize.ToString();
             this.lblDecompressedSize.Text = fileEntry.DecompressedSize.ToString();
             this.lblOffset.Text = fileEntry.DataOffset.ToString();
@@ -338,7 +305,7 @@ namespace DeadRisingArcTool
             if (GameResource.ResourceParsers.ContainsKey(fileEntry.FileType) == true)
             {
                 // Parse the game resource using the parser type.
-                GameResource resource = ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].GetArcFileAsResource<GameResource>(datum.FileIndex);
+                GameResource resource = ArchiveCollection.Instance.Archives[datum.ArchiveIndex].GetFileAsResource<GameResource>(datum.FileIndex);
                 if (resource != null)
                 {
                     // Loop through all of the resource editors and see if we have one that supports this resource type.
@@ -348,7 +315,7 @@ namespace DeadRisingArcTool
                         if (this.resourceEditors[i].CanEditResource(fileEntry.FileType) == true)
                         {
                             // Update the resource being edited and make the editor visible.
-                            this.resourceEditors[i].UpdateResource(ArcFileCollection.Instance.ArcFiles[datum.ArcIndex], resource);
+                            this.resourceEditors[i].UpdateResource(ArchiveCollection.Instance.Archives[datum.ArchiveIndex], resource);
                             this.resourceEditors[i].Visible = true;
 
                             // Set this as the active resource editor.
@@ -438,7 +405,7 @@ namespace DeadRisingArcTool
                 this.Enabled = false;
 
                 // Extract the file.
-                ArcFileCollection.Instance.ArcFiles[datum.ArcIndex].ExtractFile(datum.FileIndex, sfd.FileName);
+                ArchiveCollection.Instance.Archives[datum.ArchiveIndex].ExtractFile(datum.FileIndex, sfd.FileName);
 
                 // Re-enable the form.
                 this.Enabled = true;
@@ -473,7 +440,7 @@ namespace DeadRisingArcTool
             this.resourceTypeToolStripMenuItem.Checked = false;
 
             // Resort the tree view.
-            SetTreeViewSortOrder(TreeNodeOrder.ArcFile);
+            SetTreeViewSortOrder(TreeNodeOrder.ArchiveName);
         }
 
         private void resourceTypeToolStripMenuItem_Click(object sender, EventArgs e)
@@ -504,7 +471,7 @@ namespace DeadRisingArcTool
             this.treeView1.Nodes.Clear();
 
             // Build the tree node graph from the arc file collection.
-            TreeNodeCollection treeNodes = ArcFileCollection.Instance.BuildTreeNodeArray(order);
+            TreeNodeCollection treeNodes = ArchiveCollection.Instance.BuildTreeNodeArray(order);
             this.treeView1.Nodes.AddRange(treeNodes.Cast<TreeNode>().ToArray());
 
             // Sort the tree view.
@@ -602,17 +569,17 @@ namespace DeadRisingArcTool
             if (fbd.ShowDialog() == DialogResult.OK)
             {
                 // Loop through every single arc file and extract all bitmaps.
-                for (int i = 0; i < ArcFileCollection.Instance.ArcFiles.Length; i++)
+                for (int i = 0; i < ArchiveCollection.Instance.Archives.Length; i++)
                 {
                     // Loop through all of the files in the arc file and save textures.
-                    for (int x = 0; x < ArcFileCollection.Instance.ArcFiles[i].FileEntries.Length; x++)
+                    for (int x = 0; x < ArchiveCollection.Instance.Archives[i].FileEntries.Length; x++)
                     {
                         // Check if this is a texture.
-                        if (ArcFileCollection.Instance.ArcFiles[i].FileEntries[x].FileType != ResourceType.rTexture)
+                        if (ArchiveCollection.Instance.Archives[i].FileEntries[x].FileType != ResourceType.rTexture)
                             continue;
 
                         // Parse the game resource.
-                        rTexture texture = ArcFileCollection.Instance.ArcFiles[i].GetArcFileAsResource<rTexture>(x);
+                        rTexture texture = ArchiveCollection.Instance.Archives[i].GetFileAsResource<rTexture>(x);
 
                         // Convert to a DDS image.
                         DDSImage ddsImage = DDSImage.FromGameTexture(texture);
@@ -637,16 +604,16 @@ namespace DeadRisingArcTool
             this.Enabled = false;
 
             // Loop through the list of loaded arc files.
-            for (int i = 0; i < ArcFileCollection.Instance.ArcFiles.Length; i++)
+            for (int i = 0; i < ArchiveCollection.Instance.Archives.Length; i++)
             {
                 // Check if a backup file exists for this arc file.
-                if (File.Exists(ArcFileCollection.Instance.ArcFiles[i].FileName + "_bak") == true)
+                if (File.Exists(ArchiveCollection.Instance.Archives[i].FileName + "_bak") == true)
                 {
                     // Delete the arc file.
-                    File.Delete(ArcFileCollection.Instance.ArcFiles[i].FileName);
+                    File.Delete(ArchiveCollection.Instance.Archives[i].FileName);
 
                     // Rename the backup file.
-                    File.Move(ArcFileCollection.Instance.ArcFiles[i].FileName + "_bak", ArcFileCollection.Instance.ArcFiles[i].FileName);
+                    File.Move(ArchiveCollection.Instance.Archives[i].FileName + "_bak", ArchiveCollection.Instance.Archives[i].FileName);
                 }
             }
 
@@ -667,10 +634,15 @@ namespace DeadRisingArcTool
 
         public DatumIndex[] GetDatumsToUpdateForResource(string fileName)
         {
-            // TODO: Here is where we will check if the user wants to update all duplicates or pick an choose.
+            // Check if we should overwrite all duplicated or not.
+            if (Properties.Settings.Default.OverwriteAllDuplicates == false)
+            {
+                // Only return the datum index for the selected file.
+                return new DatumIndex[] { GetSelectedResourceDatum() };
+            }
 
-            // For now we update all duplicate files.
-            return ArcFileCollection.Instance.GetDatumsForFileName(fileName);
+            // Return the datums for all copies.
+            return ArchiveCollection.Instance.GetDatumsForFileName(fileName);
         }
 
 #endregion

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,11 +53,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// XY coordinates of the mouse cursor
         /// </summary>
         public int[] MousePosition { get; protected set; } = new int[2];
-
         /// <summary>
         /// True if the xbox gamepad is connected
         /// </summary>
         public bool IsGamepadConnected { get { return this.gamepadDevice.IsConnected; } }
+        /// <summary>
+        /// Values of the gamepad thumbsticks in the order: LThumbX, LThumbY, RThumbX, RThumbY
+        /// Thumbstick values are only > 0 when they are outside of the dead zone
+        /// </summary>
+        public short[] GamepadThumbSticks { get; protected set; } = new short[4];
+        /// <summary>
+        /// Values of the gamepad triggers in the order: Left, Right
+        /// Trigger values are only > 0 when they are outside of the dead zone
+        /// </summary>
+        public byte[] GamepadTriggers { get; protected set; } = new byte[2];
 
         // Control handle we bind to for input focus.
         IntPtr formHandle;
@@ -126,7 +136,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.mouseDevice.SetCooperativeLevel(this.formHandle, CooperativeLevel.Foreground | CooperativeLevel.NonExclusive);
 
             // Initialize the xbox game pad.
-            this.gamepadDevice = new Controller(UserIndex.Any);
+            this.gamepadDevice = new Controller(UserIndex.One);
             if (this.gamepadDevice.IsConnected == true)
             {
                 // Get the initial gamepad state.
@@ -198,16 +208,52 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 State newState = this.gamepadDevice.GetState();
                 if (newState.PacketNumber != this.gamepadState.PacketNumber)
                 {
+                    // Update thumbstick state.
+                    if (newState.Gamepad.LeftThumbX > Gamepad.LeftThumbDeadZone || newState.Gamepad.LeftThumbX < -Gamepad.LeftThumbDeadZone)
+                        this.GamepadThumbSticks[0] = newState.Gamepad.LeftThumbX;
+                    else
+                        this.GamepadThumbSticks[0] = 0;
+
+                    if (newState.Gamepad.LeftThumbY > Gamepad.LeftThumbDeadZone || newState.Gamepad.LeftThumbY < -Gamepad.LeftThumbDeadZone)
+                        this.GamepadThumbSticks[1] = newState.Gamepad.LeftThumbY;
+                    else
+                        this.GamepadThumbSticks[1] = 0;
+
+                    if (newState.Gamepad.RightThumbX > Gamepad.RightThumbDeadZone || newState.Gamepad.RightThumbX < -Gamepad.RightThumbDeadZone)
+                        this.GamepadThumbSticks[2] = newState.Gamepad.RightThumbX;
+                    else
+                        this.GamepadThumbSticks[2] = 0;
+
+                    if (newState.Gamepad.RightThumbY > Gamepad.RightThumbDeadZone || newState.Gamepad.RightThumbY < -Gamepad.RightThumbDeadZone)
+                        this.GamepadThumbSticks[3] = newState.Gamepad.RightThumbY;
+                    else
+                        this.GamepadThumbSticks[3] = 0;
+
+                    // Update trigger state.
+                    if (newState.Gamepad.LeftTrigger > Gamepad.TriggerThreshold)
+                        this.GamepadTriggers[0] = newState.Gamepad.LeftTrigger;
+                    else
+                        this.GamepadTriggers[0] = 0;
+
+                    if (newState.Gamepad.RightTrigger > Gamepad.TriggerThreshold)
+                        this.GamepadTriggers[1] = newState.Gamepad.RightTrigger;
+                    else
+                        this.GamepadTriggers[1] = 0;
+
                     // Update button state.
-                    this.ButtonState[(int)InputAction.MoveUp] = newState.Gamepad.RightTrigger > 0;
-                    this.ButtonState[(int)InputAction.MoveDown] = newState.Gamepad.LeftTrigger > 0;
-                    this.ButtonState[(int)InputAction.CamSpeedIncrease] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.Y);
-                    this.ButtonState[(int)InputAction.CamSpeedDecrease] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.B);
+                    this.ButtonState[(int)InputAction.MoveUp] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.RightThumb);
+                    this.ButtonState[(int)InputAction.MoveDown] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.LeftThumb);
                     this.ButtonState[(int)InputAction.NextAnimation] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.RightShoulder);
                     this.ButtonState[(int)InputAction.PreviousAnimation] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.LeftShoulder);
 
                     // Save the new gamepad state.
                     this.gamepadState = newState;
+                }
+                else
+                {
+                    // Input state is the same as the previous packet. Copy over all button state values.
+                    this.ButtonState[(int)InputAction.MoveUp] = this.PreviousButtonState[(int)InputAction.MoveUp];
+                    this.ButtonState[(int)InputAction.MoveDown] = this.PreviousButtonState[(int)InputAction.MoveDown];
                 }
             }
 

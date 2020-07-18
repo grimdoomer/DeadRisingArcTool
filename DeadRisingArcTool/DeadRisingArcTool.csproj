@@ -128,8 +128,8 @@
     <Compile Include="Controls\TextEditor.Designer.cs">
       <DependentUpon>TextEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="FileFormats\Archive\ArcFile.cs" />
-    <Compile Include="FileFormats\Archive\ArcFileCollection.cs" />
+    <Compile Include="FileFormats\Archive\Archive.cs" />
+    <Compile Include="FileFormats\Archive\ArchiveCollection.cs" />
     <Compile Include="FileFormats\Bitmaps\DDS.cs" />
     <Compile Include="FileFormats\Bitmaps\Swizzle.cs" />
     <Compile Include="FileFormats\GameResource.cs" />
@@ -157,6 +157,12 @@
     <Compile Include="FileFormats\Geometry\rMotionList.cs" />
     <Compile Include="FileFormats\Misc\BinaryXmlFile.cs" />
     <Compile Include="FileFormats\Misc\XmlFile.cs" />
+    <Compile Include="Forms\ArchiveSelectDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ArchiveSelectDialog.Designer.cs">
+      <DependentUpon>ArchiveSelectDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\LoadingDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -196,6 +202,9 @@
     <EmbeddedResource Include="Controls\TextEditor.resx">
       <DependentUpon>TextEditor.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Forms\ArchiveSelectDialog.resx">
+      <DependentUpon>ArchiveSelectDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\LoadingDialog.resx">
       <DependentUpon>LoadingDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -213,6 +222,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="FileFormats\Geometry\Shaders\Wireframe.ps">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -260,6 +270,12 @@
     <Content Include="IDA\DumpObjectInfo.py" />
     <Content Include="IDA\ObjectTypes.txt" />
     <Content Include="IDA\SSEHelper.py" />
+    <None Include="Resources\object.png" />
+    <None Include="Resources\texture.png" />
+    <None Include="Resources\file.png" />
+    <None Include="Resources\folder_blue.png" />
+    <None Include="Resources\blue_folder.png" />
+    <None Include="Resources\folder.png" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
   <ItemGroup>

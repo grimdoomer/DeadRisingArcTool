@@ -60,7 +60,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
                     new InputElement("TEXCOORD",        0, Format.R16G16_SNorm,         24, 0),
                     new InputElement("TEXCOORD",        1, Format.R16G16_SNorm,         8,  1),
                     new InputElement("BLENDWEIGHT",     0, Format.R8G8B8A8_UNorm,       12, 0),
-                    new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_UInt,        8,  0),
+                    new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_SInt,        8,  0),
                     new InputElement("TEXCOORD",        2, Format.R32G32B32A32_Float,   0,  0),
                     new InputElement("TEXCOORD",        3, Format.R32G32B32A32_Float,   0,  0),
                     });

@@ -84,6 +84,10 @@ namespace DeadRisingArcTool.Forms
         Matrix projectionMatrix;
         Matrix worldGround;
 
+        // FPS counter data.
+        long startTime;
+        int framesPerSecond = 0;
+
         // Input manager.
         InputManager inputManager = null;
 
@@ -124,6 +128,7 @@ namespace DeadRisingArcTool.Forms
             this.renderTime.CurrentTickCount = DateTime.Now.Ticks;
 
             // Show the form and enter the render loop.
+            this.startTime = DateTime.Now.Ticks;
             while (this.isClosing == false && this.IsDisposed == false)
             {
                 // Render the next frame and process the windows message queue.
@@ -163,7 +168,7 @@ namespace DeadRisingArcTool.Forms
             }
 
             // Find the arc file the resource is in.
-            ArcFileCollection.Instance.GetArcFileEntryFromFileName(fileName, out ArcFile arcFile, out ArcFileEntry fileEntry);
+            ArchiveCollection.Instance.GetArchiveFileEntryFromFileName(fileName, out Archive arcFile, out ArchiveFileEntry fileEntry);
             if (arcFile == null || fileEntry == null)
             {
                 // Failed to find a resource with the specified name.
@@ -171,7 +176,7 @@ namespace DeadRisingArcTool.Forms
             }
 
             // Parse the game resource and create a new GameResource object we can render.
-            GameResource resource = arcFile.GetArcFileAsResource<GameResource>(fileName);
+            GameResource resource = arcFile.GetFileAsResource<GameResource>(fileName);
             if (resource == null)
             {
                 // Failed to find and load a resource with the name specified.
@@ -233,8 +238,13 @@ namespace DeadRisingArcTool.Forms
             desc.Usage = Usage.RenderTargetOutput;
             desc.IsWindowed = true;
 
+#if DEBUG
             // Create the device and swapchain.
-            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug, desc, out this.device, out this.swapChain);
+            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.None, desc, out this.device, out this.swapChain);
+#else
+            // Create the device and swapchain.
+            SharpDX.Direct3D11.Device.CreateWithSwapChain(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.None, desc, out this.device, out this.swapChain);
+#endif
 
             // Setup the projection matrix.
             this.projectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 400000.0f);
@@ -289,16 +299,16 @@ namespace DeadRisingArcTool.Forms
             if (this.renderDatums.Length == 1)// &&
             //    ArcFileCollection.Instance.ArcFiles[this.renderDatums[0].ArcIndex].FileEntries[this.renderDatums[0].FileIndex].FileName.Contains("npc") == true)
             {
-                ArcFile arcFile;
-                ArcFileEntry fileEntry;
+                Archive arcFile;
+                ArchiveFileEntry fileEntry;
 
-                ArcFileCollection.Instance.GetArcFileEntryFromDatum(this.renderDatums[0], out arcFile, out fileEntry);
+                ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(this.renderDatums[0], out arcFile, out fileEntry);
 
                 string animationFileName = fileEntry.FileName.Replace("rModel", "rMotionList").Replace("model", "motion");
-                ArcFileCollection.Instance.GetArcFileEntryFromFileName(animationFileName, out arcFile, out fileEntry);
+                ArchiveCollection.Instance.GetArchiveFileEntryFromFileName(animationFileName, out arcFile, out fileEntry);
 
                 if (fileEntry != null)
-                    this.modelAnimation = arcFile.GetArcFileAsResource<rMotionList>(fileEntry.FileName);
+                    this.modelAnimation = arcFile.GetFileAsResource<rMotionList>(fileEntry.FileName);
             }
 
             // Loop through all of the datums to render and setup each one for rendering.
@@ -306,7 +316,7 @@ namespace DeadRisingArcTool.Forms
             for (int i = 0; i < this.renderDatums.Length; i++)
             {
                 // Create the game resource from the datum.
-                this.resourcesToRender[i] = ArcFileCollection.Instance.ArcFiles[this.renderDatums[i].ArcIndex].GetArcFileAsResource<GameResource>(this.renderDatums[i].FileIndex);
+                this.resourcesToRender[i] = ArchiveCollection.Instance.Archives[this.renderDatums[i].ArchiveIndex].GetFileAsResource<GameResource>(this.renderDatums[i].FileIndex);
                 if (this.resourcesToRender[i] == null)
                 {
                     // Failed to load the required resource.
@@ -343,6 +353,20 @@ namespace DeadRisingArcTool.Forms
             this.renderTime.LastTickCount = this.renderTime.CurrentTickCount;
             this.renderTime.CurrentTickCount = DateTime.Now.Ticks;
             this.renderTime.TimeDelta = (float)(this.renderTime.CurrentTickCount - this.renderTime.LastTickCount) / (float)TimeSpan.TicksPerSecond;
+
+            // Check if we need to reset the fps counter.
+            if (this.renderTime.CurrentTickCount >= this.startTime + TimeSpan.TicksPerSecond)
+            {
+                // Update the fps counter.
+                this.Text = string.Format("RenderView: {0} fps", this.framesPerSecond);
+
+                // Reset the fps counter.
+                this.framesPerSecond = 0;
+                this.startTime = this.renderTime.CurrentTickCount;
+            }
+
+            // Increment the frame counter.
+            this.framesPerSecond++;
 
             // Check if the form has resized and if so reset our render state to accomidate the size change.
             if (this.hasResized == true)
@@ -448,7 +472,7 @@ namespace DeadRisingArcTool.Forms
             this.renderView = new RenderTargetView(this.device, this.backBuffer);
 
             // Update the projection matrix.
-            this.projectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 40000.0f);
+            this.projectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(95.0f), (float)this.ClientSize.Width / (float)this.ClientSize.Height, 1.0f, 400000.0f);
         }
     }
 }

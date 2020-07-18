@@ -261,11 +261,11 @@ namespace DeadRisingArcTool.FileFormats
         }
 
         /// <summary>
-        /// Gets the full file name with file extension for the specified <see cref="ArcFileEntry"/>
+        /// Gets the full file name with file extension for the specified <see cref="ArchiveFileEntry"/>
         /// </summary>
         /// <param name="fileEntry"></param>
         /// <returns></returns>
-        public static string GetFullResourceName(ArcFileEntry fileEntry)
+        public static string GetFullResourceName(ArchiveFileEntry fileEntry)
         {
             return GetFullResourceName(fileEntry.FileName, fileEntry.FileType);
         }

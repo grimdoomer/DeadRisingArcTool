@@ -98,7 +98,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
                     new InputElement("POSITION",        0, Format.R16G16B16A16_SNorm,   0,  0),
                     new InputElement("TEXCOORD",        0, Format.R16G16_SNorm,         24, 0),
                     new InputElement("BLENDWEIGHT",     0, Format.R8G8B8A8_UNorm,       12, 0),
-                    new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_UInt,        8,  0),
+                    new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_SInt,        8,  0),
 
                     new InputElement("NORMAL",          0, Format.R16G16B16A16_SNorm,   16, 0),
                     new InputElement("TANGENT",         0, Format.R16G16B16A16_SNorm,   0,  0),

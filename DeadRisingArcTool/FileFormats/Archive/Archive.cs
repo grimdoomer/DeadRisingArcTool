@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace DeadRisingArcTool.FileFormats.Archive
 {
-    public struct ArcFileHeader
+    public struct ArchiveHeader
     {
         public const int kSizeOf = 8;
         public const int kHeaderMagic = 0x00435241;
@@ -25,7 +25,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /* 0x06 */ public short NumberOfFiles;
     }
 
-    public class ArcFileEntry
+    public class ArchiveFileEntry
     {
         public const int kSizeOf = 80;
 
@@ -36,7 +36,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /* 0x4C */ public int DataOffset { get; set; }
     }
 
-    public class ArcFile
+    public class Archive
     {
         // File streams for read/write access.
         private FileStream fileStream = null;
@@ -45,36 +45,42 @@ namespace DeadRisingArcTool.FileFormats.Archive
         private EndianWriter writer = null;
 
         /// <summary>
-        /// Full file path of the arc file.
+        /// Full file path of the archive.
         /// </summary>
         public string FileName { get; private set;  }
         /// <summary>
-        /// Index of the arc file in the global <see cref="ArcFileCollection"/> collection
+        /// Index of the archive in the global <see cref="ArchiveCollection"/> collection
         /// </summary>
         public int Index { get; set; }
         /// <summary>
-        /// Endiannes of the arc file.
+        /// Endiannes of the archive.
         /// </summary>
         public Endianness Endian { get { return this.endian; } }
 
-        private List<ArcFileEntry> fileEntries = new List<ArcFileEntry>();
+        private List<ArchiveFileEntry> fileEntries = new List<ArchiveFileEntry>();
         /// <summary>
-        /// Gets a list of file entries in the arc file.
+        /// Gets a list of file entries in the archive.
         /// </summary>
-        public ArcFileEntry[] FileEntries { get { return fileEntries.ToArray(); } }
+        public ArchiveFileEntry[] FileEntries { get { return fileEntries.ToArray(); } }
 
-        public ArcFile(string fileName)
+        /// <summary>
+        /// Indicates if this archive was loaded from the mods directory or not.
+        /// </summary>
+        public bool IsPatchFile { get; private set; }
+
+        public Archive(string fileName, bool isPatchFile = false)
         {
             // Initialize fields.
             this.FileName = fileName;
+            this.IsPatchFile = isPatchFile;
         }
 
         /// <summary>
-        /// Opens the arc file for reading and writing
+        /// Opens the archive for reading and writing
         /// </summary>
         /// <param name="forWrite">True if the file should be opened for writing, otherwise it will be read-only</param>
         /// <returns>True if the file was successfully opened, false otherwise</returns>
-        private bool OpenArcFile(bool forWrite)
+        private bool OpenArchive(bool forWrite)
         {
             // Determine if we are opening for R or RW access.
             FileAccess fileAccess = forWrite == true ? FileAccess.ReadWrite : FileAccess.Read;
@@ -110,9 +116,9 @@ namespace DeadRisingArcTool.FileFormats.Archive
         }
 
         /// <summary>
-        /// Closes all file streams on the arc file
+        /// Closes all file streams on the archive
         /// </summary>
-        private void CloseArcFile()
+        private void CloseArchive()
         {
             // Close all streams.
             if (this.reader != null)
@@ -127,31 +133,31 @@ namespace DeadRisingArcTool.FileFormats.Archive
         {
             bool Result = false;
 
-            // Open the arc file for reading.
-            if (OpenArcFile(false) == false)
+            // Open the archive for reading.
+            if (OpenArchive(false) == false)
             {
-                // Failed to open the arc file.
+                // Failed to open the archive.
                 return false;
             }
 
             // Make sure the file is large enough to have the header.
-            if (this.fileStream.Length < ArcFileHeader.kSizeOf)
+            if (this.fileStream.Length < ArchiveHeader.kSizeOf)
             {
-                // File is too small to be a valid arc file.
+                // File is too small to be a valid archive.
                 goto Cleanup;
             }
 
-            // Read the arc file header.
-            ArcFileHeader header = new ArcFileHeader();
+            // Read the archive header.
+            ArchiveHeader header = new ArchiveHeader();
             header.Magic = reader.ReadInt32();
             header.Version = reader.ReadInt16();
             header.NumberOfFiles = reader.ReadInt16();
 
             // Verify the header magic.
-            if (header.Magic != ArcFileHeader.kHeaderMagic)
+            if (header.Magic != ArchiveHeader.kHeaderMagic)
             {
                 // Check if the magic is in big endian.
-                if (EndianUtilities.ByteFlip32(header.Magic) == ArcFileHeader.kHeaderMagic)
+                if (EndianUtilities.ByteFlip32(header.Magic) == ArchiveHeader.kHeaderMagic)
                 {
                     // Set the endianness for future IO operations.
                     this.endian = Endianness.Big;
@@ -164,22 +170,22 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 }
                 else
                 {
-                    // Arc file header has invalid magic.
+                    // archive header has invalid magic.
                     goto Cleanup;
                 }
             }
 
             // Verify the file version.
-            if (header.Version != ArcFileHeader.kVersion)
+            if (header.Version != ArchiveHeader.kVersion)
             {
-                // Arc file is invalid version.
+                // archive is invalid version.
                 goto Cleanup;
             }
 
             // Loop for the number of files and read each file entry.
             for (int i = 0; i < header.NumberOfFiles; i++)
             {
-                ArcFileEntry fileEntry = new ArcFileEntry();
+                ArchiveFileEntry fileEntry = new ArchiveFileEntry();
 
                 // Save the current position and read the file name.
                 long offset = this.reader.BaseStream.Position;
@@ -206,24 +212,24 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 this.fileEntries.Add(fileEntry);
             }
 
-            // Successfully parsed the arc file.
+            // Successfully parsed the archive.
             Result = true;
 
         Cleanup:
-            // Close the arc file.
-            CloseArcFile();
+            // Close the archive.
+            CloseArchive();
 
             // Return the result.
             return Result;
         }
 
         /// <summary>
-        /// Searches for an arc file with matching name and returns the index of the arc file in the <see cref="FileEntries"/> array
+        /// Searches for a file with matching name and returns the index of the file in the <see cref="FileEntries"/> array
         /// </summary>
         /// <param name="fileName">Name of the file to search for</param>
         /// <param name="matchFileExtension">True if the file name should have a matching file extension, or false to ignore the file extension</param>
-        /// <returns>The index of the arc file in the <see cref="FileEntries"/> array, or -1 if a matching file name was not found</returns>
-        public int FindArcFileFromName(string fileName, bool matchFileExtension = false)
+        /// <returns>The index of the file in the <see cref="FileEntries"/> array, or -1 if a matching file name was not found</returns>
+        public int FindFileFromName(string fileName, bool matchFileExtension = false)
         {
             // Loop through all of the files until we find one that matches.
             for (int i = 0; i < this.fileEntries.Count; i++)
@@ -248,10 +254,10 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// <param name="fileName">Name of the file to search for</param>
         /// <param name="matchFileExtension">True if the file name should have a matching file extension, or false to ignore the file extension</param>
         /// <returns>The parsed game resource object, or default(T) otherwise</returns>
-        public T GetArcFileAsResource<T>(string fileName, bool matchFileExtension = false) where T : GameResource
+        public T GetFileAsResource<T>(string fileName, bool matchFileExtension = false) where T : GameResource
         {
             // Search for file entry with matching file name.
-            int index = FindArcFileFromName(fileName, matchFileExtension);
+            int index = FindFileFromName(fileName, matchFileExtension);
             if (index == -1)
             {
                 // A file entry with matching file name was not found.
@@ -277,7 +283,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// <typeparam name="T">Type of <see cref="GameResource"/> that will be returned</typeparam>
         /// <param name="fileIndex">Index of the file to parse</param>
         /// <returns>The parsed game resource object, or default(T) otherwise</returns>
-        public T GetArcFileAsResource<T>(int fileIndex) where T : GameResource
+        public T GetFileAsResource<T>(int fileIndex) where T : GameResource
         {
             // Decompress the file data.
             byte[] decompressedData = DecompressFileEntry(fileIndex);
@@ -330,10 +336,10 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
         public byte[] DecompressFileEntry(int fileIndex)
         {
-            // Open the arc file for reading.
-            if (OpenArcFile(false) == false)
+            // Open the archive for reading.
+            if (OpenArchive(false) == false)
             {
-                // Failed to open the arc file.
+                // Failed to open the archive.
                 return null;
             }
 
@@ -346,25 +352,25 @@ namespace DeadRisingArcTool.FileFormats.Archive
             // Decompress data.
             byte[] decompressedData = ZlibStream.UncompressBuffer(compressedData);
 
-            // Close the arc file and return.
-            CloseArcFile();
+            // Close the archive and return.
+            CloseArchive();
             return decompressedData;
         }
 
         #region File Manipulation
 
         /// <summary>
-        /// Extracts the specified arc file to disk
+        /// Extracts the specified file to disk
         /// </summary>
         /// <param name="fileIndex">Index of the file to decompress</param>
         /// <param name="outputFileName">File path to save the decompressed data to</param>
         /// <returns>True if the data was successfully decompressed and written to file, false otherwise</returns>
         public bool ExtractFile(int fileIndex, string outputFileName)
         {
-            // Open the arc file for reading.
-            if (OpenArcFile(false) == false)
+            // Open the archive for reading.
+            if (OpenArchive(false) == false)
             {
-                // Failed to open the arc file.
+                // Failed to open the archive.
                 return false;
             }
 
@@ -378,8 +384,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
             byte[] decompressedData = ZlibStream.UncompressBuffer(compressedData);
             File.WriteAllBytes(outputFileName, decompressedData);
 
-            // Close the arc file and return.
-            CloseArcFile();
+            // Close the archive and return.
+            CloseArchive();
             return true;
         }
 
@@ -390,10 +396,10 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// <returns>True if the files were successfully extracted, false otherwise</returns>
         public bool ExtractAllFiles(string outputFolder)
         {
-            // Open the arc file for reading.
-            if (OpenArcFile(false) == false)
+            // Open the archive for reading.
+            if (OpenArchive(false) == false)
             {
-                // Failed to open the arc file.
+                // Failed to open the archive.
                 return false;
             }
 
@@ -421,8 +427,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
                     this.fileEntries[i].FileType.ToString()), decompressedData);
             }
 
-            // Close the arc file and return.
-            CloseArcFile();
+            // Close the archive and return.
+            CloseArchive();
             return true;
         }
 
@@ -431,7 +437,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// </summary>
         /// <param name="fileIndex">Index of the file to replace</param>
         /// <param name="newFilePath">File path of the new file contants</param>
-        /// <returns>True if the data was successfully compressed and written to the arc file, false otherwise</returns>
+        /// <returns>True if the data was successfully compressed and written to the archive, false otherwise</returns>
         public bool InjectFile(int fileIndex, string newFilePath)
         {
             byte[] decompressedData = null;
@@ -456,13 +462,13 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// </summary>
         /// <param name="fileIndex">Index of the file to replace</param>
         /// <param name="data">New file contents to write</param>
-        /// <returns>True if the data was successfully compressed and written to the arc file, false otherwise</returns>
+        /// <returns>True if the data was successfully compressed and written to the archive, false otherwise</returns>
         public bool InjectFile(int fileIndex, byte[] data)
         {
-            // Open the arc file for writing.
-            if (OpenArcFile(true) == false)
+            // Open the archive for writing.
+            if (OpenArchive(true) == false)
             {
-                // Failed to open the arc file.
+                // Failed to open the archive.
                 return false;
             }
 
@@ -495,7 +501,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
                     this.fileEntries[i].DataOffset += offsetShift;
 
                     // Write the new offset to file.
-                    this.writer.BaseStream.Position = ArcFileHeader.kSizeOf + (ArcFileEntry.kSizeOf * i) + 76;
+                    this.writer.BaseStream.Position = ArchiveHeader.kSizeOf + (ArchiveFileEntry.kSizeOf * i) + 76;
                     this.writer.Write(this.fileEntries[i].DataOffset);
                 }
                 else if (i == fileIndex)
@@ -505,14 +511,14 @@ namespace DeadRisingArcTool.FileFormats.Archive
                     this.fileEntries[i].DecompressedSize = data.Length;
 
                     // Write the new data sizes to file.
-                    this.writer.BaseStream.Position = ArcFileHeader.kSizeOf + (ArcFileEntry.kSizeOf * i) + 64 + 4;
+                    this.writer.BaseStream.Position = ArchiveHeader.kSizeOf + (ArchiveFileEntry.kSizeOf * i) + 64 + 4;
                     this.writer.Write(this.fileEntries[i].CompressedSize);
                     this.writer.Write(this.fileEntries[i].DecompressedSize);
                 }
             }
 
-            // Close the arc file and return.
-            CloseArcFile();
+            // Close the archive and return.
+            CloseArchive();
             return true;
         }
 

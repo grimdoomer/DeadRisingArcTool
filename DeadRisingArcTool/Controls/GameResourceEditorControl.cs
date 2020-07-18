@@ -27,7 +27,7 @@ namespace DeadRisingArcTool.Controls
         /// <summary>
         /// Arc file that contains <see cref="GameResource"/>
         /// </summary>
-        public ArcFile ArcFile { get; protected set; }
+        public Archive ArcFile { get; protected set; }
 
         /// <summary>
         /// Indicates if the resource data has been modified since it was loaded
@@ -54,7 +54,7 @@ namespace DeadRisingArcTool.Controls
             return attr.ResourceTypes.Contains(resource);
         }
 
-        public void UpdateResource(ArcFile arcFile, GameResource gameResource)
+        public void UpdateResource(Archive arcFile, GameResource gameResource)
         {
             // Update our tracked arc file and game resource.
             this.GameResource = gameResource;

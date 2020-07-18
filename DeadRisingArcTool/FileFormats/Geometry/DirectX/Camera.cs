@@ -2,6 +2,7 @@
 using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -105,13 +106,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             if (input.ButtonPressed(InputAction.MoveDown) == true || input.ButtonHeld(InputAction.MoveDown) == true)
                 this.position += DefaultDown * this.Speed;
 
+            // Check for controller camera movement.
+            if (input.GamepadThumbSticks[0] > 0)
+                this.position += this.camRight * this.Speed * ((float)input.GamepadThumbSticks[0] / (float)short.MaxValue);
+            if (input.GamepadThumbSticks[0] < 0)
+                this.position += this.camLeft * this.Speed * -((float)input.GamepadThumbSticks[0] / (float)short.MaxValue);
+            if (input.GamepadThumbSticks[1] > 0)
+                this.position += this.camForward * this.Speed * ((float)input.GamepadThumbSticks[1] / (float)short.MaxValue);
+            if (input.GamepadThumbSticks[1] < 0)
+                this.position += this.camBackward * this.Speed * -((float)input.GamepadThumbSticks[1] / (float)short.MaxValue);
+
             // Update camera speed.
-            if (input.ButtonPressed(InputAction.CamSpeedIncrease) == true || input.ButtonHeld(InputAction.CamSpeedIncrease) == true)
+            if (input.ButtonPressed(InputAction.CamSpeedIncrease) == true || 
+                input.ButtonHeld(InputAction.CamSpeedIncrease) == true || input.GamepadTriggers[1] > 0)
             {
                 Speed += SpeedModifier;
                 if (Speed < 0) { Speed = 0.002f; }
             }
-            if (input.ButtonPressed(InputAction.CamSpeedDecrease) == true || input.ButtonHeld(InputAction.CamSpeedDecrease) == true)
+            if (input.ButtonPressed(InputAction.CamSpeedDecrease) == true || 
+                input.ButtonHeld(InputAction.CamSpeedDecrease) == true || input.GamepadTriggers[0] > 0)
             {
                 Speed -= SpeedModifier;
                 if (Speed < 0) { Speed = 0.002f; }
@@ -123,6 +136,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 // Update camera rotation.
                 this.camYaw += -input.MousePosition[0] * 0.005f;     // Flip x direction for RH coordinate system
                 this.camPitch += input.MousePosition[1] * 0.005f;
+            }
+
+            // Check for controller camera rotation.
+            if (input.GamepadThumbSticks[2] != 0 || input.GamepadThumbSticks[3] != 0)
+            {
+                float yaw = -((float)input.GamepadThumbSticks[2] / (float)short.MaxValue) * 0.005f;
+                float pitch = -((float)input.GamepadThumbSticks[3] / (float)short.MaxValue) * 0.005f;
+                //Debug.WriteLine(string.Format("Camera X={0} Y={1}", yaw, pitch));
+
+                // Update the camera position.
+                this.camYaw += -((float)input.GamepadThumbSticks[2] / (float)short.MaxValue) * 0.005f;
+                this.camPitch += -((float)input.GamepadThumbSticks[3] / (float)short.MaxValue) * 0.005f;
+                //Debug.WriteLine(string.Format("Camera Yaw={0} Pitch={1} Math Yaw={2} Pitch={3}", this.camYaw, this.camPitch, yaw, pitch));
             }
 
             // Update camera vectors.

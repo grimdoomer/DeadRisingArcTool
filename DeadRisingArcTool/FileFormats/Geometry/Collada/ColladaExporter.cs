@@ -52,7 +52,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
 
                         // Find the arc file the resource is in.
                         string textureFileName = GameResource.GetFullResourceName(model.textureFileNames[i], ResourceType.rTexture);
-                        ArcFileCollection.Instance.GetArcFileEntryFromFileName(textureFileName, out ArcFile arcFile, out ArcFileEntry fileEntry);
+                        ArchiveCollection.Instance.GetArchiveFileEntryFromFileName(textureFileName, out Archive.Archive arcFile, out ArchiveFileEntry fileEntry);
                         if (arcFile == null || fileEntry == null)
                         {
                             // Failed to find a resource with the specified name.
@@ -60,7 +60,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                         }
 
                         // Parse the game resource and cast it to rtexture.
-                        rTexture texture = arcFile.GetArcFileAsResource<rTexture>(textureFileName);
+                        rTexture texture = arcFile.GetFileAsResource<rTexture>(textureFileName);
 
                         // Save the texture to a dds image that can be loaded with the model.
                         DDSImage ddsImage = DDSImage.FromGameTexture(texture);

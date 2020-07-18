@@ -124,10 +124,10 @@ namespace DeadRisingArcTool.Controls
             for (int i = 0; i < datums.Length; i++)
             {
                 // Write the new texture back to the arc file.
-                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
+                if (ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
                 {
                     // Failed to write the new texture back to the arc file.
-                    MessageBox.Show("Failed to write new texture to arc file " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
+                    MessageBox.Show("Failed to write new texture to arc file " + ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].FileName + "!");
                     this.EditorOwner.SetUIState(true);
                     return false;
                 }
@@ -250,10 +250,10 @@ namespace DeadRisingArcTool.Controls
             for (int i = 0; i < datums.Length; i++)
             {
                 // Write the new texture back to the arc file.
-                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
+                if (ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
                 {
                     // Failed to write the new texture back to the arc file.
-                    MessageBox.Show("Failed to write new texture to arc file  " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
+                    MessageBox.Show("Failed to write new texture to arc file  " + ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].FileName + "!");
                     this.EditorOwner.SetUIState(true);
                     return;
                 }

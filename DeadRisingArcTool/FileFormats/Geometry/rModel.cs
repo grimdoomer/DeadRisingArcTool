@@ -1143,8 +1143,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Set the vertex and index buffers.
                 device.ImmediateContext.InputAssembler.SetVertexBuffers(0,
-                    new VertexBufferBinding(this.primaryVertexBuffer, this.primitives[0].VertexStride1, this.primitives[i].VertexStream1Offset),
-                    new VertexBufferBinding(this.secondaryVertexBuffer, this.primitives[0].VertexStride2, this.primitives[i].VertexStream2Offset));
+                    new VertexBufferBinding(this.primaryVertexBuffer, this.primitives[i].VertexStride1, this.primitives[i].VertexStream1Offset),
+                    new VertexBufferBinding(this.secondaryVertexBuffer, this.primitives[i].VertexStride2, this.primitives[i].VertexStream2Offset));
                 device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
 
                 // Setup the vertex shader, pixel shader, sampler states, and vertex declaration.

@@ -70,14 +70,14 @@ namespace DeadRisingArcTool.Controls
             this.TextFile.Buffer = Encoding.ASCII.GetBytes(this.textbox.Text);
 
             // Get a list of duplicate datums that we should update and update all of them.
-            DatumIndex[] datums = ArcFileCollection.Instance.GetDatumsForFileName(this.GameResource.FileName);
+            DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
             for (int i = 0; i < datums.Length; i++)
             {
                 // Update the arc file with the new resource data.
-                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, this.TextFile.Buffer) == false)
+                if (ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].InjectFile(datums[i].FileIndex, this.TextFile.Buffer) == false)
                 {
                     // Failed to write the arc file data.
-                    MessageBox.Show("Failed to write file to arc " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
+                    MessageBox.Show("Failed to write file to arc " + ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].FileName + "!");
                     this.EditorOwner.SetUIState(true);
                     return false;
                 }
