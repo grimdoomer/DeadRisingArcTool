@@ -275,6 +275,7 @@
     <None Include="Resources\file.png" />
     <None Include="Resources\blue_folder.png" />
     <None Include="Resources\folder.png" />
+    <None Include="Resources\texture_light.png" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
   <ItemGroup>

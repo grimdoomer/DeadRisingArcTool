@@ -14,7 +14,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
     {
         public float radius = 1.0f;
         public float Speed { get; set; } = 1.0f;
-        public float SpeedModifier { get; set; } = 0.002f;
+        public float SpeedModifier { get; set; } = 0.2f;
 
 
         float moveLeftRight = 0.0f;
@@ -121,13 +121,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 input.ButtonHeld(InputAction.CamSpeedIncrease) == true || input.GamepadTriggers[1] > 0)
             {
                 Speed += SpeedModifier;
-                if (Speed < 0) { Speed = 0.002f; }
+                if (Speed <= 0) { Speed = SpeedModifier; }
             }
             if (input.ButtonPressed(InputAction.CamSpeedDecrease) == true || 
                 input.ButtonHeld(InputAction.CamSpeedDecrease) == true || input.GamepadTriggers[0] > 0)
             {
                 Speed -= SpeedModifier;
-                if (Speed < 0) { Speed = 0.002f; }
+                if (Speed <= 0) { Speed = SpeedModifier; }
             }
 
             // Check for mouse movement.
@@ -141,13 +141,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Check for controller camera rotation.
             if (input.GamepadThumbSticks[2] != 0 || input.GamepadThumbSticks[3] != 0)
             {
-                float yaw = -((float)input.GamepadThumbSticks[2] / (float)short.MaxValue) * 0.005f;
+                float yaw = -((float)input.GamepadThumbSticks[2] / (float)short.MaxValue) * 0.5f;
                 float pitch = -((float)input.GamepadThumbSticks[3] / (float)short.MaxValue) * 0.005f;
                 //Debug.WriteLine(string.Format("Camera X={0} Y={1}", yaw, pitch));
 
                 // Update the camera position.
-                this.camYaw += -((float)input.GamepadThumbSticks[2] / (float)short.MaxValue) * 0.005f;
-                this.camPitch += -((float)input.GamepadThumbSticks[3] / (float)short.MaxValue) * 0.005f;
+                this.camYaw += -((float)input.GamepadThumbSticks[2] / (float)short.MaxValue) * 0.075f;
+                this.camPitch += -((float)input.GamepadThumbSticks[3] / (float)short.MaxValue) * 0.075f;
                 //Debug.WriteLine(string.Format("Camera Yaw={0} Pitch={1} Math Yaw={2} Pitch={3}", this.camYaw, this.camPitch, yaw, pitch));
             }
 

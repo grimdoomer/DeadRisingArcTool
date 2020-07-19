@@ -1224,18 +1224,29 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
             }
 
-            // Loop and draw the bounding boxes for all the primitives in the mesh.
-            for (int i = 0; i < this.primitiveBoxes.Length; i++)
+            // Get the debug draw flags and check if we should draw extra stuff.
+            DebugDrawOptions options = manager.GetDebugDrawOptions();
+
+            // Joint bounding speheres:
+            if (options.HasFlag(DebugDrawOptions.DrawJointBoundingSpheres) == true)
             {
-                // Draw the bounding box.
-                //this.primitiveBoxes[i].DrawFrame(manager, device);
+                // Loop and draw bounding sphere for all the joints in the mesh.
+                for (int i = 0; i < this.jointBoundingSpheres.Length; i++)
+                {
+                    // Draw the bounding sphere.
+                    this.jointBoundingSpheres[i].DrawFrame(manager, device);
+                }
             }
 
-            // Loop and draw bounding sphere for all the joints in the mesh.
-            for (int i = 0; i < this.jointBoundingSpheres.Length; i++)
+            // Primitive bounding boxes:
+            if (options.HasFlag(DebugDrawOptions.DrawPrimitiveBoundingBox) == true)
             {
-                // Draw the bounding sphere.
-                this.jointBoundingSpheres[i].DrawFrame(manager, device);
+                // Loop and draw the bounding boxes for all the primitives in the mesh.
+                for (int i = 0; i < this.primitiveBoxes.Length; i++)
+                {
+                    // Draw the bounding box.
+                    this.primitiveBoxes[i].DrawFrame(manager, device);
+                }
             }
 
             // Done rendering.

@@ -16,6 +16,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         LevelMesh
     }
 
+    [Flags]
+    public enum DebugDrawOptions : int
+    {
+        None = 0,
+        DrawJointBoundingSpheres = 1,
+        DrawPrimitiveBoundingBox = 2
+    }
+
     public interface IRenderManager
     {
         /// <summary>
@@ -38,6 +46,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         rMotionList GetMotionList();
 
         RenderTime GetTime();
+
+        DebugDrawOptions GetDebugDrawOptions();
 
         /// <summary>
         /// Gets the input manager instance for querying device input

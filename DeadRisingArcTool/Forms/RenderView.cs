@@ -20,15 +20,10 @@ using DeadRisingArcTool.FileFormats;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
 using DeadRisingArcTool.Utilities;
+using System.Threading;
 
 namespace DeadRisingArcTool.Forms
 {
-    struct MyVertex
-    {
-        public Vector3 Position;
-        public Vector4 Color;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct ShaderConstants
     {
@@ -87,12 +82,16 @@ namespace DeadRisingArcTool.Forms
         // FPS counter data.
         long startTime;
         int framesPerSecond = 0;
+        long lastInputPollTime = 0;
 
         // Input manager.
         InputManager inputManager = null;
 
         // Built in shader collection.
         BuiltInShaderCollection shaderCollection = null;
+
+        // Debug draw options.
+        DebugDrawOptions debugDrawOptions = DebugDrawOptions.None;
 
         // Shader constant buffer.
         ShaderConstants shaderConsts = new ShaderConstants();
@@ -199,6 +198,12 @@ namespace DeadRisingArcTool.Forms
         {
             // Get the shader from the shader collection.
             return this.shaderCollection.GetShader(type);
+        }
+
+        public DebugDrawOptions GetDebugDrawOptions()
+        {
+            // Get the debug draw options.
+            return this.debugDrawOptions;
         }
 
         public void SetMatrixMapFactor(Vector4 vec)
@@ -372,14 +377,37 @@ namespace DeadRisingArcTool.Forms
             if (this.hasResized == true)
                 ResizeRenderTarget();
 
-            // Only move the camera if the window is visible.
-            if (this.Visible == true && this.Focused == true)
+            // Cap input polling to 30 times per second.
+            if ((this.renderTime.CurrentTickCount - this.lastInputPollTime) > (TimeSpan.TicksPerSecond / 30))
             {
-                // Update input.
-                this.inputManager.DrawFrame(this, this.device);
+                // Only move the camera if the window is visible.
+                if (this.Visible == true && this.Focused == true)
+                {
+                    // Update input.
+                    this.lastInputPollTime = DateTime.Now.Ticks;
+                    this.inputManager.DrawFrame(this, this.device);
 
-                // Update the camera.
-                this.camera.DrawFrame(this, this.device);
+                    // Check if we need to update debug draw options.
+                    if (this.inputManager.ButtonPressed(InputAction.MiscAction1) == true)
+                    {
+                        // Toggle joint bounding spheres.
+                        if (this.debugDrawOptions.HasFlag(DebugDrawOptions.DrawJointBoundingSpheres) == true)
+                            this.debugDrawOptions &= ~DebugDrawOptions.DrawJointBoundingSpheres;
+                        else
+                            this.debugDrawOptions |= DebugDrawOptions.DrawJointBoundingSpheres;
+                    }
+                    if (this.inputManager.ButtonPressed(InputAction.MiscAction2) == true)
+                    {
+                        // Toggle primitive bounding boxes.
+                        if (this.debugDrawOptions.HasFlag(DebugDrawOptions.DrawPrimitiveBoundingBox) == true)
+                            this.debugDrawOptions &= ~DebugDrawOptions.DrawPrimitiveBoundingBox;
+                        else
+                            this.debugDrawOptions |= DebugDrawOptions.DrawPrimitiveBoundingBox;
+                    }
+
+                    // Update the camera.
+                    this.camera.DrawFrame(this, this.device);
+                }
             }
 
             // Set our render target to our swapchain buffer.

@@ -36,6 +36,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         NextAnimation,
         PreviousAnimation,
 
+        // Misc actions:
+        MiscAction1,
+        MiscAction2,
+
         InputAction_Max
     }
 
@@ -78,6 +82,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         private Controller gamepadDevice = null;
 
         private State gamepadState;
+        private State previousGamepadState;
 
         /// <summary>
         /// Initializes a new InputManager instance using the form handle specified
@@ -180,14 +185,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                     case Key.S: this.ButtonState[(int)InputAction.MoveBackward] = true; break;
                     case Key.A: this.ButtonState[(int)InputAction.StrafeLeft] = true; break;
                     case Key.D: this.ButtonState[(int)InputAction.StrafeRight] = true; break;
-                    case Key.Z: this.ButtonState[(int)InputAction.MoveUp] = true; break;
-                    case Key.X: this.ButtonState[(int)InputAction.MoveDown] = true; break;
+                    case Key.X: this.ButtonState[(int)InputAction.MoveUp] = true; break;
+                    case Key.Z: this.ButtonState[(int)InputAction.MoveDown] = true; break;
                     case Key.Equals:
                     case Key.Add: this.ButtonState[(int)InputAction.CamSpeedIncrease] = true; break;
                     case Key.Minus:
                     case Key.Subtract: this.ButtonState[(int)InputAction.CamSpeedDecrease] = true; break;
                     case Key.PageUp: this.ButtonState[(int)InputAction.NextAnimation] = true; break;
                     case Key.PageDown: this.ButtonState[(int)InputAction.PreviousAnimation] = true; break;
+
+                    case Key.D1:
+                    case Key.NumberPad1: this.ButtonState[(int)InputAction.MiscAction1] = true; break;
+                    case Key.D2:
+                    case Key.NumberPad2: this.ButtonState[(int)InputAction.MiscAction2] = true; break;
                 }
             }
 
@@ -208,6 +218,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 State newState = this.gamepadDevice.GetState();
                 if (newState.PacketNumber != this.gamepadState.PacketNumber)
                 {
+                    // Save the previous gamepad state, only do this when the packet number changes.
+                    this.previousGamepadState = gamepadState;
+
                     // Update thumbstick state.
                     if (newState.Gamepad.LeftThumbX > Gamepad.LeftThumbDeadZone || newState.Gamepad.LeftThumbX < -Gamepad.LeftThumbDeadZone)
                         this.GamepadThumbSticks[0] = newState.Gamepad.LeftThumbX;
@@ -245,6 +258,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                     this.ButtonState[(int)InputAction.MoveDown] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.LeftThumb);
                     this.ButtonState[(int)InputAction.NextAnimation] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.RightShoulder);
                     this.ButtonState[(int)InputAction.PreviousAnimation] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.LeftShoulder);
+                    this.ButtonState[(int)InputAction.MiscAction1] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.X);
+                    this.ButtonState[(int)InputAction.MiscAction2] = newState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.Y);
 
                     // Save the new gamepad state.
                     this.gamepadState = newState;
@@ -252,8 +267,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 else
                 {
                     // Input state is the same as the previous packet. Copy over all button state values.
-                    this.ButtonState[(int)InputAction.MoveUp] = this.PreviousButtonState[(int)InputAction.MoveUp];
-                    this.ButtonState[(int)InputAction.MoveDown] = this.PreviousButtonState[(int)InputAction.MoveDown];
+                    if (this.ButtonState[(int)InputAction.MoveUp] == false)
+                        this.ButtonState[(int)InputAction.MoveUp] = this.previousGamepadState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.RightThumb);
+                    if (this.ButtonState[(int)InputAction.MoveDown] == false)
+                        this.ButtonState[(int)InputAction.MoveDown] = this.previousGamepadState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.LeftThumb);
+                    if (this.ButtonState[(int)InputAction.MiscAction1] == false)
+                        this.ButtonState[(int)InputAction.MiscAction1] = this.previousGamepadState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.X);
+                    if (this.ButtonState[(int)InputAction.MiscAction2] == false)
+                        this.ButtonState[(int)InputAction.MiscAction2] = this.previousGamepadState.Gamepad.Buttons.HasFlag(GamepadButtonFlags.Y);
                 }
             }
 
