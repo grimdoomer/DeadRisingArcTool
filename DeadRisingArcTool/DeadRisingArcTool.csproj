@@ -93,43 +93,51 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Controls\AnimationEditor.cs">
+    <Compile Include="FileFormats\Archive\DatumIndex.cs" />
+    <Compile Include="UI\Controls\AnimationEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\AnimationEditor.Designer.cs">
+    <Compile Include="UI\Controls\AnimationEditor.Designer.cs">
       <DependentUpon>AnimationEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\BitmapViewer.cs">
+    <Compile Include="UI\Controls\ArchiveIndexEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\BitmapViewer.Designer.cs">
+    <Compile Include="UI\Controls\ArchiveIndexEditor.Designer.cs">
+      <DependentUpon>ArchiveIndexEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Controls\BitmapViewer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\BitmapViewer.Designer.cs">
       <DependentUpon>BitmapViewer.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\GameResourceEditorAttribute.cs" />
-    <Compile Include="Controls\GameResourceEditorControl.cs">
+    <Compile Include="UI\Controls\GameResourceEditorAttribute.cs" />
+    <Compile Include="UI\Controls\GameResourceEditorControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\IResourceEditorOwner.cs" />
-    <Compile Include="Controls\ModelViewer.cs">
+    <Compile Include="UI\Controls\IResourceEditorOwner.cs" />
+    <Compile Include="UI\Controls\ModelViewer.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ModelViewer.Designer.cs">
+    <Compile Include="UI\Controls\ModelViewer.Designer.cs">
       <DependentUpon>ModelViewer.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\ShaderEditor.cs">
+    <Compile Include="UI\Controls\ShaderEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\ShaderEditor.Designer.cs">
+    <Compile Include="UI\Controls\ShaderEditor.Designer.cs">
       <DependentUpon>ShaderEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="Controls\TextEditor.cs">
+    <Compile Include="UI\Controls\TextEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\TextEditor.Designer.cs">
+    <Compile Include="UI\Controls\TextEditor.Designer.cs">
       <DependentUpon>TextEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="FileFormats\Archive\Archive.cs" />
     <Compile Include="FileFormats\Archive\ArchiveCollection.cs" />
+    <Compile Include="FileFormats\Archive\rArchive.cs" />
     <Compile Include="FileFormats\Bitmaps\DDS.cs" />
     <Compile Include="FileFormats\Bitmaps\Swizzle.cs" />
     <Compile Include="FileFormats\GameResource.cs" />
@@ -157,61 +165,75 @@
     <Compile Include="FileFormats\Geometry\rMotionList.cs" />
     <Compile Include="FileFormats\Misc\BinaryXmlFile.cs" />
     <Compile Include="FileFormats\Misc\XmlFile.cs" />
-    <Compile Include="Forms\ArchiveSelectDialog.cs">
+    <Compile Include="UI\Forms\ArchiveSelectDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\ArchiveSelectDialog.Designer.cs">
+    <Compile Include="UI\Forms\ArchiveSelectDialog.Designer.cs">
       <DependentUpon>ArchiveSelectDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\LoadingDialog.cs">
+    <Compile Include="UI\Forms\LoadingDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\LoadingDialog.Designer.cs">
+    <Compile Include="UI\Forms\LoadingDialog.Designer.cs">
       <DependentUpon>LoadingDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\MainForm.cs">
+    <Compile Include="UI\Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\MainForm.Designer.cs">
+    <Compile Include="UI\Forms\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\RenderView.cs" />
-    <Compile Include="Forms\RenderView.Designer.cs">
+    <Compile Include="UI\Forms\RenameFileDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\Forms\RenameFileDialog.Designer.cs">
+      <DependentUpon>RenameFileDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Forms\RenderView.cs" />
+    <Compile Include="UI\Forms\RenderView.Designer.cs">
       <DependentUpon>RenderView.cs</DependentUpon>
     </Compile>
     <Compile Include="FileFormats\Geometry\DirectX\Camera.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\IconSet.cs" />
     <Compile Include="Utilities\AbstractControlDescriptionProvider.cs" />
+    <Compile Include="Utilities\CustomTreeViewNodeSorter.cs" />
     <Compile Include="Utilities\DirectXExtensions.cs" />
     <Compile Include="Utilities\HexAttribute.cs" />
     <Compile Include="Utilities\IOExtensions.cs" />
     <Compile Include="Utilities\ZlibUtilities.cs" />
-    <EmbeddedResource Include="Controls\AnimationEditor.resx">
+    <EmbeddedResource Include="UI\Controls\AnimationEditor.resx">
       <DependentUpon>AnimationEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\BitmapViewer.resx">
+    <EmbeddedResource Include="UI\Controls\ArchiveIndexEditor.resx">
+      <DependentUpon>ArchiveIndexEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Controls\BitmapViewer.resx">
       <DependentUpon>BitmapViewer.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\ModelViewer.resx">
+    <EmbeddedResource Include="UI\Controls\ModelViewer.resx">
       <DependentUpon>ModelViewer.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\ShaderEditor.resx">
+    <EmbeddedResource Include="UI\Controls\ShaderEditor.resx">
       <DependentUpon>ShaderEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Controls\TextEditor.resx">
+    <EmbeddedResource Include="UI\Controls\TextEditor.resx">
       <DependentUpon>TextEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\ArchiveSelectDialog.resx">
+    <EmbeddedResource Include="UI\Forms\ArchiveSelectDialog.resx">
       <DependentUpon>ArchiveSelectDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\LoadingDialog.resx">
+    <EmbeddedResource Include="UI\Forms\LoadingDialog.resx">
       <DependentUpon>LoadingDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\MainForm.resx">
+    <EmbeddedResource Include="UI\Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\RenderView.resx">
+    <EmbeddedResource Include="UI\Forms\RenameFileDialog.resx">
+      <DependentUpon>RenameFileDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Forms\RenderView.resx">
       <DependentUpon>RenderView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -276,6 +298,9 @@
     <None Include="Resources\blue_folder.png" />
     <None Include="Resources\folder.png" />
     <None Include="Resources\texture_light.png" />
+    <None Include="Resources\folder_blue.png" />
+    <None Include="Resources\database.png" />
+    <None Include="Resources\database_add.png" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
   <ItemGroup>

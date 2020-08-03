@@ -17,7 +17,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
     public struct ArchiveHeader
     {
         public const int kSizeOf = 8;
-        public const int kHeaderMagic = 0x00435241;
+        public const int kHeaderMagic1 = 0x00435241;    // 'ARC'
+        public const int kHeaderMagic2 = 0x53435241;    // 'ARCS'
         public const int kVersion = 4;
 
         /* 0x00 */ public int Magic;
@@ -28,19 +29,37 @@ namespace DeadRisingArcTool.FileFormats.Archive
     public class ArchiveFileEntry
     {
         public const int kSizeOf = 80;
+        public const int kMaxFileNameLength = 64;
+        public const int kUsableFileNameLength = 64 - 1;
 
         /* 0x00 */ public string FileName { get; set; }
         /* 0x40 */ public ResourceType FileType { get; set; }
         /* 0x44 */ public int CompressedSize { get; set; }
         /* 0x48 */ public int DecompressedSize { get; set;  }
         /* 0x4C */ public int DataOffset { get; set; }
+
+        public uint FileId { get; set; }
+
+        /// <summary>
+        /// Gets the file name with no file extension
+        /// </summary>
+        /// <returns></returns>
+        public string GetFileNameNoExtension()
+        {
+            // Remove the file extension from the file name.
+            int index = this.FileName.IndexOf('.');
+            if (index != -1)
+                return this.FileName.Substring(0, index);
+
+            // No file extension, return as-is.
+            return this.FileName;
+        }
     }
 
     public class Archive
     {
         // File streams for read/write access.
         private FileStream fileStream = null;
-        private Endianness endian = Endianness.Little;
         private EndianReader reader = null;
         private EndianWriter writer = null;
 
@@ -49,13 +68,13 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// </summary>
         public string FileName { get; private set;  }
         /// <summary>
-        /// Index of the archive in the global <see cref="ArchiveCollection"/> collection
+        /// Unique id for the archive.
         /// </summary>
-        public int Index { get; set; }
+        public uint ArchiveId { get; private set; }
         /// <summary>
         /// Endiannes of the archive.
         /// </summary>
-        public Endianness Endian { get { return this.endian; } }
+        public Endianness Endian { get; private set; }
 
         private List<ArchiveFileEntry> fileEntries = new List<ArchiveFileEntry>();
         /// <summary>
@@ -63,17 +82,28 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// </summary>
         public ArchiveFileEntry[] FileEntries { get { return fileEntries.ToArray(); } }
 
+        // Unique id counter for file entries in the lookup dictionary. I hate this but trying
+        // to use hashcodes for the file name kept resulting in collisions.
+        private uint nextFileId = 0x80000000;
+
+        // Dictionary of file ids to position in the fileEntries list.
+        private Dictionary<uint, int> fileEntryLookupDictionary = new Dictionary<uint, int>();
+
         /// <summary>
         /// Indicates if this archive was loaded from the mods directory or not.
         /// </summary>
         public bool IsPatchFile { get; private set; }
 
-        public Archive(string fileName, bool isPatchFile = false)
+        public Archive(string fileName, uint archiveId, bool isPatchFile = false, Endianness endian = Endianness.Little)
         {
             // Initialize fields.
             this.FileName = fileName;
+            this.ArchiveId = archiveId;
             this.IsPatchFile = isPatchFile;
+            this.Endian = endian;
         }
+
+        #region Archive open/close
 
         /// <summary>
         /// Opens the archive for reading and writing
@@ -88,21 +118,21 @@ namespace DeadRisingArcTool.FileFormats.Archive
             try
             {
                 // Open the file for reading.
-                this.fileStream = new FileStream(this.FileName, FileMode.Open, fileAccess, FileShare.Read);
-                this.reader = new EndianReader(this.endian, this.fileStream);
+                this.fileStream = new FileStream(this.FileName, FileMode.OpenOrCreate, fileAccess, FileShare.Read);
+                this.reader = new EndianReader(this.Endian, this.fileStream);
 
                 // If we want write access then open it for writing as well.
                 if (forWrite == true)
                 {
                     // Check if the backup file exists and if not create a backup file.
-                    if (File.Exists(this.FileName + "_bak") == false)
+                    if (this.reader.BaseStream.Length > 0 && File.Exists(this.FileName + "_bak") == false)
                     {
                         // Create a backup file.
                         File.Copy(this.FileName, this.FileName + "_bak");
                     }
 
                     // Open the file for writing.
-                    this.writer = new EndianWriter(this.endian, this.fileStream);
+                    this.writer = new EndianWriter(this.Endian, this.fileStream);
                 }
             }
             catch (Exception e)
@@ -154,13 +184,13 @@ namespace DeadRisingArcTool.FileFormats.Archive
             header.NumberOfFiles = reader.ReadInt16();
 
             // Verify the header magic.
-            if (header.Magic != ArchiveHeader.kHeaderMagic)
+            if (header.Magic != ArchiveHeader.kHeaderMagic1)
             {
                 // Check if the magic is in big endian.
-                if (EndianUtilities.ByteFlip32(header.Magic) == ArchiveHeader.kHeaderMagic)
+                if (EndianUtilities.ByteFlip32(header.Magic) == ArchiveHeader.kHeaderMagic1)
                 {
                     // Set the endianness for future IO operations.
-                    this.endian = Endianness.Big;
+                    this.Endian = Endianness.Big;
                     this.reader.Endian = Endianness.Big;
 
                     // Correct the header values we already read.
@@ -198,6 +228,9 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 fileEntry.DecompressedSize = this.reader.ReadInt32();
                 fileEntry.DataOffset = this.reader.ReadInt32();
 
+                // Create a unique file id for the file.
+                fileEntry.FileId = this.nextFileId++;
+
                 // Check if the type of file is known.
                 if (GameResource.KnownResourceTypes.ContainsKey(fileType) == true)
                 {
@@ -207,6 +240,9 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 }
                 else
                     fileEntry.FileType = ResourceType.Unknown;
+
+                // Calculate the unique id for the file and add it to the file loopup dictionary.
+                this.fileEntryLookupDictionary.Add(fileEntry.FileId, this.fileEntries.Count);
 
                 // Add the file entry to the list of files.
                 this.fileEntries.Add(fileEntry);
@@ -222,6 +258,10 @@ namespace DeadRisingArcTool.FileFormats.Archive
             // Return the result.
             return Result;
         }
+
+        #endregion
+
+        #region File access
 
         /// <summary>
         /// Searches for a file with matching name and returns the index of the file in the <see cref="FileEntries"/> array
@@ -248,12 +288,30 @@ namespace DeadRisingArcTool.FileFormats.Archive
         }
 
         /// <summary>
+        /// Searches for a file with matching file id and returns the index of the file in the <see cref="FileEntries"/> array
+        /// </summary>
+        /// <param name="datum">File id of the file to find</param>
+        /// <returns>The index of the file in the <see cref="FileEntries"/> array or -1 if the file id was not found</returns>
+        public int FindFileFromDatum(DatumIndex datum)
+        {
+            // Make sure we have an entry for this file id in the lookup dictionary.
+            if (this.fileEntryLookupDictionary.ContainsKey(datum.FileId) == false)
+            {
+                // No entry for this file id.
+                return -1;
+            }
+
+            // Return the index of the file.
+            return this.fileEntryLookupDictionary[datum.FileId];
+        }
+
+        /// <summary>
         /// Searches for a file entry with matching file name and parses the resource data for that file
         /// </summary>
         /// <typeparam name="T">Type of <see cref="GameResource"/> that will be returned</typeparam>
         /// <param name="fileName">Name of the file to search for</param>
         /// <param name="matchFileExtension">True if the file name should have a matching file extension, or false to ignore the file extension</param>
-        /// <returns>The parsed game resource object, or default(T) otherwise</returns>
+        /// <returns>The parsed game resource object, or null otherwise</returns>
         public T GetFileAsResource<T>(string fileName, bool matchFileExtension = false) where T : GameResource
         {
             // Search for file entry with matching file name.
@@ -261,7 +319,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
             if (index == -1)
             {
                 // A file entry with matching file name was not found.
-                return default(T);
+                return null;
             }
 
             // Decompress the file data.
@@ -269,33 +327,43 @@ namespace DeadRisingArcTool.FileFormats.Archive
             if (decompressedData == null)
             {
                 // Failed to decompress the file data.
-                return default(T);
+                return null;
             }
 
             // Parse the resource game and return the object.
             return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[index].FileName, 
-                new DatumIndex((short)this.Index, (short)index), this.fileEntries[index].FileType, this.endian == Endianness.Big);
+                new DatumIndex(this.ArchiveId, this.fileEntries[index].FileId), this.fileEntries[index].FileType, this.Endian == Endianness.Big);
         }
 
         /// <summary>
-        ///  Parses the resource data for the file at the specified index
+        ///  Parses the resource data for the file with the specified file id
         /// </summary>
         /// <typeparam name="T">Type of <see cref="GameResource"/> that will be returned</typeparam>
-        /// <param name="fileIndex">Index of the file to parse</param>
-        /// <returns>The parsed game resource object, or default(T) otherwise</returns>
-        public T GetFileAsResource<T>(int fileIndex) where T : GameResource
+        /// <param name="fileId">File id of the file to parse</param>
+        /// <returns>The parsed game resource object, or null otherwise</returns>
+        public T GetFileAsResource<T>(uint fileId) where T : GameResource
         {
+            // Make sure we have a file id entry in the dictionary.
+            if (this.fileEntryLookupDictionary.ContainsKey(fileId) == false)
+            {
+                // No dictionary entry for this file id.
+                return null;
+            }
+
+            // Get the index of the file from the file id.
+            int fileIndex = this.fileEntryLookupDictionary[fileId];
+
             // Decompress the file data.
             byte[] decompressedData = DecompressFileEntry(fileIndex);
             if (decompressedData == null)
             {
                 // Failed to decompress the file data.
-                return default(T);
+                return null;
             }
 
             // Parse the resource game and return the object.
             return (T)GameResource.FromGameResource(decompressedData, this.fileEntries[fileIndex].FileName,
-                new DatumIndex((short)this.Index, (short)fileIndex), this.fileEntries[fileIndex].FileType, this.endian == Endianness.Big);
+                new DatumIndex(this.ArchiveId, this.fileEntries[fileIndex].FileId), this.fileEntries[fileIndex].FileType, this.Endian == Endianness.Big);
         }
 
         public byte[] DecompressFileEntry(string fileName, bool matchFileExtension = false)
@@ -314,24 +382,6 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
             // A file with matching name was not found.
             return null;
-        }
-
-        private bool CompareFileNamesNoExt(string file1, string file2)
-        {
-            // Loop and compare the the file names.
-            for (int i = 0; i < Math.Min(file1.Length, file2.Length); i++)
-            {
-                // If the characters don't match we fail.
-                if (file1[i] != file2[i])
-                    return false;
-            }
-
-            // Make sure the next character in file1 is a period for the file extension.
-            if (file1.Length < file2.Length && file1[file2.Length] != '.')
-                return false;
-
-            // If we made it here it's good enough for what we need.
-            return true;
         }
 
         public byte[] DecompressFileEntry(int fileIndex)
@@ -357,16 +407,165 @@ namespace DeadRisingArcTool.FileFormats.Archive
             return decompressedData;
         }
 
-        #region File Manipulation
+        /// <summary>
+        /// Gets the compressed file contents for the specified file
+        /// </summary>
+        /// <param name="fileId">File id if the file to retrieve file contents for</param>
+        /// <returns>Compressed file contents for the specified file</returns>
+        public byte[] GetCompressedFileContents(uint fileId)
+        {
+            // Make sure we have an entry for this file id in the reverse lookup dictionary.
+            if (this.fileEntryLookupDictionary.ContainsKey(fileId) == false)
+            {
+                // No file entry for this file id.
+                return null;
+            }
+
+            // Open the archive for reading.
+            if (OpenArchive(false) == false)
+            {
+                // Failed to open the archive.
+                return null;
+            }
+
+            // Seek to the start of the compressed data.
+            int fileIndex = this.fileEntryLookupDictionary[fileId];
+            this.reader.BaseStream.Position = this.fileEntries[fileIndex].DataOffset;
+
+            // Read the compressed data.
+            byte[] compressedData = this.reader.ReadBytes(this.fileEntries[fileIndex].CompressedSize);
+
+            // Close the archive and return the buffer.
+            CloseArchive();
+            return compressedData;
+        }
+
+        #endregion
+
+        #region Extraction/Injection/Add
+
+        /// <summary>
+        /// Adds the specified files to the archive
+        /// </summary>
+        /// <param name="datums">File ids for files to be added to the archive, files must be loaded in the <see cref="ArchiveCollection"/></param>
+        /// <param name="fileNames">New file names for the files being added</param>
+        /// <returns>True if the files were added successfully, false otherwise</returns>
+        public bool AddFilesFromDatums(DatumIndex[] datums, string[] fileNames)
+        {
+            // Open the archive for writing.
+            if (OpenArchive(true) == false)
+            {
+                // Failed to open the archive for writing.
+                return false;
+            }
+
+            // Create a new memory stream to hold compressed file data.
+            List<int> fileOffsets = new List<int>();
+            MemoryStream dataStream = new MemoryStream((int)this.reader.BaseStream.Length);
+
+            // Loop through all the files in the archive and read each one into the memory stream.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Seek to the data offset.
+                this.reader.BaseStream.Position = this.fileEntries[i].DataOffset;
+
+                // Read the compressed file data.
+                byte[] compressedData = this.reader.ReadBytes(this.fileEntries[i].CompressedSize);
+
+                // Save the data offset and write the compressed data to the memory stream.
+                fileOffsets.Add((int)dataStream.Position);
+                dataStream.Write(compressedData, 0, compressedData.Length);
+            }
+
+            // Loop through all the files to be added to the archive.
+            for (int i = 0; i < datums.Length; i++)
+            {
+                // Get the file entry for this archive.
+                ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(datums[i], out Archive archive, out ArchiveFileEntry fileEntry);
+
+                // Decompress the file contents.
+                byte[] compressedData = archive.GetCompressedFileContents(fileEntry.FileId);
+
+                // Create a new file entry for this file.
+                ArchiveFileEntry newFileEntry = new ArchiveFileEntry();
+                newFileEntry.FileName = fileNames[i] + "." + fileEntry.FileType.ToString();
+                newFileEntry.CompressedSize = compressedData.Length;
+                newFileEntry.DecompressedSize = fileEntry.DecompressedSize;
+                newFileEntry.FileId = this.nextFileId++;
+                newFileEntry.FileType = fileEntry.FileType;
+
+                // Add the file entry to the list and create a reverse lookup entry.
+                this.fileEntryLookupDictionary.Add(newFileEntry.FileId, this.fileEntries.Count);
+                this.fileEntries.Add(newFileEntry);
+
+                // Add the data offset to the list and write the compressed data to the data stream.
+                fileOffsets.Add((int)dataStream.Position);
+                dataStream.Write(compressedData, 0, compressedData.Length);
+            }
+
+            // Update the header for the new file count.
+            this.writer.BaseStream.Position = 0;
+            this.writer.Write(ArchiveHeader.kHeaderMagic1);
+            this.writer.Write((short)ArchiveHeader.kVersion);
+            this.writer.Write((short)this.fileEntries.Count);
+
+            // Calculate the data start offset based on the new number of files.
+            int dataStart = ArchiveHeader.kSizeOf + (this.fileEntries.Count * ArchiveFileEntry.kSizeOf);
+            if (dataStart % 0x8000 != 0)
+                dataStart += 0x8000 - (dataStart % 0x8000);
+
+            // Loop and write all the file entries.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Write the file entry.
+                string fileName = this.fileEntries[i].GetFileNameNoExtension();
+                this.writer.Write(fileName.ToCharArray());
+                this.writer.Write(new byte[ArchiveFileEntry.kMaxFileNameLength - fileName.Length]);
+
+                // If we know the file type for this file get the file type id.
+                if (GameResource.KnownResourceTypesReverse.ContainsKey(this.fileEntries[i].FileType) == true)
+                    this.writer.Write(GameResource.KnownResourceTypesReverse[this.fileEntries[i].FileType]);
+                else
+                    this.writer.Write((int)this.fileEntries[i].FileType);
+
+                this.writer.Write(this.fileEntries[i].CompressedSize);
+                this.writer.Write(this.fileEntries[i].DecompressedSize);
+                this.writer.Write(dataStart + fileOffsets[i]);
+
+                // Update the file offset.
+                this.fileEntries[i].DataOffset = dataStart + fileOffsets[i];
+            }
+
+            // Fill the rest with padding.
+            this.writer.Write(new byte[dataStart - (int)this.writer.BaseStream.Position]);
+
+            // Write the data stream and calculate the new file size.
+            this.writer.Write(dataStream.ToArray(), 0, (int)dataStream.Length);
+            this.fileStream.SetLength(this.writer.BaseStream.Position);
+
+            // Close the archive.
+            CloseArchive();
+            return true;
+        }
 
         /// <summary>
         /// Extracts the specified file to disk
         /// </summary>
-        /// <param name="fileIndex">Index of the file to decompress</param>
+        /// <param name="fileId">File id of the file to decompress</param>
         /// <param name="outputFileName">File path to save the decompressed data to</param>
         /// <returns>True if the data was successfully decompressed and written to file, false otherwise</returns>
-        public bool ExtractFile(int fileIndex, string outputFileName)
+        public bool ExtractFile(uint fileId, string outputFileName)
         {
+            // Make sure we have a file id entry in the dictionary.
+            if (this.fileEntryLookupDictionary.ContainsKey(fileId) == false)
+            {
+                // No dictionary entry for this file id.
+                return false;
+            }
+
+            // Get the index of the file from the file id.
+            int fileIndex = this.fileEntryLookupDictionary[fileId];
+
             // Open the archive for reading.
             if (OpenArchive(false) == false)
             {
@@ -435,10 +634,10 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// <summary>
         /// Replaces the contents of <paramref name="fileIndex"/> with the file contents of <paramref name="newFilePath"/>
         /// </summary>
-        /// <param name="fileIndex">Index of the file to replace</param>
+        /// <param name="fileId">File id of the file to replace</param>
         /// <param name="newFilePath">File path of the new file contants</param>
         /// <returns>True if the data was successfully compressed and written to the archive, false otherwise</returns>
-        public bool InjectFile(int fileIndex, string newFilePath)
+        public bool InjectFile(uint fileId, string newFilePath)
         {
             byte[] decompressedData = null;
 
@@ -454,17 +653,27 @@ namespace DeadRisingArcTool.FileFormats.Archive
             }
 
             // Compress and inject the file data.
-            return InjectFile(fileIndex, decompressedData);
+            return InjectFile(fileId, decompressedData);
         }
 
         /// <summary>
         /// Replaces the contents of <paramref name="fileIndex"/> with the specified buffer
         /// </summary>
-        /// <param name="fileIndex">Index of the file to replace</param>
+        /// <param name="fileId">File id of the file to replace</param>
         /// <param name="data">New file contents to write</param>
         /// <returns>True if the data was successfully compressed and written to the archive, false otherwise</returns>
-        public bool InjectFile(int fileIndex, byte[] data)
+        public bool InjectFile(uint fileId, byte[] data)
         {
+            // Make sure we have a file id entry in the dictionary.
+            if (this.fileEntryLookupDictionary.ContainsKey(fileId) == false)
+            {
+                // No dictionary entry for this file id.
+                return false;
+            }
+
+            // Get the index of the file from the file id.
+            int fileIndex = this.fileEntryLookupDictionary[fileId];
+
             // Open the archive for writing.
             if (OpenArchive(true) == false)
             {
@@ -519,6 +728,181 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
             // Close the archive and return.
             CloseArchive();
+            return true;
+        }
+
+        #endregion
+
+        #region File manipulation
+
+        /// <summary>
+        /// Renames the specified file
+        /// </summary>
+        /// <param name="fileId">File id of the file to be renamed</param>
+        /// <param name="newFileName">New file name</param>
+        /// <returns>True if the file name was updated and changes written to archive, false otherwise</returns>
+        public bool RenameFile(uint fileId, string newFileName)
+        {
+            // Make sure the file name length is not too long.
+            if (newFileName.Length == 0 || newFileName.Length > ArchiveFileEntry.kUsableFileNameLength)
+            {
+                // File name is too long.
+                return false;
+            }
+
+            // Make sure we have a file id entry in the dictionary.
+            if (this.fileEntryLookupDictionary.ContainsKey(fileId) == false)
+            {
+                // No dictionary entry for this file id.
+                return false;
+            }
+
+            // Get the index of the file from the file id.
+            int fileIndex = this.fileEntryLookupDictionary[fileId];
+
+            // Open the archive for writing.
+            if (OpenArchive(true) == false)
+            {
+                // Failed to open the archive for writing.
+                return false;
+            }
+
+            // Update the file entry.
+            this.fileEntries[fileIndex].FileName = newFileName;
+
+            // Seek to the offset of the file entry.
+            this.writer.BaseStream.Position = ArchiveHeader.kSizeOf + (fileIndex * ArchiveFileEntry.kSizeOf);
+
+            // Write the new file name to file.
+            this.writer.Write(newFileName.ToCharArray());
+            this.writer.Write(new byte[ArchiveFileEntry.kMaxFileNameLength - newFileName.Length]);
+
+            // Close the file stream.
+            CloseArchive();
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes all of the specified files from the archive
+        /// </summary>
+        /// <param name="fileIds">Array of file DatumIndexes to delete from the archive</param>
+        /// <returns>True if the files were deleted successfully, false otherwise</returns>
+        public bool DeleteFiles(DatumIndex[] fileIds)
+        {
+            // Open the archive for writing.
+            if (OpenArchive(true) == false)
+            {
+                // Failed to open the archive for writing.
+                return false;
+            }
+
+            // Create a new memory stream to store file data in.
+            List<int> dataOffsets = new List<int>();
+            MemoryStream dataStream = new MemoryStream((int)this.reader.BaseStream.Length);
+
+            // Loop through all of the files and read the compressed data into the memory stream.
+            List<int> fileIndices = new List<int>();
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Check if this is one of the files to be deleted.
+                if (fileIds.Contains(new DatumIndex(this.ArchiveId, this.fileEntries[i].FileId)) == true)
+                {
+                    // Save the file id and continue.
+                    fileIndices.Add(i);
+                    continue;
+                }
+
+                // Seek to the compressed data and read it.
+                this.reader.BaseStream.Position = this.fileEntries[i].DataOffset;
+                byte[] data = this.reader.ReadBytes(this.fileEntries[i].CompressedSize);
+
+                // Write the data into the memory stream.
+                dataOffsets.Add((int)dataStream.Length);
+                dataStream.Write(data, 0, data.Length);
+            }
+
+            // Sort the list of files indices to remove in descending order. This is to ensure
+            // when we remove them the indices wont shift underneath us from the removals.
+            fileIndices.Sort((x, y) => y.CompareTo(x));
+
+            // Remove the files to be deleted from the file entry list.
+            for (int i = 0; i < fileIndices.Count; i++)
+            {
+                // Remove references to the file.
+                uint fileId = this.fileEntries[fileIndices[i]].FileId;
+                this.fileEntries.RemoveAt(fileIndices[i]);
+            }
+
+            // Rebuild the reverse file lookup dictionary.
+            this.fileEntryLookupDictionary.Clear();
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Add a new entry to the dictionary.
+                this.fileEntryLookupDictionary.Add(this.fileEntries[i].FileId, i);
+            }
+
+            // Update the header for the new file count.
+            this.writer.BaseStream.Position = 6;
+            this.writer.Write((short)this.fileEntries.Count);
+
+            // Calculate the data start offset based on the new number of files.
+            int dataStart = ArchiveHeader.kSizeOf + (this.fileEntries.Count * ArchiveFileEntry.kSizeOf);
+            if (dataStart % 0x8000 != 0)
+                dataStart += 0x8000 - (dataStart % 0x8000);
+
+            // Loop and write all the file entries.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Write the file entry.
+                string fileName = this.fileEntries[i].GetFileNameNoExtension();
+                this.writer.Write(fileName.ToCharArray());
+                this.writer.Write(new byte[ArchiveFileEntry.kMaxFileNameLength - fileName.Length]);
+
+                // If we know the file type for this file get the file type id.
+                if (GameResource.KnownResourceTypesReverse.ContainsKey(this.fileEntries[i].FileType) == true)
+                    this.writer.Write(GameResource.KnownResourceTypesReverse[this.fileEntries[i].FileType]);
+                else
+                    this.writer.Write((int)this.fileEntries[i].FileType);
+
+                this.writer.Write(this.fileEntries[i].CompressedSize);
+                this.writer.Write(this.fileEntries[i].DecompressedSize);
+                this.writer.Write(dataStart + dataOffsets[i]);
+
+                // Update the file offset.
+                this.fileEntries[i].DataOffset = dataStart + dataOffsets[i];
+            }
+
+            // Fill the rest with padding.
+            this.writer.Write(new byte[dataStart - (int)this.writer.BaseStream.Position]);
+
+            // Write the data stream and calculate the new file size.
+            this.writer.Write(dataStream.ToArray(), 0, (int)dataStream.Length);
+            this.fileStream.SetLength(this.writer.BaseStream.Position);
+
+            // Close the archive.
+            CloseArchive();
+            return true;
+        }
+
+        #endregion
+
+        #region Utilities
+
+        private bool CompareFileNamesNoExt(string file1, string file2)
+        {
+            // Loop and compare the the file names.
+            for (int i = 0; i < Math.Min(file1.Length, file2.Length); i++)
+            {
+                // If the characters don't match we fail.
+                if (file1[i] != file2[i])
+                    return false;
+            }
+
+            // Make sure the next character in file1 is a period for the file extension.
+            if (file1.Length < file2.Length && file1[file2.Length] != '.')
+                return false;
+
+            // If we made it here it's good enough for what we need.
             return true;
         }
 

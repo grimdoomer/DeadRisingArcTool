@@ -121,16 +121,10 @@ namespace DeadRisingArcTool.Controls
 
             // Get a list of every datum to be updated for this file and update all of them.
             DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
-            for (int i = 0; i < datums.Length; i++)
+            if (ArchiveCollection.Instance.InjectFile(datums, textureBuffer) == false)
             {
-                // Write the new texture back to the arc file.
-                if (ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
-                {
-                    // Failed to write the new texture back to the arc file.
-                    MessageBox.Show("Failed to write new texture to arc file " + ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].FileName + "!");
-                    this.EditorOwner.SetUIState(true);
-                    return false;
-                }
+                // Failed to update files.
+                return false;
             }
 
             // Flag that we no longer have changes made to the resource.
@@ -247,16 +241,11 @@ namespace DeadRisingArcTool.Controls
 
             // Get a list of every datum to be updated for this file and update all of them.
             DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
-            for (int i = 0; i < datums.Length; i++)
+            if (ArchiveCollection.Instance.InjectFile(datums, textureBuffer) == false)
             {
-                // Write the new texture back to the arc file.
-                if (ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
-                {
-                    // Failed to write the new texture back to the arc file.
-                    MessageBox.Show("Failed to write new texture to arc file  " + ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].FileName + "!");
-                    this.EditorOwner.SetUIState(true);
-                    return;
-                }
+                // Failed to update files.
+                this.EditorOwner.SetUIState(true);
+                return;
             }
 
             // Update the game resource instance and reload the UI.

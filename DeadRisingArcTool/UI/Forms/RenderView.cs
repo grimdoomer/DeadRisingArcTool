@@ -321,7 +321,7 @@ namespace DeadRisingArcTool.Forms
             for (int i = 0; i < this.renderDatums.Length; i++)
             {
                 // Create the game resource from the datum.
-                this.resourcesToRender[i] = ArchiveCollection.Instance.Archives[this.renderDatums[i].ArchiveIndex].GetFileAsResource<GameResource>(this.renderDatums[i].FileIndex);
+                this.resourcesToRender[i] = ArchiveCollection.Instance.GetFileAsResource<GameResource>(this.renderDatums[i]);
                 if (this.resourcesToRender[i] == null)
                 {
                     // Failed to load the required resource.

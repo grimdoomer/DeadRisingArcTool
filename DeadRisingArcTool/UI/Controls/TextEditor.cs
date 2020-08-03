@@ -71,16 +71,10 @@ namespace DeadRisingArcTool.Controls
 
             // Get a list of duplicate datums that we should update and update all of them.
             DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
-            for (int i = 0; i < datums.Length; i++)
+            if (ArchiveCollection.Instance.InjectFile(datums, this.TextFile.Buffer) == false)
             {
-                // Update the arc file with the new resource data.
-                if (ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].InjectFile(datums[i].FileIndex, this.TextFile.Buffer) == false)
-                {
-                    // Failed to write the arc file data.
-                    MessageBox.Show("Failed to write file to arc " + ArchiveCollection.Instance.Archives[datums[i].ArchiveIndex].FileName + "!");
-                    this.EditorOwner.SetUIState(true);
-                    return false;
-                }
+                // Failed to update files.
+                return false;
             }
 
             // Flag that we no longer have changes made to the resource.
