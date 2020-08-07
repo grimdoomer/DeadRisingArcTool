@@ -84,6 +84,15 @@ namespace DeadRisingArcTool.FileFormats.Archive
         private Dictionary<string, DatumIndex[]> patchArchiveFileNameReverseDictionary = new Dictionary<string, DatumIndex[]>();
 
         /// <summary>
+        /// List of file names found in the loaded game archives (does not include patch archives).
+        /// </summary>
+        public string[] GameFileNames { get { return this.archiveFileNameReverseDictionary.Keys.ToArray(); } }
+        /// <summary>
+        /// List of file names found in the loaded patch archives (does not include game archives).
+        /// </summary>
+        public string[] PatchFileNames { get { return this.patchArchiveFileNameReverseDictionary.Keys.ToArray(); } }
+
+        /// <summary>
         /// Root directory the archive files were loaded from.
         /// </summary>
         public string RootDirectory { get; private set; }
@@ -237,6 +246,25 @@ namespace DeadRisingArcTool.FileFormats.Archive
         #region File searching/access
 
         /// <summary>
+        /// Searches for an archive with the specified file path and returns the <see cref="Archive"/> instance
+        /// </summary>
+        /// <param name="filePath">File path to search for</param>
+        /// <returns>Archive instance for the specified file path if it is currently loaded, null otherwise.</returns>
+        public Archive GetArchiveFromFilePath(string filePath)
+        {
+            // Find the file path in the list of loaded archives.
+            int archiveIndex = this.loadedArchives.IndexOf(filePath);
+            if (archiveIndex == -1)
+            {
+                // An archive with the specified file path was not found in the collection.
+                return null;
+            }
+
+            // Return the archive instance.
+            return this.archives[archiveIndex];
+        }
+
+        /// <summary>
         /// Finds the archive and file entry for the specified file datum
         /// </summary>
         /// <param name="datum">File datum to find in the archive collection</param>
@@ -331,6 +359,24 @@ namespace DeadRisingArcTool.FileFormats.Archive
         }
 
         /// <summary>
+        /// Gets all patch file datums for the specified file name.
+        /// </summary>
+        /// <param name="fileName">File name to get datums for</param>
+        /// <returns></returns>
+        public DatumIndex[] GetPatchDatumsForFileName(string fileName)
+        {
+            // Check if there are patch datums for this file name.
+            if (this.patchArchiveFileNameReverseDictionary.ContainsKey(fileName) == true)
+            {
+                // Return the datums for this patch file.
+                return this.patchArchiveFileNameReverseDictionary[fileName];
+            }
+
+            // No entry found for this file.
+            return new DatumIndex[0];
+        }
+
+        /// <summary>
         ///  Parses the resource data for the file with the specified DatumIndex
         /// </summary>
         /// <typeparam name="T">Type of <see cref="GameResource"/> that will be returned</typeparam>
@@ -417,7 +463,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
                     string dialogMsg = "Deleting all the files in {0} will also delete the archive, are you sure you want to continue?\r\n" +
                         "\tYes - Delete archive\r\n" +
                         "\tNo - Skip deleting files for this archive and continue\r\n" +
-                        "\tCancel - Abort the delete operation, files already deleted will not be restored";
+                        "\tCancel - Abort the operation, files already deleted will not be restored";
 
                     // Prompt the user to delete the archive outright and handle accordingly.
                     string archiveName = this.archives[archiveIndex].FileName.Substring(this.archives[archiveIndex].FileName.LastIndexOf("\\") + 1);
@@ -482,14 +528,102 @@ namespace DeadRisingArcTool.FileFormats.Archive
             if (archiveIndex != -1)
             {
                 // Add the files to the archive.
-                return this.archives[archiveIndex].AddFilesFromDatums(datums, newFileNames);
+                if (this.archives[archiveIndex].AddFilesFromDatums(datums, newFileNames, out DatumIndex[] newDatums) == false)
+                {
+                    // Failed to add the files to the archive.
+                    return false;
+                }
+
+                // Loop through the new files and add each one to the lookup dictionary.
+                Dictionary<string, DatumIndex[]> dictToAdd = this.archives[archiveIndex].IsPatchFile == true ? this.patchArchiveFileNameReverseDictionary : this.archiveFileNameReverseDictionary;
+                for (int i = 0; i < newDatums.Length; i++)
+                {
+                    // Get the file entry for this file.
+                    int fileIndex = this.archives[archiveIndex].FindFileFromDatum(newDatums[i]);
+
+                    // Add or update the dictionary entry for this file name.
+                    if (dictToAdd.ContainsKey(this.archives[archiveIndex].FileEntries[fileIndex].FileName) == true)
+                    {
+                        // Create a new list that is 1 element larger than the old.
+                        DatumIndex[] newFileDatums = new DatumIndex[dictToAdd[this.archives[archiveIndex].FileEntries[fileIndex].FileName].Length + 1];
+                        Array.Copy(dictToAdd[this.archives[archiveIndex].FileEntries[fileIndex].FileName], newFileDatums, newFileDatums.Length - 1);
+
+                        // Add the new file datum to the list.
+                        newFileDatums[newFileDatums.Length - 1] = newDatums[i];
+                        dictToAdd[this.archives[archiveIndex].FileEntries[fileIndex].FileName] = newFileDatums;
+                    }
+                    else
+                    {
+                        // Create a new entry in the dictionary.
+                        dictToAdd.Add(this.archives[archiveIndex].FileEntries[fileIndex].FileName, new DatumIndex[] { newDatums[i] });
+                    }
+                }
+
+                // Files added successfully.
+                return true;
             }
 
             // Create a new archive using the file path provided.
             Archive archive = new Archive(archiveFilePath, this.nextArchiveId++, true);
 
             // Add the files to the archive.
-            if (archive.AddFilesFromDatums(datums, newFileNames) == false)
+            if (archive.AddFilesFromDatums(datums, newFileNames, out DatumIndex[] _) == false)
+            {
+                // Failed to create and add the files to the archive.
+                return false;
+            }
+
+            // Add the archive to the collection.
+            return AddArchive(archive, archiveFilePath, true);
+        }
+
+        public bool AddFilesToArchive(string archiveFilePath, string[] newFileNames, string[] filePaths)
+        {
+            // Check if this archive is in the list of loaded archives.
+            int archiveIndex = this.loadedArchives.IndexOf(archiveFilePath);
+            if (archiveIndex != -1)
+            {
+                // Add the files to the archive.
+                if (this.archives[archiveIndex].AddFiles(newFileNames, filePaths, out DatumIndex[] newDatums) == false)
+                {
+                    // Failed to add the files to the archive.
+                    return false;
+                }
+
+                // Loop through the new files and add each one to the lookup dictionary.
+                Dictionary<string, DatumIndex[]> dictToAdd = this.archives[archiveIndex].IsPatchFile == true ? this.patchArchiveFileNameReverseDictionary : this.archiveFileNameReverseDictionary;
+                for (int i = 0; i < newDatums.Length; i++)
+                {
+                    // Get the file entry for this file.
+                    int fileIndex = this.archives[archiveIndex].FindFileFromDatum(newDatums[i]);
+
+                    // Add or update the dictionary entry for this file name.
+                    if (dictToAdd.ContainsKey(this.archives[archiveIndex].FileEntries[fileIndex].FileName) == true)
+                    {
+                        // Create a new list that is 1 element larger than the old.
+                        DatumIndex[] newFileDatums = new DatumIndex[dictToAdd[this.archives[archiveIndex].FileEntries[fileIndex].FileName].Length + 1];
+                        Array.Copy(dictToAdd[this.archives[archiveIndex].FileEntries[fileIndex].FileName], newFileDatums, newFileDatums.Length - 1);
+
+                        // Add the new file datum to the list.
+                        newFileDatums[newFileDatums.Length - 1] = newDatums[i];
+                        dictToAdd[this.archives[archiveIndex].FileEntries[fileIndex].FileName] = newFileDatums;
+                    }
+                    else
+                    {
+                        // Create a new entry in the dictionary.
+                        dictToAdd.Add(this.archives[archiveIndex].FileEntries[fileIndex].FileName, new DatumIndex[] { newDatums[i] });
+                    }
+                }
+
+                // Files added successfully.
+                return true;
+            }
+
+            // Create a new archive using the file path provided.
+            Archive archive = new Archive(archiveFilePath, this.nextArchiveId++, true);
+
+            // Add the files to the archive.
+            if (archive.AddFiles(newFileNames, filePaths, out DatumIndex[] _) == false)
             {
                 // Failed to create and add the files to the archive.
                 return false;
@@ -521,6 +655,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
             // Create the mods tree node.
             modsNode = new TreeNode("Mods");
+            modsNode.Name = "Mods";
             modsNode.ForeColor = System.Drawing.Color.Blue;
             modsNode.SelectedImageIndex = modsNode.ImageIndex = (int)UIIcon.FolderBlue;
             modsNode.Tag = new TreeNodeTag(true, new DatumIndex(DatumIndex.Unassigned), false);
@@ -528,6 +663,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
             // Create the game files tree node.
             gameFilesNode = new TreeNode("Game Files");
+            gameFilesNode.Name = "Game Files";
             gameFilesNode.SelectedImageIndex = gameFilesNode.ImageIndex = (int)UIIcon.Folder;
             gameFilesNode.Tag = new TreeNodeTag(false, new DatumIndex(DatumIndex.Unassigned), false);
             root.Nodes.Add(gameFilesNode);
@@ -637,6 +773,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
                         previousNode = new TreeNode(this.archives[i].FileEntries[x].FileType.ToString());
                         previousNode.Name = this.archives[i].FileEntries[x].FileType.ToString();
                         previousNode.Tag = new TreeNodeTag(this.archives[i].IsPatchFile, new DatumIndex(DatumIndex.Unassigned), false);
+                        previousNode.SelectedImageIndex = previousNode.ImageIndex = (int)(this.archives[i].IsPatchFile == true ? UIIcon.FolderBlue : UIIcon.Folder);
 
                         // Add the node to the corresponding files node.
                         if (this.archives[i].IsPatchFile == true)
@@ -661,7 +798,8 @@ namespace DeadRisingArcTool.FileFormats.Archive
             string[] pieces = filePath.Split(new string[] { "\\" }, StringSplitOptions.None);
 
             // Check if this file is overrided by a patch file.
-            bool isOverrided = this.patchArchiveFileNameReverseDictionary.ContainsKey(filePath);
+            bool isOverrided = isPatchFile == false ? this.patchArchiveFileNameReverseDictionary.ContainsKey(filePath) :
+                this.archiveFileNameReverseDictionary.ContainsKey(filePath);
 
             // Loop through all of the pieces and add each one to the tree node.
             TreeNode previousNode = root;
@@ -710,11 +848,11 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 // Check if we need to set additional properties.
                 if (z == pieces.Length - 1)
                 {
-                    // Set the file datum for the node tag.
+                    // Set the node tag.
                     newNode.Tag = new TreeNodeTag(isPatchFile, datum, true, isOverrided);
 
                     // If there is no resource editor for this node set the color to red.
-                    if (GameResource.ResourceParsers.ContainsKey(fileType) == false)
+                    if ((isOverrided == false || isPatchFile == true) && GameResource.ResourceParsers.ContainsKey(fileType) == false)
                     {
                         // No resource editor for this file type, set the node color to red.
                         newNode.ForeColor = System.Drawing.Color.Red;

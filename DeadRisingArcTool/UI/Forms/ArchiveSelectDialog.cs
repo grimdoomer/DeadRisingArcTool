@@ -50,7 +50,7 @@ namespace DeadRisingArcTool.Forms
         /// </summary>
         public bool HideGameArchives { get; private set; }
 
-        public ArchiveSelectDialog(ArchiveSelectReason reason, bool hideGameArchives)
+        public ArchiveSelectDialog(ArchiveSelectReason reason, bool hideGameArchives, bool allowCreateNew = true)
         {
             InitializeComponent();
 
@@ -62,6 +62,9 @@ namespace DeadRisingArcTool.Forms
             this.lstArchives.SmallImageList = IconSet.Instance.IconImageList;
             this.treeView1.ImageList = IconSet.Instance.IconImageList;
 
+            // Set the new archive button enabled state.
+            this.btnNewArchive.Enabled = allowCreateNew;
+
             // Change UI options for the selection reason.
             if (this.SelectReason == ArchiveSelectReason.LoadArchives)
             {
@@ -72,6 +75,10 @@ namespace DeadRisingArcTool.Forms
             {
                 // Hide the list view.
                 this.lstArchives.Visible = false;
+
+                // Disable select/clear all.
+                this.btnSelectAll.Enabled = false;
+                this.btnClearAll.Enabled = false;
 
                 // Change the load button text.
                 this.btnLoadArchives.Text = "Copy Files";
@@ -253,13 +260,14 @@ namespace DeadRisingArcTool.Forms
             this.SelectedFolder = fbd.SelectedPath;
 
             // Check if we should load patch files or not.
-            if (Properties.Settings.Default.LoadPatchFiles == true)
+            //if (Properties.Settings.Default.LoadPatchFiles == true)
             {
                 // Get the length of the patch folder path for string manipulation.
-                int fileNameStartIndex = Properties.Settings.Default.PatchFileDirectory.Length + 1;
+                string patchFileDirectory = fbd.SelectedPath + "\\Mods";
+                int fileNameStartIndex = patchFileDirectory.Length + 1;
 
                 // Scan the patch folder and add each archive to the list.
-                string[] patchArchives = FindArchivesInFolder(Properties.Settings.Default.PatchFileDirectory, true, false);
+                string[] patchArchives = FindArchivesInFolder(patchFileDirectory, true, false);
                 for (int i = 0; i < patchArchives.Length; i++)
                 {
                     // Add the archive to our tracking list
@@ -319,7 +327,7 @@ namespace DeadRisingArcTool.Forms
 
                 // Create a new tree node for the archive.
                 TreeNode archiveNode = new TreeNode(archive.FileName.Substring(archive.FileName.LastIndexOf("\\") + 1));
-                archiveNode.ImageIndex = (int)(archive.IsPatchFile == true ? UIIcon.PatchArchive : UIIcon.Archive);
+                archiveNode.SelectedImageIndex = archiveNode.ImageIndex = (int)(archive.IsPatchFile == true ? UIIcon.PatchArchive : UIIcon.Archive);
                 archiveNode.Tag = archiveIndex;
 
                 // Loop through all of the files in the archive and built the folder hierarchy.

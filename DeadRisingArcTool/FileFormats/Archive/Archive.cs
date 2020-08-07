@@ -450,8 +450,126 @@ namespace DeadRisingArcTool.FileFormats.Archive
         /// <param name="datums">File ids for files to be added to the archive, files must be loaded in the <see cref="ArchiveCollection"/></param>
         /// <param name="fileNames">New file names for the files being added</param>
         /// <returns>True if the files were added successfully, false otherwise</returns>
-        public bool AddFilesFromDatums(DatumIndex[] datums, string[] fileNames)
+        public bool AddFilesFromDatums(DatumIndex[] datums, string[] fileNames, out DatumIndex[] newDatums)
         {
+            // Satisfy the compiler.
+            newDatums = new DatumIndex[0];
+
+            // Open the archive for reading only in case we are duplicating a file.
+            if (OpenArchive(false) == false)
+            {
+                // Failed to open the archive for reading.
+                return false;
+            }
+
+            // Create a new memory stream to hold compressed file data.
+            List<int> fileOffsets = new List<int>();
+            MemoryStream dataStream = new MemoryStream((int)this.reader.BaseStream.Length);
+
+            // Loop through all the files in the archive and read each one into the memory stream.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Seek to the data offset.
+                this.reader.BaseStream.Position = this.fileEntries[i].DataOffset;
+
+                // Read the compressed file data.
+                byte[] compressedData = this.reader.ReadBytes(this.fileEntries[i].CompressedSize);
+
+                // Save the data offset and write the compressed data to the memory stream.
+                fileOffsets.Add((int)dataStream.Position);
+                dataStream.Write(compressedData, 0, compressedData.Length);
+            }
+
+            // Close the archive for now.
+            CloseArchive();
+
+            // Loop through all the files to be added to the archive.
+            newDatums = new DatumIndex[datums.Length];
+            for (int i = 0; i < datums.Length; i++)
+            {
+                // Get the file entry for this archive.
+                ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(datums[i], out Archive archive, out ArchiveFileEntry fileEntry);
+
+                // Decompress the file contents.
+                byte[] compressedData = archive.GetCompressedFileContents(fileEntry.FileId);
+
+                // Create a new file entry for this file.
+                ArchiveFileEntry newFileEntry = new ArchiveFileEntry();
+                newFileEntry.FileName = fileNames[i] + "." + fileEntry.FileType.ToString();
+                newFileEntry.CompressedSize = compressedData.Length;
+                newFileEntry.DecompressedSize = fileEntry.DecompressedSize;
+                newFileEntry.FileId = this.nextFileId++;
+                newFileEntry.FileType = fileEntry.FileType;
+
+                // Copy the new datum to the output list.
+                newDatums[i] = new DatumIndex(this.ArchiveId, newFileEntry.FileId);
+
+                // Add the file entry to the list and create a reverse lookup entry.
+                this.fileEntryLookupDictionary.Add(newFileEntry.FileId, this.fileEntries.Count);
+                this.fileEntries.Add(newFileEntry);
+
+                // Add the data offset to the list and write the compressed data to the data stream.
+                fileOffsets.Add((int)dataStream.Position);
+                dataStream.Write(compressedData, 0, compressedData.Length);
+            }
+
+            // Reopen the archive for writing.
+            if (OpenArchive(true) == false)
+            {
+                // Failed to open the archive for writing.
+                return false;
+            }
+
+            // Update the header for the new file count.
+            this.writer.BaseStream.Position = 0;
+            this.writer.Write(ArchiveHeader.kHeaderMagic1);
+            this.writer.Write((short)ArchiveHeader.kVersion);
+            this.writer.Write((short)this.fileEntries.Count);
+
+            // Calculate the data start offset based on the new number of files.
+            int dataStart = ArchiveHeader.kSizeOf + (this.fileEntries.Count * ArchiveFileEntry.kSizeOf);
+            if (dataStart % 0x8000 != 0)
+                dataStart += 0x8000 - (dataStart % 0x8000);
+
+            // Loop and write all the file entries.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Write the file entry.
+                string fileName = this.fileEntries[i].GetFileNameNoExtension();
+                this.writer.Write(fileName.ToCharArray());
+                this.writer.Write(new byte[ArchiveFileEntry.kMaxFileNameLength - fileName.Length]);
+
+                // If we know the file type for this file get the file type id.
+                if (GameResource.KnownResourceTypesReverse.ContainsKey(this.fileEntries[i].FileType) == true)
+                    this.writer.Write(GameResource.KnownResourceTypesReverse[this.fileEntries[i].FileType]);
+                else
+                    this.writer.Write((int)this.fileEntries[i].FileType);
+
+                this.writer.Write(this.fileEntries[i].CompressedSize);
+                this.writer.Write(this.fileEntries[i].DecompressedSize);
+                this.writer.Write(dataStart + fileOffsets[i]);
+
+                // Update the file offset.
+                this.fileEntries[i].DataOffset = dataStart + fileOffsets[i];
+            }
+
+            // Fill the rest with padding.
+            this.writer.Write(new byte[dataStart - (int)this.writer.BaseStream.Position]);
+
+            // Write the data stream and calculate the new file size.
+            this.writer.Write(dataStream.ToArray(), 0, (int)dataStream.Length);
+            this.fileStream.SetLength(this.writer.BaseStream.Position);
+
+            // Close the archive.
+            CloseArchive();
+            return true;
+        }
+
+        public bool AddFiles(string[] newFileNames, string[] filePaths, out DatumIndex[] newDatums)
+        {
+            // Satisfy the compiler.
+            newDatums = new DatumIndex[0];
+
             // Open the archive for writing.
             if (OpenArchive(true) == false)
             {
@@ -477,22 +595,27 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 dataStream.Write(compressedData, 0, compressedData.Length);
             }
 
-            // Loop through all the files to be added to the archive.
-            for (int i = 0; i < datums.Length; i++)
+            // Loop through all of the new files and create file entries for each one.
+            newDatums = new DatumIndex[newFileNames.Length];
+            for (int i = 0; i < newFileNames.Length; i++)
             {
-                // Get the file entry for this archive.
-                ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(datums[i], out Archive archive, out ArchiveFileEntry fileEntry);
+                // Read the file contents and compress it.
+                byte[] decompressedData = File.ReadAllBytes(filePaths[i]);
+                byte[] compressedData = ZlibUtilities.CompressData(decompressedData);
 
-                // Decompress the file contents.
-                byte[] compressedData = archive.GetCompressedFileContents(fileEntry.FileId);
+                // Get the resource type from the file extension.
+                ResourceType fileType = (ResourceType)Enum.Parse(typeof(ResourceType), filePaths[i].Substring(filePaths[i].LastIndexOf('.') + 1), true);
 
                 // Create a new file entry for this file.
                 ArchiveFileEntry newFileEntry = new ArchiveFileEntry();
-                newFileEntry.FileName = fileNames[i] + "." + fileEntry.FileType.ToString();
+                newFileEntry.FileName = newFileNames[i] + "." + fileType.ToString();
                 newFileEntry.CompressedSize = compressedData.Length;
-                newFileEntry.DecompressedSize = fileEntry.DecompressedSize;
+                newFileEntry.DecompressedSize = decompressedData.Length;
                 newFileEntry.FileId = this.nextFileId++;
-                newFileEntry.FileType = fileEntry.FileType;
+                newFileEntry.FileType = fileType;
+
+                // Copy the new datum to the output list.
+                newDatums[i] = new DatumIndex(this.ArchiveId, newFileEntry.FileId);
 
                 // Add the file entry to the list and create a reverse lookup entry.
                 this.fileEntryLookupDictionary.Add(newFileEntry.FileId, this.fileEntries.Count);
@@ -768,7 +891,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
             }
 
             // Update the file entry.
-            this.fileEntries[fileIndex].FileName = newFileName;
+            this.fileEntries[fileIndex].FileName = newFileName + "." + this.fileEntries[fileIndex].FileType.ToString();
 
             // Seek to the offset of the file entry.
             this.writer.BaseStream.Position = ArchiveHeader.kSizeOf + (fileIndex * ArchiveFileEntry.kSizeOf);

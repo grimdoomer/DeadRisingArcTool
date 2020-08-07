@@ -25,6 +25,18 @@ namespace DeadRisingArcTool
 {
     public partial class MainForm : Form, IResourceEditorOwner
     {
+        public class CopyPastInfo
+        {
+            /// <summary>
+            /// Array of datums to be copied
+            /// </summary>
+            public DatumIndex[] DatumsToCopy;
+            /// <summary>
+            /// File path of where the copy operation was performed, used for splicing file paths.
+            /// </summary>
+            public string CopyRootPath;
+        }
+
         [Flags]
         public enum TreeViewMenuState : uint
         {
@@ -37,6 +49,10 @@ namespace DeadRisingArcTool
             /// Menu option bypassed any restrictions set by the selected tree node's tag property.
             /// </summary>
             BypassNodeTagMenuRestrictions = 2,
+            /// <summary>
+            /// Menu option requires valid copy paste info to be set.
+            /// </summary>
+            RequiresCopyPasteInfo = 4,
 
             /// <summary>
             /// Tree view context menu options for patch files only.
@@ -83,7 +99,8 @@ namespace DeadRisingArcTool
         List<GameResourceEditorControl> resourceEditors = new List<GameResourceEditorControl>();
         int activeResourceEditor = -1;
 
-        // 
+        // Copy past info.
+        CopyPastInfo copyPasteInfo = null;
 
         public MainForm()
         {
@@ -99,9 +116,9 @@ namespace DeadRisingArcTool
             this.extractToolStripMenuItem.Tag = TreeViewMenuState.PatchOrGameFilesMask;
             this.copyToolStripMenuItem.Tag = TreeViewMenuState.PatchOrGameFilesMask | TreeViewMenuState.PatchOrGameFoldersMask;
             this.toArchiveToolStripMenuItem.Tag = TreeViewMenuState.PatchOrGameFilesMask | TreeViewMenuState.PatchOrGameFoldersMask;
-            this.pasteToolStripMenuItem.Tag = TreeViewMenuState.PatchFoldersOnly;
+            this.pasteToolStripMenuItem.Tag = TreeViewMenuState.PatchFoldersOnly | TreeViewMenuState.RequiresCopyPasteInfo;
             this.duplicateToolStripMenuItem.Tag = TreeViewMenuState.PatchFilesOnly;
-            this.renameToolStripMenuItem.Tag = TreeViewMenuState.PatchFilesAndFoldersMask;
+            this.renameToolStripMenuItem.Tag = TreeViewMenuState.PatchFilesOnly;
             this.deleteToolStripMenuItem.Tag = TreeViewMenuState.PatchFilesAndFoldersMask;
 
             this.sortByToolStripMenuItem.Tag = TreeViewMenuState.BypassNodeTagMenuRestrictions | TreeViewMenuState.PatchOrGameFilesMask | TreeViewMenuState.PatchOrGameFoldersMask;
@@ -150,7 +167,7 @@ namespace DeadRisingArcTool
             this.Enabled = false;
 
             // Show the archive select dialog.
-            ArchiveSelectDialog selectDialog = new ArchiveSelectDialog(ArchiveSelectReason.LoadArchives, false);
+            ArchiveSelectDialog selectDialog = new ArchiveSelectDialog(ArchiveSelectReason.LoadArchives, false, false);
             if (selectDialog.ShowDialog() == DialogResult.OK)
             {
                 // Setup the background worker.
@@ -476,10 +493,31 @@ namespace DeadRisingArcTool
                     if (state == TreeViewMenuState.None)
                         menuItems[i].Enabled = false;
                     else if (((int)flags & (int)state) != 0)
-                        menuItems[i].Enabled = true;
+                    {
+                        // If the copy has copy paste info flag is set it must be checked explicitly.
+                        if (flags.HasFlag(TreeViewMenuState.RequiresCopyPasteInfo) == true)
+                        {
+                            // Explicitly check the copy paste info.
+                            if (this.copyPasteInfo != null)
+                                menuItems[i].Enabled = true;
+                            else
+                                menuItems[i].Enabled = false;
+                        }
+                        else
+                            menuItems[i].Enabled = true;
+                    }
                     else
                         menuItems[i].Enabled = false;
                 }
+            }
+
+            // HACK: Block copy paste operations when the tree view is sorted by file type.
+            TreeNodeOrder order = GetTreeViewSortOrder();
+            if (order == TreeNodeOrder.ResourceType)
+            {
+                // Disable the copy and paste buttons.
+                this.copyToolStripMenuItem.Enabled = false;
+                this.pasteToolStripMenuItem.Enabled = false;
             }
         }
 
@@ -506,6 +544,113 @@ namespace DeadRisingArcTool
 
             // Return the collection of menu items found.
             return menuItems.ToArray();
+        }
+
+        private void RecolorTreeViewNodes()
+        {
+            // Get the patch file and game file tree nodes.
+            TreeNode patchFilesNode = this.treeView1.Nodes.Find("Mods", false)?[0];
+            TreeNode gameFilesNode = this.treeView1.Nodes.Find("Game Files", false)?[0];
+            if (gameFilesNode == null)
+                return;
+
+            // If the patch node exists loop and clear the override color on all child nodes.
+            if (patchFilesNode != null)
+            {
+                // Loop and clear the color on all child nodes.
+                for (int i = 0; i < patchFilesNode.Nodes.Count; i++)
+                {
+                    // Recursively clear tree node color.
+                    ClearTreeNodeOverrideColor(patchFilesNode.Nodes[i]);
+                }
+            }
+
+            // Loop and clear the color on all child nodes under the game files node.
+            for (int i = 0; i < gameFilesNode.Nodes.Count; i++)
+            {
+                // Recursively clear tree node color.
+                ClearTreeNodeOverrideColor(gameFilesNode.Nodes[i]);
+            }
+
+            // Get the list of override files from the archive collection.
+            string[] overrideFiles = ArchiveCollection.Instance.PatchFileNames;
+
+            // Loop through the override files and color nodes for all of them in both the patch files and game files nodes.
+            for (int i = 0; i < overrideFiles.Length; i++)
+            {
+                // Get just the file name for the current override file.
+                string fileName = overrideFiles[i];
+                int index = fileName.LastIndexOf('\\');
+                if (index != -1)
+                    fileName = fileName.Substring(index + 1);
+
+                // Check if the node exists in the game files node.
+                TreeNode[] nodesFound = gameFilesNode.Nodes.Find(fileName, true).Where(n => n.FullPath.EndsWith(overrideFiles[i], StringComparison.OrdinalIgnoreCase) == true).ToArray();
+                if (nodesFound.Length > 0)
+                {
+                    // Loop through all of the nodes and recolor them.
+                    for (int x = 0; x < nodesFound.Length; x++)
+                    {
+                        // Recolor the node recursively.
+                        for (TreeNode node = nodesFound[x]; node != gameFilesNode; node = node.Parent)
+                            node.ForeColor = System.Drawing.Color.Blue;
+                    }
+
+                    // Get the patch files nodes for this file path and recolor them all.
+                    nodesFound = patchFilesNode.Nodes.Find(fileName, true).Where(n => n.FullPath.EndsWith(overrideFiles[i], StringComparison.OrdinalIgnoreCase) == true).ToArray();
+                    for (int x = 0; x < nodesFound.Length; x++)
+                    {
+                        // Get the tree node tag for this node.
+                        TreeNodeTag nodeTag = (TreeNodeTag)nodesFound[x].Tag;
+                        ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(nodeTag.Datum, out Archive _, out ArchiveFileEntry fileEntry);
+
+                        // If there is a resource editor for this file type color it blue, else red.
+                        if (GameResource.ResourceParsers.ContainsKey(fileEntry.FileType) == true)
+                            nodesFound[x].ForeColor = System.Drawing.Color.Blue;
+                        else
+                            nodesFound[x].ForeColor = System.Drawing.Color.Red;
+
+                        // Recolor the node recursively.
+                        for (TreeNode node = nodesFound[x].Parent; node != patchFilesNode; node = node.Parent)
+                            node.ForeColor = System.Drawing.Color.Blue;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Recursively clears the override text color for the specified treenode and all child nodes.
+        /// </summary>
+        /// <param name="parent"></param>
+        private void ClearTreeNodeOverrideColor(TreeNode parent)
+        {
+            // If the parent node color is not blue bail out.
+            if (parent.ForeColor != System.Drawing.Color.Blue)
+                return;
+
+            // Clear the text color on the parent.
+            parent.ForeColor = System.Drawing.Color.Empty;
+
+            // If there are no child nodes check if there is an editor for this node.
+            if (parent.Nodes.Count == 0)
+            {
+                // Get the file entry from the node's tag.
+                TreeNodeTag nodeTag = (TreeNodeTag)parent.Tag;
+                ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(nodeTag.Datum, out Archive _, out ArchiveFileEntry fileEntry);
+
+                // Check if there is a resource editor for this file type.
+                if (GameResource.ResourceParsers.ContainsKey(fileEntry.FileType) == false)
+                {
+                    // Set the node color to red.
+                    parent.ForeColor = System.Drawing.Color.Red;
+                }
+            }
+            else
+            {
+                // Recursively recolor all child nodes.
+                for (int i = 0; i < parent.Nodes.Count; i++)
+                    ClearTreeNodeOverrideColor(parent.Nodes[i]);
+            }
         }
 
         #endregion
@@ -601,7 +746,93 @@ namespace DeadRisingArcTool
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            // Disable the main form.
+            this.Enabled = false;
 
+            // Prompt the user to browse for a file of any type (we will validate later on).
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Multiselect = true;
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                // Create a list of valid file extensions from known resource types.
+                string[] knownResourceTypes = Enum.GetValues(typeof(ResourceType)).Cast<ResourceType>().Select(t => t.ToString().ToLower()).ToArray();
+
+                // Validate the file extensions.
+                List<string> validFilePaths = new List<string>();
+                for (int i = 0; i < ofd.FileNames.Length; i++)
+                {
+                    // Get the file extension from the file path.
+                    string fileExt = ofd.FileNames[i].Substring(ofd.FileNames[i].LastIndexOf('.') + 1);
+                    if (knownResourceTypes.Contains(fileExt.ToLower()) == false)
+                    {
+                        // Unrecognized file extension.
+                        string fileName = ofd.FileNames[i].Substring(ofd.FileName.LastIndexOf('\\') + 1);
+                        if (MessageBox.Show(string.Format("File '{0}' has an unsupported file extension, would like to skip this file and continue?", fileName),
+                            "Unrecognized file type", MessageBoxButtons.YesNo) == DialogResult.No)
+                        {
+                            // Bail out.
+                            this.Enabled = true;
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        // Add the file path to the valid files list.
+                        validFilePaths.Add(ofd.FileNames[i]);
+                    }
+                }
+
+                // Get the root path of where the add operation is being performed.
+                string folderPath = this.treeView1.SelectedNode.FullPath;
+                folderPath = folderPath.Substring(folderPath.IndexOf('\\') + 1);
+                int index = folderPath.IndexOf('\\');
+                if (index != -1)
+                    folderPath = folderPath.Substring(folderPath.IndexOf('\\') + 1);
+                else
+                    folderPath = "";
+
+                // Loop and create new file names for all the files.
+                string[] newFileNames = new string[validFilePaths.Count];
+                for (int i = 0; i < validFilePaths.Count; i++)
+                {
+                    // Format the new file path.
+                    if (folderPath.Length > 0)
+                        newFileNames[i] = string.Format("{0}\\{1}", folderPath, validFilePaths[i].Substring(validFilePaths[i].LastIndexOf('\\') + 1));
+                    else
+                        newFileNames[i] = validFilePaths[i].Substring(validFilePaths[i].LastIndexOf('\\') + 1);
+                }
+
+                // HACK: Get the list of child datums for the selected node so we know what archive to add the files to.
+                DatumIndex[] childDatums = GetChildNodeDatums(this.treeView1.SelectedNode);
+                ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(childDatums[0], out Archive archive, out ArchiveFileEntry _);
+
+                // Show the renamer dialog to get proper files names for the files being added.
+                RenameFileDialog renameDialog = new RenameFileDialog(newFileNames, archive.FileName);
+                if (renameDialog.ShowDialog() == DialogResult.OK)
+                {
+                    // Add the files to the archive using the new file names.
+                    if (ArchiveCollection.Instance.AddFilesToArchive(archive.FileName, renameDialog.NewFileNames, validFilePaths.ToArray()) == false)
+                    {
+                        // Display an error to ther user.
+                        MessageBox.Show("Failed to add files to the archive!");
+                    }
+                    else
+                    {
+                        // Determine what the current sort order is for the treeview.
+                        TreeNodeOrder order = GetTreeViewSortOrder();
+
+                        // Reload the tree view as there is no easy to update it without traversing every node anyway.
+                        SetTreeViewSortOrder(order);
+
+                        // Files were successfully added to the archive.
+                        MessageBox.Show(string.Format("Successfully added {0} files to {1}!", 
+                            validFilePaths.Count, archive.FileName.Substring(archive.FileName.LastIndexOf("\\") + 1)));
+                    }
+                }
+            }
+
+            // Re-enable the form.
+            this.Enabled = true;
         }
 
         private void btnCopyTo_Click(object sender, EventArgs e)
@@ -622,11 +853,11 @@ namespace DeadRisingArcTool
                 {
                     // Get the file entry for this datum.
                     ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(fileDatums[i], out Archive archive, out ArchiveFileEntry fileEntry);
-                    fileNames[i] = fileEntry.GetFileNameNoExtension();
+                    fileNames[i] = fileEntry.FileName;
                 }
 
                 // Show the renamer dialog.
-                RenameFileDialog renameDialog = new RenameFileDialog(fileNames);
+                RenameFileDialog renameDialog = new RenameFileDialog(fileNames, selectDialog.SelectedArchives[0].Item1);
                 if (renameDialog.ShowDialog() == DialogResult.OK)
                 {
                     // Add the files to the archive.
@@ -650,28 +881,192 @@ namespace DeadRisingArcTool
                 }
             }
 
-            //Re-enable the form.
+            // Clear copy paste info.
+            this.copyPasteInfo = null;
+
+            // Re-enable the form.
             this.Enabled = true;
         }
 
         private void copyToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Create a new copy paste info struct to fill with info.
+            this.copyPasteInfo = new CopyPastInfo();
+            this.copyPasteInfo.DatumsToCopy = GetChildNodeDatums(this.treeView1.SelectedNode);
 
+            // Set the copy root to the parent of the selected node.
+            if (this.treeView1.SelectedNode.Parent != null && this.treeView1.SelectedNode.Parent.Text != "Mods" && this.treeView1.SelectedNode.Parent.Text != "Game Files")
+            {
+                // Get the full path for the parent node, and remove the upper most folder for it (Game Files or Mods).
+                string folderPath = this.treeView1.SelectedNode.Parent.FullPath;
+                this.copyPasteInfo.CopyRootPath = folderPath.Substring(folderPath.IndexOf('\\') + 1);
+            }
+            else
+            {
+                // We are copying from the root of the archive.
+                this.copyPasteInfo.CopyRootPath = "";
+            }
         }
 
         private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Disable the main form.
+            this.Enabled = false;
 
+            // Get the root path of where the paste operation is being performed.
+            string folderPath = this.treeView1.SelectedNode.FullPath;
+            folderPath = folderPath.Substring(folderPath.IndexOf('\\') + 1);
+            int index = folderPath.IndexOf('\\');
+            if (index != -1)
+                folderPath = folderPath.Substring(folderPath.IndexOf('\\') + 1);
+            else
+                folderPath = "";
+
+            // Loop through all of the datums that are on the clipboard and create new file names for them.
+            string[] newFileNames = new string[this.copyPasteInfo.DatumsToCopy.Length];
+            for (int i = 0; i < this.copyPasteInfo.DatumsToCopy.Length; i++)
+            {
+                // Get the file info for this datum.
+                ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(this.copyPasteInfo.DatumsToCopy[i], out Archive _, out ArchiveFileEntry fileEntry);
+
+                // If the files were copied from a child folder, remove parent folder names.
+                string relativeFilePath = fileEntry.FileName;
+                if (this.copyPasteInfo.CopyRootPath.Length > 0)
+                    relativeFilePath = relativeFilePath.Substring(this.copyPasteInfo.CopyRootPath.Length + 1);
+
+                // Format the new file name.
+                if (folderPath.Length > 0)
+                    newFileNames[i] = string.Format("{0}\\{1}", folderPath, relativeFilePath);
+                else
+                    newFileNames[i] = relativeFilePath;
+            }
+
+            // HACK: Get the list of child datums for the selected node so we know what archive to paste the files into.
+            DatumIndex[] childDatums = GetChildNodeDatums(this.treeView1.SelectedNode);
+            ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(childDatums[0], out Archive archive, out ArchiveFileEntry _);
+
+            // Show the renamer dialog to get proper files names for the files being pasted.
+            RenameFileDialog renameDialog = new RenameFileDialog(newFileNames, archive.FileName);
+            if (renameDialog.ShowDialog() == DialogResult.OK)
+            {
+                // Add the files to the archive using the new file names.
+                if (ArchiveCollection.Instance.AddFilesToArchive(archive.FileName, this.copyPasteInfo.DatumsToCopy, renameDialog.NewFileNames) == false)
+                {
+                    // Display an error to ther user.
+                    MessageBox.Show("Failed to add files to the archive!");
+                }
+                else
+                {
+                    // Determine what the current sort order is for the treeview.
+                    TreeNodeOrder order = GetTreeViewSortOrder();
+
+                    // Reload the tree view as there is no easy to update it without traversing every node anyway.
+                    SetTreeViewSortOrder(order);
+
+                    // Files were successfully added to the archive.
+                    MessageBox.Show(string.Format("Successfully added {0} files to {1}!", 
+                        this.copyPasteInfo.DatumsToCopy.Length, archive.FileName.Substring(archive.FileName.LastIndexOf("\\") + 1)));
+
+                    // Clear the copy paste info.
+                    this.copyPasteInfo = null;
+                }
+            }
+
+            // Re-enable the form.
+            this.Enabled = true;
         }
 
         private void duplicateToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Disable the main form.
+            this.Enabled = false;
 
+            // Get the datum index for the selected node.
+            TreeNodeTag nodeTag = (TreeNodeTag)this.treeView1.SelectedNode.Tag;
+
+            // Get the archive and file entry for the selected file.
+            ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(nodeTag.Datum, out Archive archive, out ArchiveFileEntry fileEntry);
+
+            // Loop and create a unique file name for the new file.
+            string newFileName = "";
+            string[] existingFileNames = archive.FileEntries.Select(f => f.GetFileNameNoExtension()).ToArray();
+            for (int i = 1; ; i++)
+            {
+                // Check if the next file name is unique.
+                newFileName = string.Format("{0}_({1})", fileEntry.GetFileNameNoExtension(), i);
+                if (existingFileNames.Contains(newFileName) == false)
+                {
+                    // Found a unique file name, break the loop.
+                    break;
+                }
+            }
+
+            // Duplicate the file.
+            if (archive.AddFilesFromDatums(new DatumIndex[] { nodeTag.Datum }, new string[] { newFileName }, out DatumIndex[] _) == true)
+            {
+                // Determine what the current sort order is for the treeview.
+                TreeNodeOrder order = GetTreeViewSortOrder();
+
+                // Reload the tree view as there is no easy to update it without traversing every node anyway.
+                SetTreeViewSortOrder(order);
+
+                // Set the selected tree node.
+                string nodeName = newFileName.Substring(newFileName.LastIndexOf('\\') + 1) + "." + fileEntry.FileType.ToString();
+                string nodePath = string.Format("{0}.{1}", newFileName, fileEntry.FileType.ToString());
+                this.treeView1.SelectedNode = this.treeView1.Nodes.Find(nodeName, true).Where(n => n.FullPath.EndsWith(nodePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            }
+            else
+            {
+                // Failed to duplicate the file.
+                MessageBox.Show("Failed to duplicate the file!");
+            }
+
+            // Re-enable the form.
+            this.Enabled = true;
         }
 
         private void btnRename_Click(object sender, EventArgs e)
         {
+            // Disable the main form.
+            this.Enabled = false;
 
+            // Get the datum index for the selected node.
+            TreeNodeTag nodeTag = (TreeNodeTag)this.treeView1.SelectedNode.Tag;
+
+            // Get the archive and file entry for the selected file.
+            ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(nodeTag.Datum, out Archive archive, out ArchiveFileEntry fileEntry);
+
+            // Show the renamer dialog.
+            RenameFileDialog renameDialog = new RenameFileDialog(new string[] { fileEntry.FileName }, archive.FileName);
+            if (renameDialog.ShowDialog() == DialogResult.OK)
+            {
+                // Rename the file.
+                if (archive.RenameFile(nodeTag.Datum.FileId, renameDialog.NewFileNames[0]) == true)
+                {
+                    // Determine what the current sort order is for the treeview.
+                    TreeNodeOrder order = GetTreeViewSortOrder();
+
+                    // Reload the tree view as there is no easy to update it without traversing every node anyway.
+                    SetTreeViewSortOrder(order);
+
+                    // Set the selected tree node.
+                    string newFileName = renameDialog.NewFileNames[0];
+                    string nodeName = newFileName.Substring(newFileName.LastIndexOf('\\') + 1) + "." + fileEntry.FileType.ToString();
+                    string nodePath = string.Format("{0}.{1}", newFileName, fileEntry.FileType.ToString());
+                    this.treeView1.SelectedNode = this.treeView1.Nodes.Find(nodeName, true).Where(n => n.FullPath.EndsWith(nodePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                }
+                else
+                {
+                    // Failed to rename the file.
+                    MessageBox.Show("Failed to rename the file!");
+                }
+            }
+
+            // Clear copy paste info.
+            this.copyPasteInfo = null;
+
+            // Re-enable the form.
+            this.Enabled = true;
         }
 
         private void deleteToolStripMenuItem_Click(object sender, EventArgs e)
@@ -683,44 +1078,60 @@ namespace DeadRisingArcTool
             DatumIndex[] datumsToDelete = GetChildNodeDatums(this.treeView1.SelectedNode);
 
             // Delete the files from their respective archives.
-            if (ArchiveCollection.Instance.DeleteFiles(datumsToDelete, out DatumIndex[] datumsDeleted) == true && datumsToDelete.Length == datumsDeleted.Length)
+            if (ArchiveCollection.Instance.DeleteFiles(datumsToDelete, out DatumIndex[] datumsDeleted) == true)
             {
-                // Remove the selected node from the treeview.
-                TreeNode currentNode = this.treeView1.SelectedNode;
-                while (currentNode != null)
+                // Check if all the files were deleted or not.
+                if (datumsToDelete.Length == datumsDeleted.Length)
                 {
-                    // Check if the current node has a valid parent before removal.
-                    TreeNode nodeToDelete = currentNode;
-                    if (currentNode.Parent != null && currentNode.Parent.Nodes.Count == 1)
-                        currentNode = currentNode.Parent;
-                    else
-                        currentNode = null;
+                    // Remove the selected node from the treeview.
+                    TreeNode currentNode = this.treeView1.SelectedNode;
+                    while (currentNode != null)
+                    {
+                        // Check if the current node has a valid parent before removal.
+                        TreeNode nodeToDelete = currentNode;
+                        if (currentNode.Parent != null && currentNode.Parent.Nodes.Count == 1)
+                            currentNode = currentNode.Parent;
+                        else
+                            currentNode = null;
 
-                    // Delete the current node.
-                    this.treeView1.Nodes.Remove(nodeToDelete);
+                        // Delete the current node.
+                        this.treeView1.Nodes.Remove(nodeToDelete);
+                    }
+                    this.treeView1.SelectedNode = null;
+
+                    // Recolor the tree nodes accordingly.
+                    RecolorTreeViewNodes();
+
+                    // If there are no more nodes in the treeview disable all context menu options.
+                    if (this.treeView1.Nodes.Count == 0)
+                        SetTreeViewMenuState(TreeViewMenuState.None);
+
+                    // Inform the user the operation was successful.
+                    MessageBox.Show(string.Format("Successfully deleted {0} file(s)!", datumsDeleted.Length));
                 }
-                this.treeView1.SelectedNode = null;
+                else if (datumsDeleted.Length > 0)
+                {
+                    // Determine what the current sort order is for the treeview.
+                    TreeNodeOrder order = GetTreeViewSortOrder();
 
-                // If there are no more nodes in the treeview disable all context menu options.
-                if (this.treeView1.Nodes.Count == 0)
-                    SetTreeViewMenuState(TreeViewMenuState.None);
+                    // Reload the tree view as there is no easy to update it without traversing every node anyway.
+                    SetTreeViewSortOrder(order);
 
-                // Inform the user the operation was successful.
-                MessageBox.Show(string.Format("Successfully deleted {0} file(s)!", datumsDeleted.Length));
+                    // TODO: Currently there are several issues here in trying to recover from this. Best approach is
+                    // to reload the app and archives. Duplicate files have made this an absolute nightmare.
+                    MessageBox.Show(string.Format("Successfully deleted {0} files out of {1}. It is recommended you restart ArcTool to properly reload these changes!",
+                        datumsDeleted.Length, datumsToDelete.Length));
+                }
             }
-            else if (datumsDeleted.Length > 0)
+            else
             {
-                // Determine what the current sort order is for the treeview.
+                // Delete operation failed, most likely due to abort, force reload the treeview.
                 TreeNodeOrder order = GetTreeViewSortOrder();
-
-                // Reload the tree view as there is no easy to update it without traversing every node anyway.
                 SetTreeViewSortOrder(order);
-
-                // TODO: Currently there are several issues here in trying to recover from this. Best approach is
-                // to reload the app and archives. Duplicate files have made this an absolute nightmare.
-                MessageBox.Show(string.Format("Successfully deleted {0} files out of {1}. It is recommended you restart ArcTool to properly reload these changes!", 
-                    datumsDeleted.Length, datumsToDelete.Length));
             }
+
+            // Clear copy paste info.
+            this.copyPasteInfo = null;
 
             // Re-enable the form.
             this.Enabled = true;
