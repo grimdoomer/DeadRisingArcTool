@@ -704,8 +704,8 @@ namespace DeadRisingArcTool
 
         private void SetTreeViewSortOrder(TreeNodeOrder order)
         {
-            // Set the main form to be disabled while we populate the tree view.
-            this.Enabled = false;
+            // Set the tree view to be disabled while we change the node collection.
+            this.treeView1.Enabled = false;
             this.treeView1.SuspendLayout();
 
             // Clear all the old nodes out of the tree view.
@@ -722,9 +722,13 @@ namespace DeadRisingArcTool
             for (int i = 0; i < this.treeView1.Nodes.Count; i++)
                 this.treeView1.Nodes[i].Expand();
 
-            // Resume the layout and enable the form.
+            // Select the very first node.
+            if (this.treeView1.Nodes.Count > 0)
+                this.treeView1.SelectedNode = this.treeView1.Nodes[0];
+
+            // Resume the layout and enable the treeview.
             this.treeView1.ResumeLayout();
-            this.Enabled = true;
+            this.treeView1.Enabled = true;
         }
 
         private TreeNodeOrder GetTreeViewSortOrder()

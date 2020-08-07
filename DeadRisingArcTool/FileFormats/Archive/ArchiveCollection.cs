@@ -683,7 +683,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 {
                     // Create a new tree node for the archive.
                     TreeNode archiveNode = new TreeNode(this.archives[i].FileName.Substring(this.archives[i].FileName.LastIndexOf("\\") + 1));
-                    archiveNode.SelectedImageIndex = archiveNode.ImageIndex = (int)UIIcon.FolderBlue;
+                    archiveNode.SelectedImageIndex = archiveNode.ImageIndex = (int)UIIcon.PatchArchive;
                     archiveNode.ForeColor = System.Drawing.Color.Blue;
                     archiveNode.Tag = new TreeNodeTag(true, new DatumIndex(DatumIndex.Unassigned)); ;
 
@@ -773,7 +773,7 @@ namespace DeadRisingArcTool.FileFormats.Archive
                         previousNode = new TreeNode(this.archives[i].FileEntries[x].FileType.ToString());
                         previousNode.Name = this.archives[i].FileEntries[x].FileType.ToString();
                         previousNode.Tag = new TreeNodeTag(this.archives[i].IsPatchFile, new DatumIndex(DatumIndex.Unassigned), false);
-                        previousNode.SelectedImageIndex = previousNode.ImageIndex = (int)(this.archives[i].IsPatchFile == true ? UIIcon.FolderBlue : UIIcon.Folder);
+                        previousNode.SelectedImageIndex = previousNode.ImageIndex = (int)(this.archives[i].IsPatchFile == true ? UIIcon.FileCollectionBlue : UIIcon.FileCollection);
 
                         // Add the node to the corresponding files node.
                         if (this.archives[i].IsPatchFile == true)

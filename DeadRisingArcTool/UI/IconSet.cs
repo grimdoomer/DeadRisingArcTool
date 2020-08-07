@@ -14,6 +14,8 @@ namespace DeadRisingArcTool.UI
         FolderBlue,
         Archive,
         PatchArchive,
+        FileCollection,
+        FileCollectionBlue,
         Model,
         Texture
     }
@@ -36,8 +38,10 @@ namespace DeadRisingArcTool.UI
             this.IconImageList.Images.Add(Properties.Resources.File);
             this.IconImageList.Images.Add(Properties.Resources.Folder);
             this.IconImageList.Images.Add(Properties.Resources.FolderBlue);
-            this.IconImageList.Images.Add(Properties.Resources.Database);
-            this.IconImageList.Images.Add(Properties.Resources.DatabaseAdd);
+            this.IconImageList.Images.Add(Properties.Resources.GameArchive);
+            this.IconImageList.Images.Add(Properties.Resources.PatchArchive);
+            this.IconImageList.Images.Add(Properties.Resources.FileBox);
+            this.IconImageList.Images.Add(Properties.Resources.FileBoxBlue);
             this.IconImageList.Images.Add(Properties.Resources.ObjectIcon);
             this.IconImageList.Images.Add(Properties.Resources.Texture);
 

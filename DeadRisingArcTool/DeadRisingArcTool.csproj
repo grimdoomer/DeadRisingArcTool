@@ -299,8 +299,10 @@
     <None Include="Resources\folder.png" />
     <None Include="Resources\texture_light.png" />
     <None Include="Resources\folder_blue.png" />
-    <None Include="Resources\database.png" />
-    <None Include="Resources\database_add.png" />
+    <None Include="Resources\network_folder_black.png" />
+    <None Include="Resources\network_folder_blue.png" />
+    <None Include="Resources\iconfinder_icon-141-box-filled_314509.png" />
+    <None Include="Resources\iconfinder_icon-141-box-filled_314734.png" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
   <ItemGroup>
