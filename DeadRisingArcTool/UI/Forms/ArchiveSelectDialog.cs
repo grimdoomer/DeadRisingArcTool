@@ -133,6 +133,19 @@ namespace DeadRisingArcTool.Forms
             // Show a save file dialog to save the new archive.
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Filter = "Archive (*.arc)|*.arc";
+
+            // Set the default folder location.
+            if (Properties.Settings.Default.ArcFolder != string.Empty)
+            {
+                // If the mods folder exists open us there, otherwise use the arc folder.
+                string modsFolder = Properties.Settings.Default.ArcFolder + "\\Mods";
+                if (Directory.Exists(modsFolder) == true)
+                    sfd.InitialDirectory = modsFolder;
+                else
+                    sfd.InitialDirectory = Properties.Settings.Default.ArcFolder;
+            }
+
+            // Show the dialog.
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 // Add the new arc file location to the selected archives list.

@@ -114,6 +114,7 @@ namespace DeadRisingArcTool
             // Set the tag properties of the tree view context menu options.
             this.addToolStripMenuItem.Tag = TreeViewMenuState.PatchFoldersOnly;
             this.extractToolStripMenuItem.Tag = TreeViewMenuState.PatchOrGameFilesMask;
+            this.injectToolStripMenuItem.Tag = TreeViewMenuState.PatchFilesOnly;
             this.copyToolStripMenuItem.Tag = TreeViewMenuState.PatchOrGameFilesMask | TreeViewMenuState.PatchOrGameFoldersMask;
             this.toArchiveToolStripMenuItem.Tag = TreeViewMenuState.PatchOrGameFilesMask | TreeViewMenuState.PatchOrGameFoldersMask;
             this.pasteToolStripMenuItem.Tag = TreeViewMenuState.PatchFoldersOnly | TreeViewMenuState.RequiresCopyPasteInfo;
@@ -1176,6 +1177,40 @@ namespace DeadRisingArcTool
                 // Re-enable the form.
                 this.Enabled = true;
             }
+        }
+
+        private void injectToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Disable the main form.
+            this.Enabled = false;
+
+            // Get the archive and file entry for the selected file.
+            DatumIndex datum = GetSelectedResourceDatum();
+            ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(datum, out Archive archive, out ArchiveFileEntry fileEntry);
+
+            // Let the user browse for a file with the same file extension.
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = string.Format("(*.{0})|*.{0}", fileEntry.FileType.ToString());
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                // Inject the file into the archive.
+                if (archive.InjectFile(datum.FileId, File.ReadAllBytes(ofd.FileName)) == false)
+                {
+                    // Failed to inject the new file.
+                    MessageBox.Show("Failed to inject file!");
+                }
+                else
+                {
+                    // Trigger the treeview after select event to update the UI.
+                    treeView1_AfterSelect(this.treeView1, new TreeViewEventArgs(this.treeView1.SelectedNode));
+
+                    // Display a done message.
+                    MessageBox.Show("Done!");
+                }
+            }
+
+            // Re-enable the form.
+            this.Enabled = true;
         }
 
         #endregion

@@ -45,6 +45,7 @@
             this.addToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.extractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toArchiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.duplicateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -68,9 +69,8 @@
             this.lblOffset = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.toArchiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuStrip1.SuspendLayout();
-            this.treeViewContextMenu.SuspendLayout();
+            this.injectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.FileInfoBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -183,6 +183,8 @@
             this.treeViewContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.addToolStripMenuItem,
             this.extractToolStripMenuItem,
+            this.injectToolStripMenuItem,
+            this.toolStripSeparator4,
             this.copyToolStripMenuItem,
             this.toArchiveToolStripMenuItem,
             this.pasteToolStripMenuItem,
@@ -217,6 +219,13 @@
             this.copyToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.copyToolStripMenuItem.Text = "Copy";
             this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
+            // 
+            // toArchiveToolStripMenuItem
+            // 
+            this.toArchiveToolStripMenuItem.Name = "toArchiveToolStripMenuItem";
+            this.toArchiveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.toArchiveToolStripMenuItem.Text = "Copy To Archive...";
+            this.toArchiveToolStripMenuItem.Click += new System.EventHandler(this.btnCopyTo_Click);
             // 
             // pasteToolStripMenuItem
             // 
@@ -423,12 +432,17 @@
             this.splitContainer1.SplitterDistance = 297;
             this.splitContainer1.TabIndex = 3;
             // 
-            // toArchiveToolStripMenuItem
+            // injectToolStripMenuItem
             // 
-            this.toArchiveToolStripMenuItem.Name = "toArchiveToolStripMenuItem";
-            this.toArchiveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.toArchiveToolStripMenuItem.Text = "Copy To Archive...";
-            this.toArchiveToolStripMenuItem.Click += new System.EventHandler(this.btnCopyTo_Click);
+            this.injectToolStripMenuItem.Name = "injectToolStripMenuItem";
+            this.injectToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.injectToolStripMenuItem.Text = "Inject";
+            this.injectToolStripMenuItem.Click += new System.EventHandler(this.injectToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(177, 6);
             // 
             // MainForm
             // 
@@ -498,6 +512,8 @@
         private System.Windows.Forms.ToolStripMenuItem duplicateToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem findDuplicateFilesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toArchiveToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem injectToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
     }
 }
 
