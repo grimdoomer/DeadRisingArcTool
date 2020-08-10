@@ -34,5 +34,41 @@ namespace DeadRisingArcTool.Properties {
                 this["ArcFolder"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool LoadPatchFiles {
+            get {
+                return ((bool)(this["LoadPatchFiles"]));
+            }
+            set {
+                this["LoadPatchFiles"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("K:\\_SteamLibrary\\steamapps\\common\\Dead Rising\\nativeWin64\\Mods")]
+        public string PatchFileDirectory {
+            get {
+                return ((string)(this["PatchFileDirectory"]));
+            }
+            set {
+                this["PatchFileDirectory"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool OverwriteAllDuplicates {
+            get {
+                return ((bool)(this["OverwriteAllDuplicates"]));
+            }
+            set {
+                this["OverwriteAllDuplicates"] = value;
+            }
+        }
     }
 }

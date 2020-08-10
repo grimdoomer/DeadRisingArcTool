@@ -10,6 +10,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
     public enum BuiltInShaderType
     {
         /// <summary>
+        /// Used to display colored wireframe meshes
+        /// </summary>
+        Wireframe,
+        /// <summary>
         /// A normal model mesh
         /// </summary>
         Game_Mesh,
@@ -53,9 +57,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
         /// </summary>
         public InputLayout VertexDeclaration { get; protected set; }
         /// <summary>
-        /// Array of sampler states used in the shader
+        /// Array of sampler states used in the vertex shader
         /// </summary>
-        public SamplerState[] SampleStates { get; protected set; }
+        public SamplerState[] VertexSampleStates { get; protected set; }
+        /// <summary>
+        /// Array of sampler states used in the pixel shader
+        /// </summary>
+        public SamplerState[] PixelSampleStates { get; protected set; }
         /// <summary>
         /// One of <see cref="BuiltInShaderType"/> that this shader maps to
         /// </summary>
@@ -78,15 +86,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             device.ImmediateContext.VertexShader.Set(this.VertexShader);
             device.ImmediateContext.PixelShader.Set(this.PixelShader);
 
-            // If we have sampler states set them.
-            if (this.SampleStates != null)
+            // If we have any vertex sampler states set them.
+            if (this.VertexSampleStates != null)
             {
                 // Loop and set all the shader sampler states.
-                for (int i = 0; i < this.SampleStates.Length; i++)
-                {
-                    device.ImmediateContext.VertexShader.SetSampler(0, this.SampleStates[i]);
-                    device.ImmediateContext.PixelShader.SetSampler(0, this.SampleStates[i]);
-                }
+                for (int i = 0; i < this.VertexSampleStates.Length; i++)
+                    device.ImmediateContext.VertexShader.SetSampler(i, this.VertexSampleStates[i]);
+            }
+
+            // If we have any pixel shader sampler states set them.
+            if (this.PixelSampleStates != null)
+            {
+                // Loop and set all the shader sampler states.
+                for (int i = 0; i < this.PixelSampleStates.Length; i++)
+                    device.ImmediateContext.PixelShader.SetSampler(i, this.PixelSampleStates[i]);
             }
 
             // Set the vertex declaration.
@@ -101,9 +114,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             if (this.VertexDeclaration != null)
                 this.VertexDeclaration.Dispose();
 
-            if (this.SampleStates != null)
-                for (int i = 0; i < this.SampleStates.Length; i++)
-                    this.SampleStates[i].Dispose();
+            if (this.VertexSampleStates != null)
+                for (int i = 0; i < this.VertexSampleStates.Length; i++)
+                    this.VertexSampleStates[i].Dispose();
 
             if (this.VertexShader != null)
                 this.VertexShader.Dispose();

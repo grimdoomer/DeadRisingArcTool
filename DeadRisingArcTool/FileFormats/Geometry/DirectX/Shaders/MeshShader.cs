@@ -27,27 +27,40 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             this.PixelShader = new PixelShader(device, pixelByteCode);
 
             // Setup the sampler states for the vertex shader.
-            SamplerStateDescription samplerDesc = new SamplerStateDescription();
-            samplerDesc.AddressU = TextureAddressMode.Wrap;
-            samplerDesc.AddressV = TextureAddressMode.Wrap;
-            samplerDesc.AddressW = TextureAddressMode.Wrap;
-            samplerDesc.BorderColor = new SharpDX.Mathematics.Interop.RawColor4(0.0f, 0.0f, 0.0f, 0.0f);
-            samplerDesc.MaximumLod = 0;
-            samplerDesc.Filter = Filter.Anisotropic;
-            samplerDesc.MipLodBias = 0;
-            samplerDesc.MaximumAnisotropy = 3;
-            this.SampleStates = new SamplerState[] { new SamplerState(device, samplerDesc) };
+            SamplerStateDescription vertexDesc = new SamplerStateDescription();
+            vertexDesc.AddressU = TextureAddressMode.Wrap;
+            vertexDesc.AddressV = TextureAddressMode.Wrap;
+            vertexDesc.AddressW = TextureAddressMode.Wrap;
+            vertexDesc.BorderColor = new SharpDX.Mathematics.Interop.RawColor4(0.0f, 0.0f, 0.0f, 0.0f);
+            vertexDesc.MaximumLod = 13;
+            vertexDesc.Filter = Filter.MinMagMipPoint;
+            vertexDesc.MipLodBias = 0;
+            vertexDesc.MaximumAnisotropy = 1;
+            vertexDesc.ComparisonFunction = Comparison.Never;
+            this.VertexSampleStates = new SamplerState[] { new SamplerState(device, vertexDesc) };
+
+            SamplerStateDescription pixelDesc = new SamplerStateDescription();
+            pixelDesc.AddressU = TextureAddressMode.Wrap;
+            pixelDesc.AddressV = TextureAddressMode.Wrap;
+            pixelDesc.AddressW = TextureAddressMode.Wrap;
+            pixelDesc.BorderColor = new SharpDX.Mathematics.Interop.RawColor4(0.0f, 0.0f, 0.0f, 0.0f);
+            pixelDesc.MaximumLod = 0;
+            pixelDesc.Filter = Filter.Anisotropic;
+            pixelDesc.MipLodBias = 0;
+            pixelDesc.MaximumAnisotropy = 3;
+            this.PixelSampleStates = new SamplerState[] { new SamplerState(device, pixelDesc) };
 
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
             this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, new InputElement[]
                     {
+                        // Id: 0x0550228e
                     new InputElement("POSITION",        0, Format.R16G16B16A16_SNorm,   0,  0),
                     new InputElement("NORMAL",          0, Format.R16G16B16A16_SNorm,   16, 0),
                     new InputElement("TANGENT",         0, Format.R16G16B16A16_SNorm,   0,  1),
                     new InputElement("TEXCOORD",        0, Format.R16G16_SNorm,         24, 0),
                     new InputElement("TEXCOORD",        1, Format.R16G16_SNorm,         8,  1),
                     new InputElement("BLENDWEIGHT",     0, Format.R8G8B8A8_UNorm,       12, 0),
-                    new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_UInt,        8,  0),
+                    new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_SInt,        8,  0),
                     new InputElement("TEXCOORD",        2, Format.R32G32B32A32_Float,   0,  0),
                     new InputElement("TEXCOORD",        3, Format.R32G32B32A32_Float,   0,  0),
                     });

@@ -218,6 +218,13 @@ float3 decodePosition(in float3 pos)
 	return pos * gXfQuantPosScale + gXfQuantPosOffset;
 }
 
+/*
+	gXfMatrixMapFactor.x = starting matrix index
+	gXfMatrixMapFactor.y = line number?
+	gXfMatrixMapFactor.z = size of 1 matrix unit (in uv range)
+	gXfMatrixMapFactor.w = row size of matrix (in uv range)
+*/
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 float3x4 getMatrixFromTexture(Texture2D tex, SamplerState ss, float index, float _line)

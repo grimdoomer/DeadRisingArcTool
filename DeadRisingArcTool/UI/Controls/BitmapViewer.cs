@@ -45,6 +45,9 @@ namespace DeadRisingArcTool.Controls
             // Flag that we are reloading the UI.
             this.isLoading = true;
 
+            // Set the inject button enabled only if this is a patch file.
+            this.injectToolStripMenuItem.Enabled = this.ArcFile.IsPatchFile;
+
             // Clear the combobox items.
             this.comboBox1.Items.Clear();
 
@@ -121,16 +124,10 @@ namespace DeadRisingArcTool.Controls
 
             // Get a list of every datum to be updated for this file and update all of them.
             DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
-            for (int i = 0; i < datums.Length; i++)
+            if (ArchiveCollection.Instance.InjectFile(datums, textureBuffer) == false)
             {
-                // Write the new texture back to the arc file.
-                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
-                {
-                    // Failed to write the new texture back to the arc file.
-                    MessageBox.Show("Failed to write new texture to arc file " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
-                    this.EditorOwner.SetUIState(true);
-                    return false;
-                }
+                // Failed to update files.
+                return false;
             }
 
             // Flag that we no longer have changes made to the resource.
@@ -247,16 +244,11 @@ namespace DeadRisingArcTool.Controls
 
             // Get a list of every datum to be updated for this file and update all of them.
             DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
-            for (int i = 0; i < datums.Length; i++)
+            if (ArchiveCollection.Instance.InjectFile(datums, textureBuffer) == false)
             {
-                // Write the new texture back to the arc file.
-                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, textureBuffer) == false)
-                {
-                    // Failed to write the new texture back to the arc file.
-                    MessageBox.Show("Failed to write new texture to arc file  " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
-                    this.EditorOwner.SetUIState(true);
-                    return;
-                }
+                // Failed to update files.
+                this.EditorOwner.SetUIState(true);
+                return;
             }
 
             // Update the game resource instance and reload the UI.
@@ -270,6 +262,14 @@ namespace DeadRisingArcTool.Controls
 
         private void BitmapViewer_DragOver(object sender, DragEventArgs e)
         {
+            // If the selected bitmap is not from patch file block the drag-drop operation.
+            if (this.ArcFile.IsPatchFile == false)
+            {
+                // Block the drag-drop operation.
+                e.Effect = DragDropEffects.None;
+                return;
+            }
+
             // Check if this is a file drop operation.
             if (e.Data.GetDataPresent(DataFormats.FileDrop) == true)
             {

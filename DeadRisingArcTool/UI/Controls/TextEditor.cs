@@ -55,6 +55,9 @@ namespace DeadRisingArcTool.Controls
                 return;
             }
 
+            // Only allow editing for patch files.
+            this.textbox.ReadOnly = !this.ArcFile.IsPatchFile;
+
             // The game resource is a XmlFile.
             this.textbox.Text = Encoding.Default.GetString(this.TextFile.Buffer);
             this.HasBeenModified = false;
@@ -70,17 +73,11 @@ namespace DeadRisingArcTool.Controls
             this.TextFile.Buffer = Encoding.ASCII.GetBytes(this.textbox.Text);
 
             // Get a list of duplicate datums that we should update and update all of them.
-            DatumIndex[] datums = ArcFileCollection.Instance.GetDatumsForFileName(this.GameResource.FileName);
-            for (int i = 0; i < datums.Length; i++)
+            DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
+            if (ArchiveCollection.Instance.InjectFile(datums, this.TextFile.Buffer) == false)
             {
-                // Update the arc file with the new resource data.
-                if (ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].InjectFile(datums[i].FileIndex, this.TextFile.Buffer) == false)
-                {
-                    // Failed to write the arc file data.
-                    MessageBox.Show("Failed to write file to arc " + ArcFileCollection.Instance.ArcFiles[datums[i].ArcIndex].FileName + "!");
-                    this.EditorOwner.SetUIState(true);
-                    return false;
-                }
+                // Failed to update files.
+                return false;
             }
 
             // Flag that we no longer have changes made to the resource.
