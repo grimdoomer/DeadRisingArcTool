@@ -55,6 +55,9 @@ namespace DeadRisingArcTool.Controls
                 return;
             }
 
+            // Only allow editing for patch files.
+            this.textbox.ReadOnly = !this.ArcFile.IsPatchFile;
+
             // The game resource is a XmlFile.
             this.textbox.Text = Encoding.Default.GetString(this.TextFile.Buffer);
             this.HasBeenModified = false;

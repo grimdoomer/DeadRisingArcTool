@@ -45,6 +45,9 @@ namespace DeadRisingArcTool.Controls
             // Flag that we are reloading the UI.
             this.isLoading = true;
 
+            // Set the inject button enabled only if this is a patch file.
+            this.injectToolStripMenuItem.Enabled = this.ArcFile.IsPatchFile;
+
             // Clear the combobox items.
             this.comboBox1.Items.Clear();
 
@@ -259,6 +262,14 @@ namespace DeadRisingArcTool.Controls
 
         private void BitmapViewer_DragOver(object sender, DragEventArgs e)
         {
+            // If the selected bitmap is not from patch file block the drag-drop operation.
+            if (this.ArcFile.IsPatchFile == false)
+            {
+                // Block the drag-drop operation.
+                e.Effect = DragDropEffects.None;
+                return;
+            }
+
             // Check if this is a file drop operation.
             if (e.Data.GetDataPresent(DataFormats.FileDrop) == true)
             {

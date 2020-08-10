@@ -121,6 +121,27 @@ namespace DeadRisingArcTool.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Icons provided by:
+        ///
+        ///Author: Aha-Soft
+        ///Link: https://www.iconfinder.com/icons/102518/3d_article_decoy_dummy_entity_facility_form_layout_make_maquette_matter_miniature_model_object_objective_objects_operand_pattern_sample_subject_theme_thing_type_icon
+        ///License: https://creativecommons.org/licenses/by/3.0/legalcode
+        ///Modified: No
+        ///
+        ///Author: Flatart
+        ///Link: https://www.iconfinder.com/icons/5172571/image_picture_twitter_icon
+        ///License: https://creativecommons.org/licenses/by/3.0/legalcode
+        ///Modified: No
+        ///
+        ///Author: [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string license {
+            get {
+                return ResourceManager.GetString("license", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         internal static System.Drawing.Bitmap ObjectIcon {

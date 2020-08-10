@@ -303,6 +303,7 @@
     <None Include="Resources\network_folder_blue.png" />
     <None Include="Resources\iconfinder_icon-141-box-filled_314509.png" />
     <None Include="Resources\iconfinder_icon-141-box-filled_314734.png" />
+    <None Include="Resources\license.txt" />
     <Content Include="Windbg\DeadRisingDbgExtensions.js" />
   </ItemGroup>
   <ItemGroup>
