@@ -124,13 +124,6 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 // If we want write access then open it for writing as well.
                 if (forWrite == true)
                 {
-                    // Check if the backup file exists and if not create a backup file.
-                    if (this.reader.BaseStream.Length > 0 && File.Exists(this.FileName + "_bak") == false)
-                    {
-                        // Create a backup file.
-                        File.Copy(this.FileName, this.FileName + "_bak");
-                    }
-
                     // Open the file for writing.
                     this.writer = new EndianWriter(this.Endian, this.fileStream);
                 }

@@ -1329,30 +1329,6 @@ namespace DeadRisingArcTool
             }
         }
 
-        private void restoreBackupsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // Disable the main form.
-            this.Enabled = false;
-
-            // Loop through the list of loaded arc files.
-            for (int i = 0; i < ArchiveCollection.Instance.Archives.Length; i++)
-            {
-                // Check if a backup file exists for this arc file.
-                if (File.Exists(ArchiveCollection.Instance.Archives[i].FileName + "_bak") == true)
-                {
-                    // Delete the arc file.
-                    File.Delete(ArchiveCollection.Instance.Archives[i].FileName);
-
-                    // Rename the backup file.
-                    File.Move(ArchiveCollection.Instance.Archives[i].FileName + "_bak", ArchiveCollection.Instance.Archives[i].FileName);
-                }
-            }
-
-            // Done, restart the application so we can reload the arc collection.
-            MessageBox.Show("Done!");
-            Application.Restart();
-        }
-
         private void findDuplicateFilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Browse for a place to save the duplicate files analysis results.
