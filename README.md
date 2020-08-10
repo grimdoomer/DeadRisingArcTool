@@ -60,6 +60,7 @@ Copying files to a patch archive can be done a couple different ways. If you wan
 If you have a patch archive already created you can use the Copy/Paste options or Ctrl+C/Ctr+V or the Copy To Archive option to copy files or folders. You can copy any file or folder whether it is from the Game Files folder or Mods folder, but you will only be able to paste them into a patch archive.
 
 Pasting a file or folder will show the rename dialog and allow you to rename all of the files before adding them to the patch archive. Clicking a file name twice will allow you to edit the file name and folder path for that item. If you rename a file and the file name already exists or the file name is invalid it will be displayed in red, and you will be asked to choose a new file name. Hovering over the item will give a description of why the file name is invalid.
+
 ![](/Images/rename_files.png)
 
 ### Extraction/Injection
