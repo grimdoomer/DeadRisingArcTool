@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeadRisingArcTool.FileFormats.Geometry.Collada
+namespace DeadRisingArcTool.FileFormats.Geometry.Vertex
 {
     public class VertexHelper
     {
-        public static Vector2 Decompress_R16G16_SNorm(byte[] buffer, int index)
+        public static Vector2 Unpack_R16G16_SNorm(byte[] buffer, int index)
         {
             // Get the vector components in compressed form from the buffer.
             short x = BitConverter.ToInt16(buffer, index);
@@ -19,7 +19,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
             return new Vector2(SNorm16ToFloat(x), SNorm16ToFloat(y));
         }
 
-        public static Vector4 Decompress_R16G16B16A16_SNorm(byte[] buffer, int index)
+        public static Vector2 Unpack_R32G32_Float(byte[] buffer, int index)
+        {
+            // No compression, return as-is.
+            return new Vector2(BitConverter.ToSingle(buffer, index), BitConverter.ToSingle(buffer, index + 4));
+        }
+
+        public static Vector3 Unpack_R32G32B32_Float(byte[] buffer, int index)
+        {
+            // No compression, return as-is.
+            return new Vector3(BitConverter.ToSingle(buffer, index), BitConverter.ToSingle(buffer, index + 4), BitConverter.ToSingle(buffer, index + 8));
+        }
+
+        public static Vector4 Unpack_R16G16B16A16_SNorm(byte[] buffer, int index)
         {
             // Get the vector components in compressed form from the buffer.
             short x = BitConverter.ToInt16(buffer, index);
@@ -37,18 +49,18 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
             return Math.Max(value / 32767.0f, -1.0f);
         }
 
-        public static short[] TriangleStripToTriangleList(short[] stripIndices, int startIndex, int indexCount, int vertexBase)
+        public static ushort[] TriangleStripToTriangleList(ushort[] stripIndices, int startIndex, int indexCount, int startingVertex)
         {
             // Create a list to hold the triangle list indices.
-            List<short> triList = new List<short>();
+            List<ushort> triList = new List<ushort>();
 
             // Loop and convert the triangle strip to a triangle list.
             for (int i = 0; i < indexCount - 2; i++)
             {
                 // Get the vertex indices for the current triangle.
-                short v1 = (short)(stripIndices[startIndex + i] - vertexBase);
-                short v2 = (short)(stripIndices[startIndex + i + 1] - vertexBase);
-                short v3 = (short)(stripIndices[startIndex + i + 2] - vertexBase);
+                ushort v1 = (ushort)(stripIndices[startIndex + i] - startingVertex);
+                ushort v2 = (ushort)(stripIndices[startIndex + i + 1] - startingVertex);
+                ushort v3 = (ushort)(stripIndices[startIndex + i + 2] - startingVertex);
 
                 // Check for degenerate triangle.
                 if (v1 == v2 || v1 == v3 || v2 == v3)
@@ -75,5 +87,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
             // Return the triangle list.
             return triList.ToArray();
         }
+
+        //public static T UnpackVertex<T>(byte[] vertexData1, byte[] vertexData2, int startIndex) where T : VertexDeclaration
+        //{
+
+        //}
     }
 }

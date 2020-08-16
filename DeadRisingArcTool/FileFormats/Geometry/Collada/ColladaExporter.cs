@@ -1,8 +1,12 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Bitmaps;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+using DeadRisingArcTool.FileFormats.Geometry.Vertex;
 using SharpDX;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -80,6 +84,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                         ArchiveCollection.Instance.GetArchiveFileEntryFromFileName(textureFileName, out Archive.Archive arcFile, out ArchiveFileEntry fileEntry);
                         if (arcFile == null || fileEntry == null)
                         {
+                            // TODO: The file can also be a r2Texture.
+                            continue;
+
                             // Failed to find a resource with the specified name.
                             return false;
                         }
@@ -174,7 +181,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                                         writer.WriteStartElement("index_of_refraction");
                                             writer.WriteStartElement("float");
                                             writer.WriteAttributeString("sid", "ior");
-                                            writer.WriteString("1.45");
+                                                writer.WriteString("1.45");
+                                            writer.WriteEndElement();
                                         writer.WriteEndElement();
                                     }
                                     writer.WriteEndElement();
@@ -316,12 +324,22 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                 // Write the mesh element.
                 writer.WriteStartElement("mesh");
                 {
+                    if (model.primitives[index].VertexStream1Offset > 0 || model.primitives[index].VertexStream2Offset > 0)
+                    {
+
+                    }
+
                     // Check the material flags for this primitive to determine the shader type.
                     int shaderType = (model.materials[model.primitives[index].MaterialIndex].Flags >> 27) & 7;
                     switch (shaderType)
                     {
-                        case 0: WriteShaderType0VertexStream(model, writer, index, primitiveId); break;
-                        default: System.Diagnostics.Debug.Assert(false); break;
+                        case 0: WriteVertexStream(writer, model, MeshShader.VertexFormat, index, primitiveId, true); break;
+                        case 2: WriteVertexStream(writer, model, LevelGeometry1Shader.VertexFormat, index, primitiveId, true); break;
+                        default:
+                            {
+                                // Shader type not currently supported.
+                                throw new NotSupportedException(string.Format("Shader type {0} not currently supported!", shaderType));
+                            }
                     }
                 }
                 writer.WriteFullEndElement();
@@ -329,117 +347,180 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
             writer.WriteFullEndElement();
         }
 
-        private static void WriteShaderType0VertexStream(rModel model, XmlWriter writer, int index, string id)
+        private static void WriteVertexStream(XmlWriter writer, rModel model, InputElement[] vertexFormat, int primitiveIndex, string primitiveId, bool positionCompressed)
         {
             // Compute the quantize position and scale for decompression.
             Vector4 gXfQuantPosScale = model.header.BoundingBoxMax - model.header.BoundingBoxMin;
             Vector4 gXfQuantPosOffset = model.header.BoundingBoxMin;
 
-            #region POSITION
+            // Format the ids for the vertex data elements.
+            string positionsId = string.Format("{0}-positions", primitiveId);
+            string positionsArrayId = string.Format("{0}-positions-array", primitiveId);
+            string texcoords0Id = string.Format("{0}-texcoords0", primitiveId);
+            string texcoords0ArrayId = string.Format("{0}-texcoords0-array", primitiveId);
 
-            // Write the positions block.
-            writer.WriteStartElement("source");
-            writer.WriteAttributeString("id", id + "-positions");
-            writer.WriteAttributeString("name", id + "-positions");
+            string verticesId = string.Format("{0}-vertices", primitiveId);
+            string materialId = string.Format("material-{0}", model.primitives[primitiveIndex].MaterialIndex);
+
+            // Loop through all of the components in the vertex declaration and process each one.
+            for (int i = 0; i < vertexFormat.Length; i++)
             {
-                // Write the positions array element start.
-                int vertCount = model.primitives[index].VertexCount;
-                writer.WriteStartElement("float_array");
-                writer.WriteAttributeString("id", id + "-positions-array");
-                writer.WriteAttributeString("count", (vertCount * 3).ToString());
+                // Setup vertex stream info.
+                int vertexStride = model.primitives[primitiveIndex].VertexStride1;
+                int startOffset = (model.primitives[primitiveIndex].StartingVertex + model.primitives[primitiveIndex].BaseVertexLocation) * vertexStride;
+                byte[] vertexData = model.vertexData1;
+
+                // Check the slot number for the vertex component.
+                if (vertexFormat[i].Slot == 1)
                 {
-                    // Loop and decompress the vertex positions.
-                    int startOffset = model.primitives[index].StartingVertex * model.primitives[index].VertexStride1;
-                    for (int i = 0; i < vertCount; i++)
-                    {
-                        // Unpack the vertex from the stream.
-                        Vector4 position = VertexHelper.Decompress_R16G16B16A16_SNorm(model.vertexData1, startOffset + (i * model.primitives[index].VertexStride1));
-
-                        // Decompress using bounding box quantization.
-                        position = position * gXfQuantPosScale + gXfQuantPosOffset;
-
-                        writer.WriteString(string.Format("{0} {1} {2} ", position.X, position.Y, position.Z));
-                    }
+                    // Use the secondary vertex stream.
+                    vertexStride = model.primitives[primitiveIndex].VertexStride2;
+                    vertexData = model.vertexData2;
                 }
-                writer.WriteFullEndElement();
 
-                // Write the technique element.
-                writer.WriteStartElement("technique_common");
+                // Check the vertex component type and handle accordingly.
+                switch (vertexFormat[i].SemanticName)
                 {
-                    // Write the accessor element.
-                    WriteAccessorElement(writer, string.Format("#{0}-positions-array", id), vertCount, typeof(Vector3));
+                    #region POSITION
+
+                    case "POSITION":
+                        {
+                            // Write the positions block.
+                            writer.WriteStartElement("source");
+                            writer.WriteAttributeString("id", positionsId);
+                            writer.WriteAttributeString("name", positionsId);
+                            {
+                                // Write the positions array element start.
+                                int vertCount = model.primitives[primitiveIndex].VertexCount;
+                                writer.WriteStartElement("float_array");
+                                writer.WriteAttributeString("id", positionsArrayId);
+                                writer.WriteAttributeString("count", (vertCount * 3).ToString());
+                                {
+                                    // Loop and decompress the vertex positions.
+                                    for (int x = 0; x < vertCount; x++)
+                                    {
+                                        // Calculate the starting offset in the vertex stream.
+                                        int offset = startOffset + (x * vertexStride) + vertexFormat[i].AlignedByteOffset;
+
+                                        // Unpack the vertex from the stream.
+                                        Vector4 position = new Vector4(0.0f);
+                                        switch (vertexFormat[i].Format)
+                                        {
+                                            case SharpDX.DXGI.Format.R32G32B32_Float:       position = new Vector4(VertexHelper.Unpack_R32G32B32_Float(vertexData, offset), 0.0f); break;
+                                            case SharpDX.DXGI.Format.R16G16B16A16_SNorm:    position = VertexHelper.Unpack_R16G16B16A16_SNorm(vertexData, offset); break;
+                                            default:
+                                                {
+                                                    // Vertex format is not supported.
+                                                    throw new NotSupportedException(string.Format("Vertex format {0} is not currently supported!", vertexFormat[i].Format));
+                                                }
+                                        }
+
+                                        // Decompress using bounding box quantization.
+                                        if (positionCompressed == true)
+                                            position = position * gXfQuantPosScale + gXfQuantPosOffset;
+
+                                        // Write the position vector.
+                                        writer.WriteString(string.Format("{0} {1} {2} ", position.X, position.Y, position.Z));
+                                    }
+                                }
+                                writer.WriteFullEndElement();
+
+                                // Write the technique element.
+                                writer.WriteStartElement("technique_common");
+                                {
+                                    // Write the accessor element.
+                                    WriteAccessorElement(writer, "#" + positionsArrayId, vertCount, typeof(Vector3));
+                                }
+                                writer.WriteFullEndElement();
+                            }
+                            writer.WriteFullEndElement();
+                            break;
+                        }
+
+                    #endregion
+
+                    #region TEXCOORD
+
+                    case "TEXCOORD":
+                        {
+                            // Currently only support extracting basemaps.
+                            if (vertexFormat[i].SemanticIndex != 0)
+                                continue;
+
+                            // Write the texcoords block.
+                            writer.WriteStartElement("source");
+                            writer.WriteAttributeString("id", texcoords0Id);
+                            {
+                                // Write the positions array element start.
+                                writer.WriteStartElement("float_array");
+                                writer.WriteAttributeString("id", texcoords0ArrayId);
+                                writer.WriteAttributeString("count", (model.primitives[primitiveIndex].VertexCount * 2).ToString());
+                                {
+                                    // Loop and decompress the texcoords.
+                                    for (int x = 0; x < model.primitives[primitiveIndex].VertexCount; x++)
+                                    {
+                                        // Calculate the starting offset in the vertex data buffer.
+                                        int offset = startOffset + (x * vertexStride) + vertexFormat[i].AlignedByteOffset;
+
+                                        // Unpack the texcoord from the stream.
+                                        Vector2 texcoord = new Vector2(0.0f);
+                                        switch (vertexFormat[i].Format)
+                                        {
+                                            case SharpDX.DXGI.Format.R16G16_SNorm:  texcoord = VertexHelper.Unpack_R16G16_SNorm(vertexData, offset); break;
+                                            case SharpDX.DXGI.Format.R32G32_Float:  texcoord = VertexHelper.Unpack_R32G32_Float(vertexData, offset); break;
+                                            default:
+                                                {
+                                                    // Vertex format not currently supported.
+                                                    throw new NotSupportedException(string.Format("Vertex format {0} is not currently supported!", vertexFormat[i].Format));
+                                                }
+                                        }
+
+                                        // Flip the the UVs over the y-axis to correct for lower-left origin.
+                                        texcoord.Y = 1.0f - texcoord.Y;
+
+                                        // Write the texcoord to file.
+                                        writer.WriteString(string.Format("{0} {1} ", texcoord.X, texcoord.Y));
+                                    }
+                                }
+                                writer.WriteFullEndElement();
+
+                                // Write the technique element.
+                                writer.WriteStartElement("technique_common");
+                                {
+                                    // Write the accessor element.
+                                    WriteAccessorElement(writer, texcoords0ArrayId, model.primitives[primitiveIndex].VertexCount, typeof(Vector2));
+                                }
+                                writer.WriteFullEndElement();
+                            }
+                            writer.WriteFullEndElement();
+                            break;
+                        }
+
+                    #endregion
                 }
-                writer.WriteFullEndElement();
             }
-            writer.WriteFullEndElement();
-
-            #endregion
-
-            // BLENDINDICES
-
-            // BLENDWEIGHT
-
-            // NORMAL
-
-            #region TEXCOORD
-
-            // Write the positions block.
-            writer.WriteStartElement("source");
-            writer.WriteAttributeString("id", id + "-texcoords0");
-            {
-                // Write the positions array element start.
-                writer.WriteStartElement("float_array");
-                writer.WriteAttributeString("id", id + "-texcoords0-array");
-                writer.WriteAttributeString("count", (model.primitives[index].VertexCount * 2).ToString());
-                {
-                    // Loop and decompress the texcoords.
-                    int startOffset = model.primitives[index].StartingVertex * model.primitives[index].VertexStride1;
-                    for (int i = 0; i < model.primitives[index].VertexCount; i++)
-                    {
-                        // Unpack the texcoord from the stream.
-                        Vector2 texcoord = VertexHelper.Decompress_R16G16_SNorm(model.vertexData1, startOffset + (i * model.primitives[index].VertexStride1) + 24);
-
-                        // Flip the the UVs over the y-axis to correct for lower-left origin.
-                        texcoord.Y = 1.0f - texcoord.Y;
-
-                        writer.WriteString(string.Format("{0} {1} ", texcoord.X, texcoord.Y));
-                    }
-                }
-                writer.WriteFullEndElement();
-
-                // Write the technique element.
-                writer.WriteStartElement("technique_common");
-                {
-                    // Write the accessor element.
-                    WriteAccessorElement(writer, string.Format("#{0}-texcoords0-array", id), model.primitives[index].VertexCount, typeof(Vector2));
-                }
-                writer.WriteFullEndElement();
-            }
-            writer.WriteFullEndElement();
-
-            #endregion
 
             // Write the vertices element.
             writer.WriteStartElement("vertices");
-            writer.WriteAttributeString("id", id + "-vertices");
+            writer.WriteAttributeString("id", verticesId);
             {
                 // Write the position input semantic.
-                WriteInputSemantic(writer, "POSITION", string.Format("#{0}-positions", id));
+                WriteInputSemantic(writer, "POSITION", "#" + positionsId);
             }
             writer.WriteFullEndElement();
 
             // Convert the triangle strip to a triangle list for better compatibility (blender).
-            short[] triangleIndices = VertexHelper.TriangleStripToTriangleList(model.indexData, 
-                model.primitives[index].StartingIndexLocation, model.primitives[index].IndexCount, model.primitives[index].StartingVertex);
+            ushort[] triangleIndices = VertexHelper.TriangleStripToTriangleList(model.indexData, model.primitives[primitiveIndex].StartingIndexLocation, 
+                model.primitives[primitiveIndex].IndexCount, model.primitives[primitiveIndex].StartingVertex);
 
             // Write the triangles element.
             writer.WriteStartElement("triangles");
-            writer.WriteAttributeString("material", string.Format("material-{0}", model.primitives[index].MaterialIndex.ToString()));
+            writer.WriteAttributeString("material", materialId);
             writer.WriteAttributeString("count", (triangleIndices.Length * 2).ToString());
             {
                 // Write the input semantics.
-                WriteInputSemantic(writer, "VERTEX", string.Format("#{0}-vertices", id), 0);
-                WriteInputSemantic(writer, "TEXCOORD", string.Format("#{0}-texcoords0", id), 1, 0);
+                WriteInputSemantic(writer, "VERTEX", "#" + verticesId, 0);
+                WriteInputSemantic(writer, "TEXCOORD", "#" + texcoords0Id, 1, 0);
 
                 // Write triangle indices.
                 writer.WriteStartElement("p");

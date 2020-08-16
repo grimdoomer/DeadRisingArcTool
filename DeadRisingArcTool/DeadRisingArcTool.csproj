@@ -94,7 +94,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
-    <Compile Include="FileFormats\Geometry\Collada\VertexHelper.cs" />
+    <Compile Include="FileFormats\Geometry\Vertex\InputSemanticAttribute.cs" />
+    <Compile Include="FileFormats\Geometry\Vertex\VertexHelper.cs" />
+    <Compile Include="FileFormats\Geometry\Vertex\VertexDeclaration.cs" />
     <Compile Include="UI\Controls\AnimationEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>

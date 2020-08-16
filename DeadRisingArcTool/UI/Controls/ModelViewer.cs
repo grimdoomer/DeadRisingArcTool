@@ -129,9 +129,14 @@ namespace DeadRisingArcTool.Controls
 
         private void btnExtract_Click(object sender, EventArgs e)
         {
-            // Extract the model.
-            ColladaExporter.ExportModel((rModel)this.GameResource, "G:\\Dead Rising\\Extract\\model test 2");
-            MessageBox.Show("Done!");
+            // Browse for a folder to extract to.
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                // Extract the model.
+                ColladaExporter.ExportModel((rModel)this.GameResource, fbd.SelectedPath);
+                MessageBox.Show("Done!");
+            }
         }
     }
 }

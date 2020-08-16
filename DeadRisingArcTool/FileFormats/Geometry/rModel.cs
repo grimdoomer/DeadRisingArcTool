@@ -198,7 +198,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         public Primitive[] primitives;
 
         // Vertex and index buffers.
-        public short[] indexData;
+        public ushort[] indexData;
         public byte[] vertexData1;
         public byte[] vertexData2;
 
@@ -468,11 +468,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             reader.BaseStream.Position = model.header.IndiceDataOffset;
 
             // Allocate and read the indice data.
-            model.indexData = new short[model.header.IndiceCount - 1];
+            model.indexData = new ushort[model.header.IndiceCount - 1];
             for (int i = 0; i < model.header.IndiceCount - 1; i++)
             {
                 // Read the index data.
-                model.indexData[i] = reader.ReadInt16();
+                model.indexData[i] = reader.ReadUInt16();
             }
 
             // Close the binary reader and memory stream.
@@ -925,7 +925,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             this.primaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData1);
             if (this.vertexData2 != null)
                 this.secondaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData2);
-            this.indexBuffer = Buffer.Create<short>(device, BindFlags.IndexBuffer, this.indexData);
+            this.indexBuffer = Buffer.Create<ushort>(device, BindFlags.IndexBuffer, this.indexData);
 
             // Allocate resources for the texture array.
             this.gameTextures = new rTexture[this.header.NumberOfTextures + 1];
