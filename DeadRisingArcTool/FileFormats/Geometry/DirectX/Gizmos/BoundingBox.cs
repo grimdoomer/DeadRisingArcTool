@@ -12,29 +12,29 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 {
     public class BoundingBox : IRenderable
     {
-        public Vector4 BoundMin { get; set; }
-        public Vector4 BoundMax { get; set; }
+        private Vector4 boundMin;
+        /// <summary>
+        /// Minimum extents of the bounding box
+        /// </summary>
+        public Vector4 BoundMin { get { return this.boundMin; } set { this.boundMin = value; BuildVertexBuffer(); } }
 
-        public Color4 Color { get; set; }
+        private Vector4 boundMax;
+        /// <summary>
+        /// Maximum extentds of the bounding box
+        /// </summary>
+        public Vector4 BoundMax { get { return this.boundMax; } set { this.boundMax = value; BuildVertexBuffer(); } }
 
-        private D3DColoredVertex[] vertices;
+        private Color4 color;
+        /// <summary>
+        /// Color of the bounding box mesh
+        /// </summary>
+        public Color4 Color { get { return this.color; } set { this.color = value; BuildVertexBuffer(); } }
+
+        private D3DColoredVertex[] vertices = new D3DColoredVertex[8];
         private SharpDX.Direct3D11.Buffer vertexBuffer;
         private SharpDX.Direct3D11.Buffer indexBuffer;
 
         private BuiltInShader shader;
-
-        // Bounding box vertices to be transformed.
-        private readonly Vector4[] BoxVertices = new Vector4[8]
-        {
-            new Vector4(-1.0f, -1.0f, -1.0f, 0.0f),
-            new Vector4(1.0f, -1.0f, -1.0f, 0.0f),
-            new Vector4(1.0f, -1.0f, 1.0f, 0.0f),
-            new Vector4(-1.0f, -1.0f, 1.0f, 0.0f), 
-            new Vector4(-1.0f, 1.0f, -1.0f, 0.0f),
-            new Vector4(1.0f, 1.0f, -1.0f, 0.0f),
-            new Vector4(1.0f, 1.0f, 1.0f, 0.0f), 
-            new Vector4(-1.0f, 1.0f, 1.0f, 0.0f)
-        };
 
         // Bounding box triangle indices.
         private readonly int[] BoxIndices = new int[24]
@@ -58,18 +58,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public BoundingBox(Vector4 boundMin, Vector4 boundMax, Color4 color)
         {
             // Initialize fields.
-            this.BoundMin = boundMin;
-            this.BoundMax = boundMax;
-            this.Color = color;
+            this.boundMin = boundMin;
+            this.boundMax = boundMax;
+            this.color = color;
         }
 
-        public bool InitializeGraphics(IRenderManager manager, Device device)
+        private void BuildVertexBuffer()
         {
             // Compute the bounding box extents.
             SharpDX.BoundingBox box = new SharpDX.BoundingBox(this.BoundMin.ToVector3(), this.BoundMax.ToVector3());
-
-            // Allocate the vertex array.
-            this.vertices = new D3DColoredVertex[8];
 
             // Calculate the half-widths of the box.
             float halfWidth = box.Width / 2.0f;
@@ -86,6 +83,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             this.vertices[5].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y + halfHeight, box.Center.Z + halfDepth);
             this.vertices[6].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y + halfHeight, box.Center.Z - halfDepth);
             this.vertices[7].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y + halfHeight, box.Center.Z - halfDepth);
+
+            // Set vertex colors.
+            for (int i = 0; i < this.vertices.Length; i++)
+                this.vertices[i].Color = this.Color;
+        }
+
+        public bool InitializeGraphics(IRenderManager manager, Device device)
+        {
+            // Build the initial vertex array.
+            BuildVertexBuffer();
 
             // Setup the vertex buffer using the vertex data stream.
             BufferDescription desc = new BufferDescription();
@@ -111,21 +118,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 
         public bool DrawFrame(IRenderManager manager, Device device)
         {
-            // Compute the bounding box extents.
-            SharpDX.BoundingBox box = new SharpDX.BoundingBox(this.BoundMin.ToVector3(), this.BoundMax.ToVector3());
-
-            // Compute the transformation matrix that will be used to transform the box vertices.
-            Matrix transMatrix = Matrix.Scaling(box.Width, box.Height, box.Depth);
-            transMatrix.Row4 = new Vector4(box.Center, transMatrix.Row4.W);
-
-            // Loop and transform the vertices.
-            for (int i = 0; i < this.vertices.Length; i++)
-            {
-                // Transform the current vertex.
-                //this.vertices[i].Position = Vector4.Transform(this.BoxVertices[i], transMatrix).ToVector3();
-                this.vertices[i].Color = this.Color;
-            }
-
             // Update the vertex buffer.
             device.ImmediateContext.UpdateSubresource(this.vertices, this.vertexBuffer);
 

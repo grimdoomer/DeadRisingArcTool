@@ -1147,66 +1147,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     new VertexBufferBinding(this.secondaryVertexBuffer, this.primitives[i].VertexStride2, this.primitives[i].VertexStream2Offset));
                 device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
 
-                // Setup the vertex shader, pixel shader, sampler states, and vertex declaration.
-                if (this.primitives[i].VertexStride1 == 28)
+                // Check the flags on the material for this primitive to determine what shader to render with.
+                int shaderFlags = (this.materials[this.primitives[i].MaterialIndex].Flags >> 27) & 7;
+                switch (shaderFlags)
                 {
-                    // Check stream 2 stride and set the shader accordingly.
-                    switch (this.primitives[i].VertexStride2)
-                    {
-                        case 12:
-                            {
-                                // Normal mesh shader.
-                                this.shaders[1].DrawFrame(manager, device);
-                                break;
-                            }
-                        case 0:
-                        case 28:
-                        case 32:
-                            {
-                                // Level geometry shader.
-                                this.shaders[2].DrawFrame(manager, device);
-                                break;
-                            }
-                        default:
-                            {
-                                continue;
-                            }
-                    }
+                    case 0: this.shaders[1].DrawFrame(manager, device); break;
+                    case 1: System.Diagnostics.Debug.Assert(false); break;
+                    case 2: this.shaders[2].DrawFrame(manager, device); break; 
                 }
-                else
-                {
-                    continue;
-                }
-
-                //// Setup the vertex shader, pixel shader, sampler states, and vertex declaration.
-                //if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 12)
-                //{
-                //    // Normal mesh shader.
-                //    this.shaders[1].DrawFrame(manager, device);
-                //}
-                //else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 28)
-                //{
-                //    // Level geometry shader.
-                //    this.shaders[2].DrawFrame(manager, device);
-                //}
-                //else if (this.primitives[i].VertexStride1 == 28 && this.primitives[i].VertexStride2 == 0)
-                //{
-                //    // TODO: I think this is the incorrect vertex declaration...
-                //    this.shaders[2].DrawFrame(manager, device);
-                //}
-                //else
-                //{
-                //    /*
-                //     * Most likely this:
-                //        POSITION		0	DXGI_FORMAT_R32G32B32_FLOAT		0	0	0	0
-		              //  COLOR			0	DXGI_FORMAT_B8G8R8A8_UNORM		0	12	0	0
-		              //  TEXCOORD		0	DXGI_FORMAT_R16G16B16A16_SNORM	0	16	0	0
-		              //  TEXCOORD		1	DXGI_FORMAT_R8G8B8A8_UINT		0	24	0	0
-		              //  TEXCOORD		2	DXGI_FORMAT_R8G8B8A8_UINT		0	28	0	0
-                //     * 
-                //     */
-                //    continue;
-                //}
 
                 // Get the material for the primitive.
                 Material material = this.materials[this.primitives[i].MaterialIndex];

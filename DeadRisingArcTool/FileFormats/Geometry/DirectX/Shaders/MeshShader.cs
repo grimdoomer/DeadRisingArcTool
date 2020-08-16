@@ -17,6 +17,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
     [BuiltInShader(BuiltInShaderType.Game_Mesh)]
     public class MeshShader : BuiltInShader
     {
+        public static readonly InputElement[] VertexFormat = new InputElement[9]
+        {
+            // Id: 0x0550228e
+            new InputElement("POSITION",        0, Format.R16G16B16A16_SNorm,   0,  0),
+            new InputElement("NORMAL",          0, Format.R16G16B16A16_SNorm,   16, 0),
+            new InputElement("TANGENT",         0, Format.R16G16B16A16_SNorm,   0,  1),
+            new InputElement("TEXCOORD",        0, Format.R16G16_SNorm,         24, 0),
+            new InputElement("TEXCOORD",        1, Format.R16G16_SNorm,         8,  1),
+            new InputElement("BLENDWEIGHT",     0, Format.R8G8B8A8_UNorm,       12, 0),
+            new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_SInt,        8,  0),
+            new InputElement("TEXCOORD",        2, Format.R32G32B32A32_Float,   0,  0),
+            new InputElement("TEXCOORD",        3, Format.R32G32B32A32_Float,   0,  0),
+        };
+
         public override bool InitializeGraphics(IRenderManager manager, Device device)
         {
             // Compile our vertex and pixel shaders.
@@ -51,19 +65,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             this.PixelSampleStates = new SamplerState[] { new SamplerState(device, pixelDesc) };
 
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
-            this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, new InputElement[]
-                    {
-                        // Id: 0x0550228e
-                    new InputElement("POSITION",        0, Format.R16G16B16A16_SNorm,   0,  0),
-                    new InputElement("NORMAL",          0, Format.R16G16B16A16_SNorm,   16, 0),
-                    new InputElement("TANGENT",         0, Format.R16G16B16A16_SNorm,   0,  1),
-                    new InputElement("TEXCOORD",        0, Format.R16G16_SNorm,         24, 0),
-                    new InputElement("TEXCOORD",        1, Format.R16G16_SNorm,         8,  1),
-                    new InputElement("BLENDWEIGHT",     0, Format.R8G8B8A8_UNorm,       12, 0),
-                    new InputElement("BLENDINDICES",    0, Format.R8G8B8A8_SInt,        8,  0),
-                    new InputElement("TEXCOORD",        2, Format.R32G32B32A32_Float,   0,  0),
-                    new InputElement("TEXCOORD",        3, Format.R32G32B32A32_Float,   0,  0),
-                    });
+            this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, MeshShader.VertexFormat);
 
             // Successfully initialized.
             return true;

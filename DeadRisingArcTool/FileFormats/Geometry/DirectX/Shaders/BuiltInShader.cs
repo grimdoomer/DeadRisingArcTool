@@ -16,12 +16,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
         /// <summary>
         /// A normal model mesh
         /// </summary>
-        Game_Mesh,
+        Game_Mesh,              // 0x0550228e
         /// <summary>
         /// A mesh that is part of the world or environment
         /// </summary>
-        Game_LevelGeometry1,
-        Game_LevelGeometry2,
+        Game_LevelGeometry1,    // 0x7976290a
+        Game_LevelGeometry2,    // 
     }
 
     public class BuiltInShaderAttribute : Attribute
