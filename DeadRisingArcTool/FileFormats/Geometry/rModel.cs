@@ -489,7 +489,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             if (this.joints[index].ParentIndex != 255)
                 return this.joints[index].Offset + GetJointPosition(this.joints[index].ParentIndex);
             else
-                return this.joints[index].Offset + this.baseTranslation.ToVector3();
+                return this.joints[index].Offset;// + this.baseTranslation.ToVector3();
         }
 
         private Matrix GetJointTransformation(int index)
@@ -506,8 +506,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Loop and initialize the animation vectors for every joint in the mesh.
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
-                this.animatedJoints[i].InterpolatedRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-                this.animatedJoints[i].InterpolatedTranslation = new Vector4(this.animatedJoints[i].Translation.ToVector3(), 0.0f);
+                // See 0x1406B1A80
+                this.animatedJoints[i].InterpolatedRotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
+                this.animatedJoints[i].InterpolatedTranslation = new Vector4(this.joints[i].Offset, 1.0f); //new Vector4(new Vector3(0.0f), 1.0f); change for basic models
                 this.animatedJoints[i].InterpolatedScale = new Vector4(1.0f);
             }
 
@@ -523,7 +524,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 {
                     // Set the joint type and translation.
                     this.animatedJoints[keyFrameDesc.JointIndex].Type = keyFrameDesc.JointType;
-                    this.animatedJoints[keyFrameDesc.JointIndex].Translation = new Vector4(this.joints[keyFrameDesc.JointType].Offset, 1.0f);
+                    this.animatedJoints[keyFrameDesc.JointIndex].Translation = new Vector4(this.joints[keyFrameDesc.JointIndex].Offset, 1.0f);
                 }
 
                 // Check the key frame usage and handle accordingly.
@@ -540,8 +541,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                         {
                             // Joint translation.
                             this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedTranslation = InterpolateKeyFrame(animation, animIndex, i,
-                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, 
-                                new Vector4(this.animatedJoints[keyFrameDesc.JointIndex].Translation.ToVector3(), 0.0f));
+                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
                             break;
                         }
                     case 2:
@@ -622,7 +622,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
             // Setup root node animation matrix.
             Matrix rootNodeMatrix = Matrix.RotationQuaternion(this.modelRotation.ToQuaternion());
-            rootNodeMatrix.Row4 = new Vector4(this.joints[0].Offset, 1.0f); // this.modelPosition.ToVector3(), 1.0f);
+            rootNodeMatrix.Row4 = new Vector4(this.modelPosition.ToVector3(), 1.0f);
 
             // Loop through all joints and compute the final animation vectors.
             Vector4 parentJointPosition = new Vector4(0.0f);
@@ -650,13 +650,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                                 {
                                     // Compute the rotational matrix of the current joint and transform the parent joint matrix by it.
                                     Matrix jointMatrix = Matrix.RotationQuaternion(joint.InterpolatedRotation.ToQuaternion());
-                                    jointMatrix.Row4 = joint.InterpolatedTranslation;
+                                    jointMatrix.TranslationVector = joint.InterpolatedTranslation.ToVector3(); //
                                     parentMatrix *= jointMatrix;
                                 }
                             }
 
                             // Transform the root joint's position by the to-parent matrix.
-                            parentJointPosition = Vector4.Transform(parentMatrix.Row4, rootNodeMatrix);
+                            parentJointPosition = Vector4.Transform(new Vector4(parentMatrix.TranslationVector, 1.0f), rootNodeMatrix);
                             break;
                         }
                     case 20:
@@ -685,7 +685,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Calculate the final SRT matrix for the joint.
                 this.animatedJoints[i].SRTMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, this.animatedJoints[i].Scale.ToVector3(),
-                    this.animatedJoints[i].Translation.ToVector3(), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
+                    GetJointPosition(i), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
+
+                if (i == 2)
+                {
+                    //System.Diagnostics.Debug.WriteLine(string.Format("Trans Y: {0}", this.animatedJoints[i].Translation.Y));
+                }
 
                 // Update the joint bounding sphere.
                 this.jointBoundingSpheres[i].Rotation = this.animatedJoints[i].Rotation;
@@ -711,7 +716,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Check the key frame codec and handle accordingly.
             switch (keyFrameDesc.Codec)
             {
-                case 1:
+                case 1: // SHOULD BE OKAY
                     {
                         // Check if we are on an even frame boundary and handle accordingly.
                         float framePosition = frame0 - (float)((int)frame0);
@@ -733,16 +738,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             if (frame0 + 1.0f < frame1)
                             {
                                 // Interpolate with the next frame.
-                                vFrameEnd = framePosition * animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[(int)frame0 + 1].Component;
+                                vFrameEnd = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[(int)frame0 + 1].Component;
                             }
                             else
                             {
                                 // Interpolate with the first frame in the animation (wrap around).
-                                vFrameEnd = framePosition * animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0].Component;
+                                vFrameEnd = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0].Component;
                             }
 
                             // Interpolate.
-                            return vFrameStart + (vFrameEnd * frameRemainder);
+                            return (vFrameStart * frameRemainder) + (vFrameEnd * framePosition);
                         }
                     }
                 case 2:
@@ -811,15 +816,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                         return new Vector4(vFrameStart.X, vFrameStart.Y, vFrameStart.Z, (float)Math.Sqrt(weight));
                     }
-                case 6:
+                case 6: // MAYBE OKAY?
                     {
                         // Find the key frame entry for the current frame position.
                         int keyFrameDataIndex = -1;
-                        float keyFramePosition = 0.0f;
+                        float previousKeyFrameStart = 0.0f;
                         for (int i = 0; i < animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData.Length; i++)
                         {
                             // Check if the current frame falls within this key frame entry.
-                            if (frame0 >= keyFramePosition && frame0 < keyFramePosition + (float)animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[i].Duration)
+                            if (frame0 >= previousKeyFrameStart && frame0 < previousKeyFrameStart + (float)animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[i].Duration)
                             {
                                 // Current frame number falls in the key frame entry.
                                 keyFrameDataIndex = i;
@@ -827,7 +832,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             }
 
                             // Update keyframe position.
-                            keyFramePosition += (float)animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[i].Duration;
+                            previousKeyFrameStart += (float)animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[i].Duration;
                         }
 
                         // Check if we found a key frame entry.
@@ -838,7 +843,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                         }
 
                         // Compute the current position in the frame.
-                        float framePosition = frame0 - (float)((int)frame0);
+                        float framePosition = (frame0 - previousKeyFrameStart) / animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[keyFrameDataIndex].Duration; //frame0 - (float)((int)frame0);
 
                         // Compute the frame vector for the key frame entry for frame0.
                         KeyFrameData keyFrame = animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[keyFrameDataIndex];
@@ -847,11 +852,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                         // Check if we need to interpolate with the next key frame, first key frame, or no interpolation is needed.
                         if (keyFrame.Duration == 0)
                         {
+                            // Recalculate the frame position.
+                            framePosition = frame0 - (float)((int)frame0);
+
                             // Compute the frame vector for the first frame in the animation.
                             Vector4 vFirstAnimFrame = ComputeCodec6FrameVector(animation.animations[animationIndex].KeyFrames[keyFrameIndex].KeyFrameData[0]);
 
-                            // Interpolate with current frame and first frame (wrap around).
-                            return Quaternion.Slerp(new Quaternion(vCurrentFrame), new Quaternion(vFirstAnimFrame), framePosition).ToVector4();
+                            // If the frame position is greater than 0 interpolate with current frame and first frame (wrap around).
+                            if (framePosition != 0.0f)
+                                return Quaternion.Slerp(new Quaternion(vCurrentFrame), new Quaternion(vFirstAnimFrame), framePosition).ToVector4();
+                            else
+                                return vCurrentFrame;
                         }
                         else if (framePosition > 0.0f)
                         {
@@ -906,11 +917,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 scalar);
 
             // Check the key frame flags and flip x/y/z as needed.
-            if ((keyFrame.Flags & 2) != 0)
+            if ((keyFrame.Flags & 1) != 0)
                 vKeyFrame.X = -vKeyFrame.X;
-            if ((keyFrame.Flags & 4) != 0)
+            if ((keyFrame.Flags & 2) != 0)
                 vKeyFrame.Y = -vKeyFrame.Y;
-            if ((keyFrame.Flags & 8) != 0)
+            if ((keyFrame.Flags & 4) != 0)
                 vKeyFrame.Z = -vKeyFrame.Z;
 
             // Return the vector.
@@ -1103,7 +1114,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 manager.GetTime().AnimationCurrentFrame = manager.GetTime().AnimationCurrentTime / manager.GetTime().AnimationTimePerFrame;
 
                 // Check if we need to reset the frame counters.
-                if (manager.GetTime().AnimationCurrentTime > manager.GetTime().AnimationTotalTime)
+                if (manager.GetTime().AnimationCurrentTime >= manager.GetTime().AnimationTotalTime)
                 {
                     // Reset the frame and time counters.
                     manager.GetTime().AnimationCurrentTime = 0.0f;
@@ -1119,10 +1130,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             {
                 // Copy the translation matrix into the bone matrix buffer.
                 Matrix SRTMatrix = GetJointTransformation(i);
-                boneMatrixData[i * 4] = new Color4(SRTMatrix.Row1);
-                boneMatrixData[i * 4 + 1] = new Color4(SRTMatrix.Row2);
-                boneMatrixData[i * 4 + 2] = new Color4(SRTMatrix.Row3);
-                boneMatrixData[i * 4 + 3] = new Color4(SRTMatrix.Row4);
+                boneMatrixData[i * 4] = new Color4(SRTMatrix.Column1);
+                boneMatrixData[i * 4 + 1] = new Color4(SRTMatrix.Column2);
+                boneMatrixData[i * 4 + 2] = new Color4(SRTMatrix.Column3);
+                boneMatrixData[i * 4 + 3] = new Color4(SRTMatrix.Column4);
             }
 
             // Update the bone matrix map texture.
@@ -1152,7 +1163,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 switch (shaderFlags)
                 {
                     case 0: this.shaders[1].DrawFrame(manager, device); break;
-                    case 1: System.Diagnostics.Debug.Assert(false); break;
+                    case 1: continue; break;
                     case 2: this.shaders[2].DrawFrame(manager, device); break; 
                 }
 
