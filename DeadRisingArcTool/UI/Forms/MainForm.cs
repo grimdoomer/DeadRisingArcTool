@@ -1271,10 +1271,6 @@ namespace DeadRisingArcTool
                 // If this node has no children check it for the .rModel extension.
                 if (childNode.Nodes.Count == 0 && childNode.Text.EndsWith(".rModel") == true)
                 {
-                    // Skip the skybox for now.
-                    if (childNode.Text.Contains("sky") == true)
-                        continue;
-
                     // Add the datum to the list.
                     modelDatums.Add(((TreeNodeTag)childNode.Tag).Datum);
                 }

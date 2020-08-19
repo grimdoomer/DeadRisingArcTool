@@ -26,6 +26,11 @@ struct VS_INPUT
 	float4		boneWeights0:	BLENDWEIGHT0;
 	int4		boneIndices0:	BLENDINDICES0;
 #endif
+
+#if	(FUNC_SKIN == SKIN_8WT)
+	float4		boneWeights1:	BLENDWEIGHT1;
+	int4		boneIndices1:	BLENDINDICES1;
+#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -56,8 +61,13 @@ VS_OUTPUT XfStandardVS(VS_INPUT I)
  
 	float3x4 wmat;
 
-#if (FUNC_SKIN != SKIN_NONE)
+#if (FUNC_SKIN == SKIN_4WT)
+
 	wmat = getWorldMatrix4wtFromTex(I.boneWeights0, I.boneIndices0);
+
+#elif (FUNC_SKIN == SKIN_8WT)
+
+	wmat = getWorldMatrix8wtFromTex(I.boneWeights0, I.boneWeights1, I.boneIndices0, I.boneIndices1);
 #endif
 
 #if (FUNC_SKIN != SKIN_NONE)

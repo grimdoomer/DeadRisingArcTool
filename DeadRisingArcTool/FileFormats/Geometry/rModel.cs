@@ -489,7 +489,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             if (this.joints[index].ParentIndex != 255)
                 return this.joints[index].Offset + GetJointPosition(this.joints[index].ParentIndex);
             else
-                return this.joints[index].Offset;// + this.baseTranslation.ToVector3();
+                return this.joints[index].Offset + this.baseTranslation.ToVector3();
         }
 
         private Matrix GetJointTransformation(int index)
@@ -508,61 +508,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             {
                 // See 0x1406B1A80
                 this.animatedJoints[i].InterpolatedRotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
-                this.animatedJoints[i].InterpolatedTranslation = new Vector4(this.joints[i].Offset, 1.0f); //new Vector4(new Vector3(0.0f), 1.0f); change for basic models
+                this.animatedJoints[i].InterpolatedTranslation = new Vector4(new Vector3(0.0f), 1.0f); //change for basic models
                 this.animatedJoints[i].InterpolatedScale = new Vector4(1.0f);
             }
 
-            // Loop through all the animated joints and update animation data for the current frame.
+            // Loop through all of the animated joints and setup the joint types.
             int animIndex = manager.GetTime().SelectedAnimation;
             for (int i = 0; i < animation.animations[animIndex].JointCount; i++)
             {
                 // Get the key frame descriptor for the current joint.
                 KeyFrameDescriptor keyFrameDesc = animation.animations[animIndex].KeyFrames[i];
-
-                // Check if we need to set the joint type and translation.
-                if (keyFrameDesc.JointIndex != 255 && keyFrameDesc.JointType != 2 && this.animatedJoints[keyFrameDesc.JointIndex].Type != keyFrameDesc.JointType)
-                {
-                    // Set the joint type and translation.
-                    this.animatedJoints[keyFrameDesc.JointIndex].Type = keyFrameDesc.JointType;
-                    this.animatedJoints[keyFrameDesc.JointIndex].Translation = new Vector4(this.joints[keyFrameDesc.JointIndex].Offset, 1.0f);
-                }
-
-                // Check the key frame usage and handle accordingly.
-                switch (keyFrameDesc.Usage)
-                {
-                    case 0:
-                        {
-                            // Joint rotation.
-                            this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedRotation = InterpolateKeyFrame(animation, animIndex, i, 
-                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
-                            break;
-                        }
-                    case 1:
-                        {
-                            // Joint translation.
-                            this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedTranslation = InterpolateKeyFrame(animation, animIndex, i,
-                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
-                            break;
-                        }
-                    case 2:
-                        {
-                            // Joint scale.
-                            this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedScale = InterpolateKeyFrame(animation, animIndex, i,
-                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(1.0f));
-                            break;
-                        }
-                    case 3:
-                        {
-                            break;
-                        }
-                    case 4:
-                        {
-                            // Root joint translation.
-                            this.baseTranslation = InterpolateKeyFrame(animation, animIndex, i, 
-                                manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, this.baseTranslation);
-                            break;
-                        }
-                }
 
                 // If this is not the root bone then setup child bone types.
                 if (keyFrameDesc.JointIndex != 255)
@@ -620,14 +575,73 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 }
             }
 
-            // Setup root node animation matrix.
-            Matrix rootNodeMatrix = Matrix.RotationQuaternion(this.modelRotation.ToQuaternion());
-            rootNodeMatrix.Row4 = new Vector4(this.modelPosition.ToVector3(), 1.0f);
-
-            // Loop through all joints and compute the final animation vectors.
-            Vector4 parentJointPosition = new Vector4(0.0f);
+            // Loop through all the animated joints and update animation data for the current frame.
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
+                if (animation.animations[animIndex].KeyFrames != null)
+                {
+                    // Loop through all of the keyframe descriptors and process any for this joint number.
+                    for (int x = 0; x < animation.animations[animIndex].KeyFrames.Length; x++)
+                    {
+                        // Get the key frame descriptor and check if it corresponds to the current joint number.
+                        KeyFrameDescriptor keyFrameDesc = animation.animations[animIndex].KeyFrames[x];
+                        if (keyFrameDesc.JointIndex != this.animatedJoints[i].JointNumber)
+                            continue;
+
+                        // Check if we need to set the joint type and translation.
+                        if (keyFrameDesc.JointIndex != 255 && keyFrameDesc.JointType != 2 && this.animatedJoints[keyFrameDesc.JointIndex].Type != keyFrameDesc.JointType)
+                        {
+                            // Set the joint type and translation.
+                            this.animatedJoints[keyFrameDesc.JointIndex].Type = keyFrameDesc.JointType;
+                            this.animatedJoints[keyFrameDesc.JointIndex].Translation = new Vector4(this.joints[keyFrameDesc.JointIndex].Offset, 1.0f);
+                        }
+
+                        // Check the key frame usage and handle accordingly.
+                        switch (keyFrameDesc.Usage)
+                        {
+                            case 0:
+                                {
+                                    // Joint rotation.
+                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedRotation = InterpolateKeyFrame(animation, animIndex, x,
+                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
+                                    break;
+                                }
+                            case 1:
+                                {
+                                    // Joint translation.
+                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedTranslation = InterpolateKeyFrame(animation, animIndex, x,
+                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
+                                    break;
+                                }
+                            case 2:
+                                {
+                                    // Joint scale.
+                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedScale = InterpolateKeyFrame(animation, animIndex, x,
+                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(1.0f));
+                                    break;
+                                }
+                            case 3:
+                                {
+                                    break;
+                                }
+                            case 4:
+                                {
+                                    // Root joint translation.
+                                    this.baseTranslation = InterpolateKeyFrame(animation, animIndex, x,
+                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, this.baseTranslation);
+                                    break;
+                                }
+                        }
+                    }
+                }
+
+                // Setup root node animation matrix.
+                Matrix rootNodeMatrix = Matrix.RotationQuaternion(this.modelRotation.ToQuaternion());
+                rootNodeMatrix.Row4 = new Vector4(this.modelPosition.ToVector3(), 1.0f);
+
+                // Loop through all joints and compute the final animation vectors.
+                Vector4 parentJointPosition = new Vector4(0.0f);
+
                 // Check the joint type and handle accordingly.
                 switch (this.animatedJoints[i].Type)
                 {
@@ -938,6 +952,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 this.secondaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData2);
             this.indexBuffer = Buffer.Create<ushort>(device, BindFlags.IndexBuffer, this.indexData);
 
+            // If this is a sky model we need to fix up the textures.
+            if (this.FileName.EndsWith("sky.rModel", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                // Allocate a new texture array.
+                this.header.NumberOfTextures = 3;
+                this.textureFileNames = new string[3];
+
+                // Get the file name for this model without the extension.
+                string fileName = this.FileName.Substring(0, this.FileName.LastIndexOf("."));
+
+                // Setup the texture file names array.
+                this.textureFileNames[0] = fileName + "_IM-00_d";
+                this.textureFileNames[1] = fileName + "_IM-00_s";
+                this.textureFileNames[2] = fileName + "_XM-00_n";
+
+                // Fixup the material to use the day bitmap.
+                this.materials[0].BaseMapTexture = 1;
+            }
+
             // Allocate resources for the texture array.
             this.gameTextures = new rTexture[this.header.NumberOfTextures + 1];
             this.dxTextures = new Texture2D[this.header.NumberOfTextures + 1];
@@ -976,8 +1009,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
             // Load all the geometry shaders that we might need.
             this.shaders = new BuiltInShader[3];
-            this.shaders[0] = manager.GetBuiltInShader(BuiltInShaderType.Game_LevelGeometry2);
-            this.shaders[1] = manager.GetBuiltInShader(BuiltInShaderType.Game_Mesh);
+            this.shaders[0] = manager.GetBuiltInShader(BuiltInShaderType.SkinnedRigid8W);
+            this.shaders[1] = manager.GetBuiltInShader(BuiltInShaderType.SkinnedRigid4W);
             this.shaders[2] = manager.GetBuiltInShader(BuiltInShaderType.Game_LevelGeometry1);
 
             // Setup the blend state for image transparency.
@@ -1163,7 +1196,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 switch (shaderFlags)
                 {
                     case 0: this.shaders[1].DrawFrame(manager, device); break;
-                    case 1: continue; break;
+                    case 1: this.shaders[0].DrawFrame(manager, device); break;
                     case 2: this.shaders[2].DrawFrame(manager, device); break; 
                 }
 

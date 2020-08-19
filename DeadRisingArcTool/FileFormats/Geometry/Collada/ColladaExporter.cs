@@ -333,7 +333,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                     int shaderType = (model.materials[model.primitives[index].MaterialIndex].Flags >> 27) & 7;
                     switch (shaderType)
                     {
-                        case 0: WriteVertexStream(writer, model, MeshShader.VertexFormat, index, primitiveId, true); break;
+                        case 0: WriteVertexStream(writer, model, SkinnedRigid4WMesh.VertexFormat, index, primitiveId, true); break;
                         case 2: WriteVertexStream(writer, model, LevelGeometry1Shader.VertexFormat, index, primitiveId, true); break;
                         default:
                             {
@@ -363,6 +363,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
             {
                 // Setup vertex stream info.
                 int vertexStride = model.primitives[primitiveIndex].VertexStride1;
+                int vertexStartOffset = model.primitives[primitiveIndex].VertexStream1Offset;
                 byte[] vertexData = model.vertexData1;
 
                 // Check the slot number for the vertex component.
@@ -370,11 +371,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                 {
                     // Use the secondary vertex stream.
                     vertexStride = model.primitives[primitiveIndex].VertexStride2;
+                    vertexStartOffset = model.primitives[primitiveIndex].VertexStream2Offset;
                     vertexData = model.vertexData2;
                 }
 
                 // Calculate the starting offset based on the selected vertex stride.
-                int startOffset = (model.primitives[primitiveIndex].StartingVertex + model.primitives[primitiveIndex].BaseVertexLocation) * vertexStride;
+                int startOffset = vertexStartOffset + (model.primitives[primitiveIndex].StartingVertex + model.primitives[primitiveIndex].BaseVertexLocation) * vertexStride;
 
                 // If this is a texcoord semantic make sure the bitmap is actually used.
                 if (vertexFormat[i].SemanticName == "TEXCOORD")

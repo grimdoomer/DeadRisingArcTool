@@ -261,10 +261,16 @@
     <None Include="FileFormats\Geometry\Shaders\XfLevelMesh.vs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="FileFormats\Geometry\Shaders\XfMesh.ps">
+    <None Include="FileFormats\Geometry\Shaders\XfMesh4W.ps">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="FileFormats\Geometry\Shaders\XfMesh.vs">
+    <None Include="FileFormats\Geometry\Shaders\XfMesh4W.vs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="FileFormats\Geometry\Shaders\XfMesh8W.ps">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="FileFormats\Geometry\Shaders\XfMesh8W.vs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />

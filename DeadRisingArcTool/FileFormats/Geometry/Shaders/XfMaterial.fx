@@ -264,4 +264,32 @@ float3x4 getWorldMatrix4wtFromTex(
 	return wmat;
 }
 
+float3x4 getWorldMatrix8wtFromTex(
+	float4		boneWeights0:	BLENDWEIGHT0,
+	float4		boneWeights1 : BLENDWEIGHT1,
+	int4		boneIndices0 : BLENDINDICES0,
+	int4		boneIndices1 : BLENDINDICES1)
+{
+	float3x4 wmat;
+	float4   ofs0 = ((float4)boneIndices0 + gXfMatrixMapFactor.x) * gXfMatrixMapFactor.z;
+	float4   ofs1 = ((float4)boneIndices1 + gXfMatrixMapFactor.x) * gXfMatrixMapFactor.z;
+	float    _line = gXfMatrixMapFactor.y;
+
+	wmat = mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs0.x, _line), boneWeights0.x)
+		+ mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs0.y, _line), boneWeights0.y)
+		+ mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs0.z, _line), boneWeights0.z)
+		+ mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs0.w, _line), boneWeights0.w);
+
+	if (boneWeights1.x > 0) {
+
+		wmat += mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs1.x, _line), boneWeights1.x)
+			+ mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs1.y, _line), boneWeights1.y)
+			+ mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs1.z, _line), boneWeights1.z)
+			+ mul(getMatrixFromTexture(XfMatrixMap, XfSamplerMatrixMap, ofs1.w, _line), boneWeights1.w);
+
+	}
+
+	return wmat;
+}
+
 #endif

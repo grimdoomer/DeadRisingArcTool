@@ -14,14 +14,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
         /// </summary>
         Wireframe,
         /// <summary>
-        /// A normal model mesh
+        /// A skinned rigid mesh with 4 bone weights per vertex
         /// </summary>
-        Game_Mesh,              // 0x0550228e
+        SkinnedRigid4W,         // 0x0550228e
+        /// <summary>
+        /// A skinned rigid mesh with 8 bone weights per vertex
+        /// </summary>
+        SkinnedRigid8W,         // 0x87a34e22
         /// <summary>
         /// A mesh that is part of the world or environment
         /// </summary>
         Game_LevelGeometry1,    // 0x7976290a
-        Game_LevelGeometry2,    // 
     }
 
     public class BuiltInShaderAttribute : Attribute
