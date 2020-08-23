@@ -272,27 +272,23 @@ namespace DeadRisingArcTool.Forms
             // Set the selected folder path.
             this.SelectedFolder = fbd.SelectedPath;
 
-            // Check if we should load patch files or not.
-            //if (Properties.Settings.Default.LoadPatchFiles == true)
+            // Get the length of the patch folder path for string manipulation.
+            string patchFileDirectory = fbd.SelectedPath + "\\Mods";
+            int fileNameStartIndex = patchFileDirectory.Length + 1;
+
+            // Scan the patch folder and add each archive to the list.
+            string[] patchArchives = FindArchivesInFolder(patchFileDirectory, true, false);
+            for (int i = 0; i < patchArchives.Length; i++)
             {
-                // Get the length of the patch folder path for string manipulation.
-                string patchFileDirectory = fbd.SelectedPath + "\\Mods";
-                int fileNameStartIndex = patchFileDirectory.Length + 1;
+                // Add the archive to our tracking list
+                this.archivesList.Add(new Tuple<string, bool>(patchArchives[i], true));
 
-                // Scan the patch folder and add each archive to the list.
-                string[] patchArchives = FindArchivesInFolder(patchFileDirectory, true, false);
-                for (int i = 0; i < patchArchives.Length; i++)
-                {
-                    // Add the archive to our tracking list
-                    this.archivesList.Add(new Tuple<string, bool>(patchArchives[i], true));
-
-                    // Add the archive to the list view.
-                    ListViewItem item = new ListViewItem(patchArchives[i].Substring(fileNameStartIndex));
-                    item.Checked = true;
-                    item.ForeColor = Color.Blue;
-                    item.ImageIndex = (int)UIIcon.PatchArchive;
-                    this.lstArchives.Items.Add(item);
-                }
+                // Add the archive to the list view.
+                ListViewItem item = new ListViewItem(patchArchives[i].Substring(fileNameStartIndex));
+                item.Checked = true;
+                item.ForeColor = Color.Blue;
+                item.ImageIndex = (int)UIIcon.PatchArchive;
+                this.lstArchives.Items.Add(item);
             }
 
             // Scan the directory for archives and add each one to the list.
@@ -300,7 +296,7 @@ namespace DeadRisingArcTool.Forms
             for (int i = 0; i < folderArchives.Length; i++)
             {
                 // Get the length of the patch folder path for string manipulation.
-                int fileNameStartIndex = fbd.SelectedPath.Length + 1;
+                fileNameStartIndex = fbd.SelectedPath.Length + 1;
 
                 // Make sure we didn't already load this archive.
                 if (this.archivesList.FindIndex(t => t.Item1 == folderArchives[i]) == -1)
@@ -401,6 +397,8 @@ namespace DeadRisingArcTool.Forms
 
             // Get the directory info for the specified folder.
             DirectoryInfo rootInfo = new DirectoryInfo(folderPath);
+            if (rootInfo.Exists == false)
+                return new string[0];
 
             // Loop through all child files in the folder.
             foreach (FileInfo fileInfo in rootInfo.GetFiles())

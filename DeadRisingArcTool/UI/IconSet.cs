@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeadRisingArcTool.FileFormats;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -48,6 +49,22 @@ namespace DeadRisingArcTool.UI
             // Set additional image list properties.
             this.IconImageList.ColorDepth = ColorDepth.Depth32Bit;
             this.IconImageList.ImageSize = new System.Drawing.Size(18, 18);
+        }
+
+        /// <summary>
+        /// Gets the <see cref="UIIcon"/> image index for the specified file type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static UIIcon UIIconFromResourceType(ResourceType type)
+        {
+            // Check the resource type and handle accordingly.
+            switch (type)
+            {
+                case ResourceType.rTexture: return UIIcon.Texture;
+                case ResourceType.rModel: return UIIcon.Model;
+                default: return UIIcon.File;
+            }
         }
     }
 }

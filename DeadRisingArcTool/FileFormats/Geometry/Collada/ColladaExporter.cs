@@ -324,16 +324,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                 // Write the mesh element.
                 writer.WriteStartElement("mesh");
                 {
-                    if (model.primitives[index].VertexStream1Offset > 0 || model.primitives[index].VertexStream2Offset > 0)
-                    {
-
-                    }
-
                     // Check the material flags for this primitive to determine the shader type.
                     int shaderType = (model.materials[model.primitives[index].MaterialIndex].Flags >> 27) & 7;
                     switch (shaderType)
                     {
                         case 0: WriteVertexStream(writer, model, SkinnedRigid4WMesh.VertexFormat, index, primitiveId, true); break;
+                        case 1: WriteVertexStream(writer, model, SkinnedRigid8WMesh.VertexFormat, index, primitiveId, true); break;
                         case 2: WriteVertexStream(writer, model, LevelGeometry1Shader.VertexFormat, index, primitiveId, true); break;
                         default:
                             {

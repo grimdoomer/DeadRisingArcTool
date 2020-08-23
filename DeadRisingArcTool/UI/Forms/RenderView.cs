@@ -310,6 +310,7 @@ namespace DeadRisingArcTool.Forms
                 ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(this.renderDatums[0], out arcFile, out fileEntry);
 
                 string animationFileName = fileEntry.FileName.Replace("rModel", "rMotionList").Replace("model", "motion");
+                animationFileName = "motion\\em\\em49\\em4900\\em4900.rMotionList";
                 ArchiveCollection.Instance.GetArchiveFileEntryFromFileName(animationFileName, out arcFile, out fileEntry);
 
                 if (fileEntry != null)

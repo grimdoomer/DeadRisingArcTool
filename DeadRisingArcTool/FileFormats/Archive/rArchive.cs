@@ -23,7 +23,28 @@ namespace DeadRisingArcTool.FileFormats.Archive
 
         public override byte[] ToBuffer()
         {
-            throw new NotImplementedException();
+            // Create a new memory stream to back our file with.
+            MemoryStream ms = new MemoryStream();
+            EndianWriter writer = new EndianWriter(this.IsBigEndian == true ? Endianness.Big : Endianness.Little, ms);
+
+            // Update the number of files in the index.
+            this.header.NumberOfFiles = (short)this.FileIds.Length;
+
+            // Write the new archive index header.
+            writer.Write(this.header.Magic);
+            writer.Write(this.header.Version);
+            writer.Write(this.header.NumberOfFiles);
+
+            // Loop and write the list of file ids.
+            for (int i = 0; i < this.FileIds.Length; i++)
+            {
+                // Write the file id.
+                writer.Write(this.FileIds[i]);
+            }
+
+            // Close the binary writer and return the memory stream as a byte array.
+            writer.Close();
+            return ms.ToArray();
         }
 
         public static rArchive FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
