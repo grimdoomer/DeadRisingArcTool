@@ -289,5 +289,21 @@ def printItemNumbers():
 		print("%s = %d" % (itemDict[item], item))
 
 
+
+def printItemInfo():
+
+	# Loop and print all item info.
+	addr = 0x14122C1E0
+	while addr < 0x14122DF68:
+
+		# Get the item info.
+		itemNumber = ida_bytes.get_dword(addr)
+		itemName = readString(ida_bytes.get_qword(addr + 8))
+		itemPath = readString(ida_bytes.get_qword(addr + 0x10))
+		addr += 0x18
+
+		print("%d - %s %s" % (itemNumber, itemName, itemPath))
+
+
 #main()
-printItemNumbers()
+printItemInfo()

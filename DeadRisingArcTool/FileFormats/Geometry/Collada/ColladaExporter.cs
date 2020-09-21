@@ -132,27 +132,50 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                             writer.WriteStartElement("profile_COMMON");
                             {
                                 // Format some object ids.
-                                string textureName = model.materials[i].BaseMapTexture == 0 ? "null" : Path.GetFileName(model.textureFileNames[model.materials[i].BaseMapTexture - 1]);
+                                bool hasNormalMap = model.materials[i].BaseMapTexture != 0;
+                                string baseMapTexture = model.materials[i].BaseMapTexture == 0 ? "null" : Path.GetFileName(model.textureFileNames[model.materials[i].BaseMapTexture - 1]);
+                                string normalMapTexture = model.materials[i].NormalMapTexture == 0 ? "null" : Path.GetFileName(model.textureFileNames[model.materials[i].NormalMapTexture - 1]);
                                 string surfaceId = string.Format("material-{0}-surface", i.ToString());
                                 string samplerId = string.Format("material-{0}-sampler", i.ToString());
                                 string texcoordsId = string.Format("material-{0}-texcoords", i.ToString());
 
                                 // Write a new param block for the surface.
                                 writer.WriteStartElement("newparam");
-                                writer.WriteAttributeString("sid", surfaceId);
+                                writer.WriteAttributeString("sid", surfaceId + "_basemap");
                                     writer.WriteStartElement("surface");
                                     writer.WriteAttributeString("type", "2D");
-                                        writer.WriteElementString("init_from", textureName);
+                                        writer.WriteElementString("init_from", baseMapTexture);
                                     writer.WriteEndElement();
                                 writer.WriteEndElement();
 
                                 // Write the new param block for the sampler.
                                 writer.WriteStartElement("newparam");
-                                writer.WriteAttributeString("sid", samplerId);
+                                writer.WriteAttributeString("sid", samplerId + "_basemap");
                                     writer.WriteStartElement("sampler2D");
-                                        writer.WriteElementString("source", surfaceId);
+                                        writer.WriteElementString("source", surfaceId + "_basemap");
                                     writer.WriteEndElement();
                                 writer.WriteEndElement();
+
+                                // Check if the material has a normal map and if so write the surface and sampler for it.
+                                if (hasNormalMap == true)
+                                {
+                                    // Write the normal map surface.
+                                    writer.WriteStartElement("newparam");
+                                    writer.WriteAttributeString("sid", surfaceId + "_bumpmap");
+                                        writer.WriteStartElement("surface");
+                                        writer.WriteAttributeString("type", "2D");
+                                            writer.WriteElementString("init_from", normalMapTexture);
+                                        writer.WriteEndElement();
+                                    writer.WriteEndElement();
+
+                                    // Write the normal map sampler.
+                                    writer.WriteStartElement("newparam");
+                                    writer.WriteAttributeString("sid", samplerId + "_bumpmap");
+                                        writer.WriteStartElement("sampler2D");
+                                            writer.WriteElementString("source", surfaceId + "_bumpmap");
+                                        writer.WriteEndElement();
+                                    writer.WriteEndElement();
+                                }
 
                                 // Write the technique element.
                                 writer.WriteStartElement("technique");
@@ -172,8 +195,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                                         // Write the diffuse texture.
                                         writer.WriteStartElement("diffuse");
                                             writer.WriteStartElement("texture");
-                                            writer.WriteAttributeString("texture", samplerId);
-                                            writer.WriteAttributeString("texcoord", texcoordsId);
+                                            writer.WriteAttributeString("texture", samplerId + "_basemap");
+                                            writer.WriteAttributeString("texcoord", texcoordsId + "0");
                                             writer.WriteEndElement();
                                         writer.WriteEndElement();
 
@@ -186,6 +209,23 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                                         writer.WriteEndElement();
                                     }
                                     writer.WriteEndElement();
+
+                                    // Check if the model has a bump map and if so write the bump technique.
+                                    if (hasNormalMap == true)
+                                    {
+                                        // Write the bump map technique.
+                                        writer.WriteStartElement("extra");
+                                            writer.WriteStartElement("technique");
+                                            writer.WriteAttributeString("profile", "FCOLLADA");
+                                                writer.WriteStartElement("bump");
+                                                    writer.WriteStartElement("texture");
+                                                    writer.WriteAttributeString("texture", samplerId + "_bumpmap");
+                                                    writer.WriteAttributeString("texcoord", texcoordsId + "1");
+                                                    writer.WriteEndElement();
+                                                writer.WriteEndElement();
+                                            writer.WriteEndElement();
+                                        writer.WriteEndElement();
+                                    }
                                 }
                                 writer.WriteEndElement();
                             }
@@ -276,11 +316,24 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                                             writer.WriteStartElement("instance_material");
                                             writer.WriteAttributeString("symbol", "material-" + model.primitives[i].MaterialIndex.ToString());
                                             writer.WriteAttributeString("target", "#material-" + model.primitives[i].MaterialIndex.ToString());
+
+                                                // Basemap:
                                                 writer.WriteStartElement("bind_vertex_input");
-                                                writer.WriteAttributeString("semantic", string.Format("material-{0}-texcoords", model.primitives[i].MaterialIndex.ToString()));
+                                                writer.WriteAttributeString("semantic", string.Format("material-{0}-texcoords0", model.primitives[i].MaterialIndex.ToString()));
                                                 writer.WriteAttributeString("input_semantic", "TEXCOORD");
                                                 writer.WriteAttributeString("input_set", "0");
                                                 writer.WriteEndElement();
+
+                                                // Check if the material has a bump map.
+                                                if (model.materials[model.primitives[i].MaterialIndex].NormalMapTexture != 0)
+                                                {
+                                                    // Normal map:
+                                                    writer.WriteStartElement("bind_vertex_input");
+                                                    writer.WriteAttributeString("semantic", string.Format("material-{0}-texcoords1", model.primitives[i].MaterialIndex.ToString()));
+                                                    writer.WriteAttributeString("input_semantic", "TEXCOORD");
+                                                    writer.WriteAttributeString("input_set", "1");
+                                                    writer.WriteEndElement();
+                                                }
                                             writer.WriteEndElement();
                                         writer.WriteEndElement();
                                     writer.WriteEndElement();

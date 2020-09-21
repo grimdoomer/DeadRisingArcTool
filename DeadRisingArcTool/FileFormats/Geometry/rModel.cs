@@ -492,6 +492,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 return this.joints[index].Offset + this.baseTranslation.ToVector3();
         }
 
+        private Vector3 GetAnimatedJointPosition(int index)
+        {
+            // Check if the joint has a parent and calculate the correct position.
+            if (this.animatedJoints[index].ParentIndex != 255)
+                return this.animatedJoints[index].Translation.ToVector3() + GetJointPosition(this.animatedJoints[index].ParentIndex);
+            else
+                return this.animatedJoints[index].Translation.ToVector3() + this.baseTranslation.ToVector3();
+        }
+
         private Matrix GetJointTransformation(int index)
         {
             // Check if this joint has a parent and caclulate the correct transformation matric.
@@ -506,10 +515,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Loop and initialize the animation vectors for every joint in the mesh.
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
+                Vector4 parentOffset = new Vector4(0.0f);
+                if (this.animatedJoints[i].ParentIndex != 255)
+                    parentOffset = this.animatedJoints[this.animatedJoints[i].ParentIndex].Translation;
+
                 // See 0x1406B1A80
-                this.animatedJoints[i].InterpolatedRotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
-                this.animatedJoints[i].InterpolatedTranslation = new Vector4(new Vector3(0.0f), 1.0f); //change for basic models
+                this.animatedJoints[i].InterpolatedRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);// Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
+                this.animatedJoints[i].InterpolatedTranslation = new Vector4(new Vector3(0.0f), 1.0f); // this.animatedJoints[i].Translation; //change for basic models
                 this.animatedJoints[i].InterpolatedScale = new Vector4(1.0f);
+                //this.animatedJoints[i].SRTMatrix = this.jointData3[i].SRTMatrix;
             }
 
             // Loop through all of the animated joints and setup the joint types.
@@ -575,6 +589,34 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 }
             }
 
+            // Loop through all of the key frames and process any for the root joint.
+            if (animation.animations[animIndex].KeyFrames != null)
+            {
+                for (int i = 0; i < animation.animations[animIndex].KeyFrames.Length; i++)
+                {
+                    // Make sure this keyframe is for the root node.
+                    KeyFrameDescriptor keyFrameDesc = animation.animations[animIndex].KeyFrames[i];
+                    if (keyFrameDesc.JointIndex != 255)
+                        continue;
+
+                    // Check the key frame usage and handle accordingly.
+                    switch (keyFrameDesc.Usage)
+                    {
+                        case 4:
+                            {
+                                // Root joint translation.
+                                this.baseTranslation = InterpolateKeyFrame(animation, animIndex, i,
+                                    manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, this.baseTranslation);
+                                break;
+                            }
+                        default:
+                            {
+                                throw new NotSupportedException(string.Format("Key frame usage {0} not currently supported for root nodes!", keyFrameDesc.Usage));
+                            }
+                    }
+                }
+            }
+
             // Loop through all the animated joints and update animation data for the current frame.
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
@@ -631,13 +673,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                                         manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, this.baseTranslation);
                                     break;
                                 }
+                            default:
+                                {
+                                    throw new NotSupportedException(string.Format("Key frame usage {0} not currently supported!", keyFrameDesc.Usage));
+                                }
                         }
                     }
                 }
 
                 // Setup root node animation matrix.
                 Matrix rootNodeMatrix = Matrix.RotationQuaternion(this.modelRotation.ToQuaternion());
-                rootNodeMatrix.Row4 = new Vector4(this.modelPosition.ToVector3(), 1.0f);
+                rootNodeMatrix.Column4 = new Vector4(this.modelPosition.ToVector3(), 1.0f);
 
                 // Loop through all joints and compute the final animation vectors.
                 Vector4 parentJointPosition = new Vector4(0.0f);
@@ -659,25 +705,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             if (this.animatedJoints[i].ParentIndex != 255)
                             {
                                 // Loop through the node's parental hierarchy until we hit the root node.
-                                for (AnimatedJoint joint = this.animatedJoints[this.animatedJoints[i].ParentIndex]; 
+                                for (AnimatedJoint joint = this.animatedJoints[this.animatedJoints[i].ParentIndex];
                                     joint.ParentIndex != 255; joint = this.animatedJoints[joint.ParentIndex])
                                 {
                                     // Compute the rotational matrix of the current joint and transform the parent joint matrix by it.
                                     Matrix jointMatrix = Matrix.RotationQuaternion(joint.InterpolatedRotation.ToQuaternion());
-                                    jointMatrix.TranslationVector = joint.InterpolatedTranslation.ToVector3(); //
+                                    jointMatrix.Column4 = joint.InterpolatedTranslation; //
                                     parentMatrix *= jointMatrix;
                                 }
                             }
 
                             // Transform the root joint's position by the to-parent matrix.
-                            parentJointPosition = Vector4.Transform(new Vector4(parentMatrix.TranslationVector, 1.0f), rootNodeMatrix);
+                            parentJointPosition = Vector4.Transform(parentMatrix.Column4, rootNodeMatrix);
                             break;
                         }
                     case 20:
                         {
                             // Transform the interpolated translation by the root node matrix.
                             Vector3 newTranslation = Vector3.TransformNormal(this.animatedJoints[i].InterpolatedTranslation.ToVector3(), rootNodeMatrix);
-                            newTranslation = (newTranslation + rootNodeMatrix.Row4.ToVector3()) - parentJointPosition.ToVector3();
+                            newTranslation = (newTranslation + rootNodeMatrix.Column4.ToVector3()) - parentJointPosition.ToVector3();
 
                             // Caclulate the length of the vector.
                             float length = newTranslation.Length();
@@ -699,7 +745,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Calculate the final SRT matrix for the joint.
                 this.animatedJoints[i].SRTMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, this.animatedJoints[i].Scale.ToVector3(),
-                    GetJointPosition(i), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
+                    GetAnimatedJointPosition(this.animatedJoints[i].JointNumber), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
 
                 if (i == 2)
                 {
@@ -707,6 +753,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 }
 
                 // Update the joint bounding sphere.
+                this.jointBoundingSpheres[i].Position = GetAnimatedJointPosition(this.animatedJoints[i].JointNumber);
                 this.jointBoundingSpheres[i].Rotation = this.animatedJoints[i].Rotation;
 
                 //this.animatedJoints[i].SRTMatrix = Matrix.RotationQuaternion(this.animatedJoints[i].Rotation.ToQuaternion());
@@ -1063,7 +1110,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 this.animatedJoints[i].SRTMatrix = this.jointTranslations[i].SRTMatrix;
 
                 // Create the bounding sphere for the current joint.
-                this.jointBoundingSpheres[i] = new BoundingSphere(jointPosition, this.animatedJoints[i].Rotation, this.joints[i].Length, new Color4(0xFF00FF00));
+                uint colorValue = (uint)(10 * i);
+                uint color = 0xFF000000 | (colorValue << 16) | (colorValue << 8) | colorValue;
+                this.jointBoundingSpheres[i] = new BoundingSphere(jointPosition, this.animatedJoints[i].Rotation, this.joints[i].Length, new Color4(color));
                 if (this.jointBoundingSpheres[i].InitializeGraphics(manager, device) == false)
                 {
                     // Failed to initialize graphics for bounding sphere.
@@ -1162,7 +1211,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
                 // Copy the translation matrix into the bone matrix buffer.
-                Matrix SRTMatrix = GetJointTransformation(i);
+                Matrix SRTMatrix = GetJointTransformation(this.animatedJoints[i].JointNumber);
                 boneMatrixData[i * 4] = new Color4(SRTMatrix.Column1);
                 boneMatrixData[i * 4 + 1] = new Color4(SRTMatrix.Column2);
                 boneMatrixData[i * 4 + 2] = new Color4(SRTMatrix.Column3);
