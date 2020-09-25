@@ -132,7 +132,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                             writer.WriteStartElement("profile_COMMON");
                             {
                                 // Format some object ids.
-                                bool hasNormalMap = model.materials[i].BaseMapTexture != 0;
+                                bool hasNormalMap = model.materials[i].NormalMapTexture != 0;
                                 string baseMapTexture = model.materials[i].BaseMapTexture == 0 ? "null" : Path.GetFileName(model.textureFileNames[model.materials[i].BaseMapTexture - 1]);
                                 string normalMapTexture = model.materials[i].NormalMapTexture == 0 ? "null" : Path.GetFileName(model.textureFileNames[model.materials[i].NormalMapTexture - 1]);
                                 string surfaceId = string.Format("material-{0}-surface", i.ToString());
@@ -383,7 +383,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.Collada
                     {
                         case 0: WriteVertexStream(writer, model, SkinnedRigid4WMesh.VertexFormat, index, primitiveId, true); break;
                         case 1: WriteVertexStream(writer, model, SkinnedRigid8WMesh.VertexFormat, index, primitiveId, true); break;
-                        case 2: WriteVertexStream(writer, model, LevelGeometry1Shader.VertexFormat, index, primitiveId, true); break;
+                        case 2: WriteVertexStream(writer, model, LevelGeometry1Shader.VertexFormat, index, primitiveId, false); break;
                         default:
                             {
                                 // Shader type not currently supported.

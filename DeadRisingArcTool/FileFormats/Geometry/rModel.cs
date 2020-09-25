@@ -114,7 +114,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x60 */ public int TextureIndex9;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x64 */ // padding
         /* 0x68 */ public float Transparency;
-        [Hex]
+        //[Hex]
         /* 0x6C */ public float Unk11;
         /* 0x70 */ public float FresnelFactor;
         /* 0x74 */ public float FresnelBias;
@@ -408,7 +408,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     model.materials[i].TextureIndex9 = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
                     model.materials[i].Transparency = reader.ReadSingle();
-                    model.materials[i].Unk11 = reader.ReadInt32();
+                    model.materials[i].Unk11 = reader.ReadSingle();
                     model.materials[i].FresnelFactor = reader.ReadSingle();
                     model.materials[i].FresnelBias = reader.ReadSingle();
                     model.materials[i].SpecularPow = reader.ReadSingle();
