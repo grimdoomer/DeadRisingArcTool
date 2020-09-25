@@ -91,7 +91,7 @@ namespace DeadRisingArcTool.Controls
         private void btnRender_Click(object sender, EventArgs e)
         {
             // Display a new render window.
-            RenderView render = new RenderView(this.GameResource.Datum);
+            RenderView render = new RenderView(RenderViewType.SingleModel, this.GameResource.Datum);
 
             // TODO: Figure out what the fuck is up with this...
             try

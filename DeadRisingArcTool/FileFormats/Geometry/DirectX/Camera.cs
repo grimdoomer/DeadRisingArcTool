@@ -39,11 +39,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         private Vector3 camLeft = DefaultLeft;
 
         private Vector3 position;
-        public Vector3 Position { get { return this.position; } set { this.position = value; } }
+        public Vector3 Position { get { return this.position; } set { this.position = value; ComputePosition(); } }
         private Vector3 lookAt;
-        public Vector3 LookAt { get { return this.lookAt; } set { this.lookAt = value; } }
+        public Vector3 LookAt { get { return this.lookAt; } set { this.lookAt = value; ComputePosition(); } }
         private Vector3 upVector;
-        public Vector3 UpVector { get { return this.upVector; } set { this.upVector = value; } }
+        public Vector3 UpVector { get { return this.upVector; } set { this.upVector = value; ComputePosition(); } }
 
         public Matrix ViewMatrix
         {

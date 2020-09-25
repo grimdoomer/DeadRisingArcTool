@@ -101,12 +101,17 @@ float4 XfStandardPS(VS_OUTPUT I) : SV_Target
 		return albedo;
 	}
 	else*/
+    if (gXfEnableHighlighting == 0)
 	{
 		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
 		clip(albedo.a * I.texCoordBase.z - 1.0 / 255.0);
 
 		return albedo;
 	}
+    else
+    {
+        return gXfHighlightColor;
+    }
 }
 
 //=============================================================================

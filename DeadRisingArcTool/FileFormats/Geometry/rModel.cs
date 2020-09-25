@@ -10,12 +10,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using BoundingSphere = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingSphere;
 using BoundingBox = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingBox;
-using System.Collections;
+using ImGuiNET;
+using ImVector2 = System.Numerics.Vector2;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
@@ -116,7 +115,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x64 */ // padding
         /* 0x68 */ public float Transparency;
         [Hex]
-        /* 0x6C */ public int Unk11;
+        /* 0x6C */ public float Unk11;
         /* 0x70 */ public float FresnelFactor;
         /* 0x74 */ public float FresnelBias;
         /* 0x78 */ public float SpecularPow;
@@ -230,6 +229,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private Vector4 modelPosition = new Vector4(0.0f);
         private Vector4 modelRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
         private Vector4 modelScale = new Vector4(1.0f);
+
+        // UI data.
+        private int[] primtiveGroupIds = null;
+        private Dictionary<int, SortedSet<int>> primitivesByGroup = new Dictionary<int, SortedSet<int>>();
+        private bool[] visibleGroupIds = null;
+
+        private int selectedMaterialIndex = 0;
+
+        private int selectedPrimitiveIndex = -1;
+        private int hoveredPrimitiveIndex = -1;
+        private bool[] visiblePrimitives = null;
 
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
@@ -520,8 +530,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     parentOffset = this.animatedJoints[this.animatedJoints[i].ParentIndex].Translation;
 
                 // See 0x1406B1A80
-                this.animatedJoints[i].InterpolatedRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);// Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
-                this.animatedJoints[i].InterpolatedTranslation = new Vector4(new Vector3(0.0f), 1.0f); // this.animatedJoints[i].Translation; //change for basic models
+                this.animatedJoints[i].InterpolatedRotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4(); //new Vector4(0.0f, 0.0f, 0.0f, 1.0f);// 
+                this.animatedJoints[i].InterpolatedTranslation = new Vector4(new Vector3(0.0f), 1.0f); // this.animatedJoints[i].Translation; //change for basic models 
                 this.animatedJoints[i].InterpolatedScale = new Vector4(1.0f);
                 //this.animatedJoints[i].SRTMatrix = this.jointData3[i].SRTMatrix;
             }
@@ -745,7 +755,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Calculate the final SRT matrix for the joint.
                 this.animatedJoints[i].SRTMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, this.animatedJoints[i].Scale.ToVector3(),
-                    GetAnimatedJointPosition(this.animatedJoints[i].JointNumber), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
+                    GetJointPosition(this.animatedJoints[i].JointNumber), this.animatedJoints[i].Rotation.ToQuaternion(), this.animatedJoints[i].Translation.ToVector3());
 
                 if (i == 2)
                 {
@@ -753,7 +763,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 }
 
                 // Update the joint bounding sphere.
-                this.jointBoundingSpheres[i].Position = GetAnimatedJointPosition(this.animatedJoints[i].JointNumber);
+                this.jointBoundingSpheres[i].Position = GetJointPosition(this.animatedJoints[i].JointNumber);
                 this.jointBoundingSpheres[i].Rotation = this.animatedJoints[i].Rotation;
 
                 //this.animatedJoints[i].SRTMatrix = Matrix.RotationQuaternion(this.animatedJoints[i].Rotation.ToQuaternion());
@@ -1064,9 +1074,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             BlendStateDescription blendDesc = new BlendStateDescription();
             blendDesc.AlphaToCoverageEnable = false;
             blendDesc.IndependentBlendEnable = false;
-            blendDesc.RenderTarget[0].IsBlendEnabled = false;
-            blendDesc.RenderTarget[0].SourceBlend = BlendOption.One;
-            blendDesc.RenderTarget[0].DestinationBlend = BlendOption.Zero;
+            blendDesc.RenderTarget[0].IsBlendEnabled = true;
+            blendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            blendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
             blendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
             blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
             blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
@@ -1110,9 +1120,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 this.animatedJoints[i].SRTMatrix = this.jointTranslations[i].SRTMatrix;
 
                 // Create the bounding sphere for the current joint.
-                uint colorValue = (uint)(10 * i);
-                uint color = 0xFF000000 | (colorValue << 16) | (colorValue << 8) | colorValue;
-                this.jointBoundingSpheres[i] = new BoundingSphere(jointPosition, this.animatedJoints[i].Rotation, this.joints[i].Length, new Color4(color));
+                float jointRadius = this.joints[i].Length > 0.0f ? this.joints[i].Length : 3.0f;
+                this.jointBoundingSpheres[i] = new BoundingSphere(jointPosition, this.animatedJoints[i].Rotation, jointRadius, new Color4(0xFF00FF00));
                 if (this.jointBoundingSpheres[i].InitializeGraphics(manager, device) == false)
                 {
                     // Failed to initialize graphics for bounding sphere.
@@ -1155,6 +1164,33 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 // Create the shader resource view that will bind this texture.
                 this.boneMapMatrixShaderView = new ShaderResourceView(device, this.boneMapMatrix);
             }
+
+            // Loop and build the list of primitives by group id.
+            this.visiblePrimitives = new bool[this.primitives.Length];
+            for (int i = 0; i < this.primitives.Length; i++)
+            {
+                // Set the primitive to visible.
+                this.visiblePrimitives[i] = true;
+
+                // Check if the key for the group id exists.
+                if (this.primitivesByGroup.ContainsKey(this.primitives[i].GroupID) == false)
+                {
+                    // Create a new list for this group id.
+                    this.primitivesByGroup.Add(this.primitives[i].GroupID, new SortedSet<int>());
+                }
+
+                // Append the primtive id list.
+                this.primitivesByGroup[this.primitives[i].GroupID].Add(i);
+            }
+
+            // Initialize the visible group id list.
+            this.visibleGroupIds = new bool[this.primitivesByGroup.Keys.Count];
+            for (int i = 0; i < this.visibleGroupIds.Length; i++)
+                this.visibleGroupIds[i] = true;
+
+            // Sort the group id keys.
+            this.primtiveGroupIds = this.primitivesByGroup.Keys.ToArray();
+            Array.Sort(this.primtiveGroupIds);
 
             // Successfully initialized.
             return true;
@@ -1227,12 +1263,22 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Set alpha blending state.
             device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState, new SharpDX.Mathematics.Interop.RawColor4(1.0f, 1.0f, 1.0f, 1.0f));
 
+            // Set the bounding box parameters for this model.
+            manager.GetShaderConstants().gXfQuantPosScale = this.header.BoundingBoxMax - this.header.BoundingBoxMin;
+            manager.GetShaderConstants().gXfQuantPosOffset = this.header.BoundingBoxMin;
+
+            // Update shader constants now to avoid doing it every frame for non-highlighted objects.
+            manager.UpdateShaderConstants();
+
             // Loop through all of the primitives for the model and draw each one.
             for (int i = 0; i < this.primitives.Length; i++)
             {
                 // Check if the primitive is enabled.
-                if (this.primitives[i].Enabled == 0)
+                if (this.primitives[i].Enabled == 0 || this.visiblePrimitives[i] == false)
                     continue;
+
+                // Set the depth stencil to normal z-test.
+                manager.SetDepthStencil(0);
 
                 // Set the vertex and index buffers.
                 device.ImmediateContext.InputAssembler.SetVertexBuffers(0,
@@ -1246,7 +1292,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 {
                     case 0: this.shaders[1].DrawFrame(manager, device); break;
                     case 1: this.shaders[0].DrawFrame(manager, device); break;
-                    case 2: this.shaders[2].DrawFrame(manager, device); break; 
+                    case 2: this.shaders[2].DrawFrame(manager, device); break;
                 }
 
                 // Get the material for the primitive.
@@ -1263,6 +1309,27 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Draw the primtive.
                 device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
+
+                // Check if we should highlight the primitive based on UI.
+                if (this.hoveredPrimitiveIndex == i)
+                {
+                    // Set the depth stencil for object bleeding.
+                    manager.SetDepthStencil(1);
+
+                    // Set the highlighting shader variables.
+                    manager.GetShaderConstants().gXfHighlightColor = new Vector4(1.0f, 0.0f, 0.0f, 0.5f);
+                    manager.GetShaderConstants().gXfHighlightingEnabled = 1;
+
+                    // Update shader constants.
+                    manager.UpdateShaderConstants();
+
+                    // Draw the object again with no depth test and using the highlight color.
+                    device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
+
+                    // Turn highlighting off and update the shader constants buffer.
+                    manager.GetShaderConstants().gXfHighlightingEnabled = 0;
+                    manager.UpdateShaderConstants();
+                }
             }
 
             // Get the debug draw flags and check if we should draw extra stuff.
@@ -1297,6 +1364,159 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         public override void CleanupGraphics(IRenderManager manager, Device device)
         {
             // TODO:
+        }
+
+        #endregion
+
+        #region ImGui
+
+        public void CreateJointsImGui(IRenderManager manager)
+        {
+            // Reset hovered index.
+            this.hoveredPrimitiveIndex = -1;
+
+            // Create the joints section.
+            if (ImGui.CollapsingHeader("Joints", ImGuiTreeNodeFlags.DefaultOpen) == true)
+            {
+                // Loop and print info on each joint.
+                ImGui.Indent();
+                for (int i = 0; i < this.joints.Length; i++)
+                {
+                    Vector4[] matrixAsVectors = new Vector4[4]
+                    {
+                        this.animatedJoints[i].SRTMatrix.Row1,
+                        this.animatedJoints[i].SRTMatrix.Row2,
+                        this.animatedJoints[i].SRTMatrix.Row3,
+                        this.animatedJoints[i].SRTMatrix.Row4
+                    };
+
+                    // Print the joint info.
+                    ImGui.BeginGroup();
+                    ImGui.Text("Parent: " + this.joints[i].ParentIndex.ToString());
+                    ImGui.Text("Index: " + this.joints[i].Index.ToString());
+                    ImGui.Text("Radius: " + this.joints[i].Length.ToString());
+                    ImGui.InputFloat3("Offset", ref this.joints[i].Offset, "%.3f", ImGuiInputTextFlags.ReadOnly);
+                    ImGui.InputFloat4("SRT Matrix", ref matrixAsVectors[0]);
+                    ImGui.InputFloat4("", ref matrixAsVectors[1]);
+                    ImGui.InputFloat4("", ref matrixAsVectors[2]);
+                    ImGui.InputFloat4("", ref matrixAsVectors[3]);
+                    ImGui.Separator();
+                    ImGui.EndGroup();
+
+                    // When the user hovers over the group change the color of the bounding sphere.
+                    if (ImGui.IsItemHovered() == true)
+                    {
+                        // Change sphere color to red.
+                        this.jointBoundingSpheres[i].Color = new Color4(0xFF0000FF);
+                    }
+                    else
+                    {
+                        // Normal color green.
+                        this.jointBoundingSpheres[i].Color = new Color4(0xFF00FF00);
+                    }
+                }
+                ImGui.Unindent();
+            }
+
+            // Materials section.
+            if (ImGui.CollapsingHeader("Materials", ImGuiTreeNodeFlags.DefaultOpen) == true)
+            {
+                // Display a combobox to select the material to display.
+                if (ImGui.BeginCombo("Material", this.selectedMaterialIndex.ToString()) == true)
+                {
+                    // Loop for the number of materials and list them in the combo box.
+                    for (int i = 0; i < this.materials.Length; i++)
+                    {
+                        // Add the combo box option.
+                        if (ImGui.Selectable("Material " + i.ToString(), this.selectedMaterialIndex == i) == true)
+                            this.selectedMaterialIndex = i;
+
+                        // Set focus when opening the combo box.
+                        if (this.selectedMaterialIndex == i)
+                            ImGui.SetItemDefaultFocus();
+                    }
+                    ImGui.EndCombo();
+                }
+                ImGui.Separator();
+
+                // Display the material properties for the selected material.
+                ImGui.Indent();
+                ImGui.Text("Shader Technique: " + this.materials[this.selectedMaterialIndex].ShaderTechnique.ToString());
+                // TODO: Textures
+                ImGui.InputFloat("Transparency", ref this.materials[this.selectedMaterialIndex].Transparency);
+                ImGui.InputFloat("##Unk11", ref this.materials[this.selectedMaterialIndex].Unk11);
+                ImGui.InputFloat("Fresnel Factor", ref this.materials[this.selectedMaterialIndex].FresnelFactor);
+                ImGui.InputFloat("Fresnel Bias", ref this.materials[this.selectedMaterialIndex].FresnelBias);
+                ImGui.InputFloat("Specular Power", ref this.materials[this.selectedMaterialIndex].SpecularPow);
+                ImGui.InputFloat("##EnvmapPower", ref this.materials[this.selectedMaterialIndex].EnvmapPower);
+                ImGui.InputFloat4("Lightmap Scale", ref this.materials[this.selectedMaterialIndex].LightMapScale);
+                ImGui.InputFloat("Detail Factor", ref this.materials[this.selectedMaterialIndex].DetailFactor);
+                ImGui.InputFloat("Detail Wrap", ref this.materials[this.selectedMaterialIndex].DetailWrap);
+                ImGui.InputFloat("##Unk22", ref this.materials[this.selectedMaterialIndex].Unk22);
+                ImGui.InputFloat("##Unk23", ref this.materials[this.selectedMaterialIndex].Unk23);
+                ImGui.InputFloat4("Transmit", ref this.materials[this.selectedMaterialIndex].Transmit);
+                ImGui.InputFloat4("Parallax", ref this.materials[this.selectedMaterialIndex].Parallax);
+                ImGui.InputFloat("##Unk32", ref this.materials[this.selectedMaterialIndex].Unk32);
+                ImGui.InputFloat("##Unk33", ref this.materials[this.selectedMaterialIndex].Unk33);
+                ImGui.InputFloat("##Unk34", ref this.materials[this.selectedMaterialIndex].Unk34);
+                ImGui.InputFloat("##Unk35", ref this.materials[this.selectedMaterialIndex].Unk35);
+                ImGui.Unindent();
+            }
+
+            // Primitives section.
+            if (ImGui.CollapsingHeader("Primitives", ImGuiTreeNodeFlags.DefaultOpen) == true)
+            {
+                // Create the scrollable treeview for primtive selection.
+                ImVector2 boxSize = ImGui.GetItemRectSize();
+                ImGui.BeginChild("PrimitiveTree", new ImVector2(boxSize.X - 7, 200), true);
+
+                // Add primitives by group into the treeview.
+                for (int i = 0; i < this.primtiveGroupIds.Length; i++)
+                {
+                    // Create a new tree node for the group id.
+                    if (ImGui.TreeNodeEx("Group " + this.primtiveGroupIds[i].ToString(), ImGuiTreeNodeFlags.DefaultOpen) == true)
+                    {
+                        // Add a checkbox that toggles the visibility of all primitives in the group.
+                        ImGui.SameLine(175.0f);
+                        if (ImGui.Checkbox("##group" + i.ToString(), ref this.visibleGroupIds[i]) == true)
+                        {
+                            // Loop and change the visible state of all primitives in the group.
+                            foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
+                                this.visiblePrimitives[primId] = this.visibleGroupIds[i];
+                        }
+
+                        // Loop and create tree nodes for all the primitives in this group.
+                        foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
+                        {
+                            // Create tree node for primitive.
+                            ImGui.AlignTextToFramePadding();
+                            if (ImGui.Selectable("Primitive " + primId.ToString(), this.selectedPrimitiveIndex == primId, 
+                                ImGuiSelectableFlags.None, new System.Numerics.Vector2(140.0f, 17.0f)) == true)
+                            {
+                                // Set the selected primitive index.
+                                this.selectedPrimitiveIndex = primId;
+                            }
+
+                            // If the user hovers a primitive node highlight that primitive mesh.
+                            if (ImGui.IsItemHovered() == true)
+                            {
+                                // Set the hovered primitive index.
+                                this.hoveredPrimitiveIndex = primId;
+                            }
+
+                            // Add a checkbox that toggles visibility of the primitive.
+                            ImGui.SameLine(175.0f);
+                            ImGui.Checkbox("##primitive" + primId.ToString(), ref this.visiblePrimitives[primId]);
+                            //ImGui.TreePop();
+
+                            System.Numerics.Vector2 size = ImGui.GetItemRectSize();
+                        }
+
+                        ImGui.TreePop();
+                    }
+                }
+                ImGui.EndChild();
+            }
         }
 
         #endregion

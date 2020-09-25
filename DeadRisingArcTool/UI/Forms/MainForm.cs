@@ -1226,7 +1226,7 @@ namespace DeadRisingArcTool
             if (nodeTag.Datum != (DatumIndex)DatumIndex.Unassigned)
             {
                 // Create a new render window.
-                RenderView render = new RenderView(nodeTag.Datum);
+                RenderView render = new RenderView(RenderViewType.SingleModel, nodeTag.Datum);
 
                 // TODO: Figure out what the fuck is up with this...
                 try
@@ -1246,7 +1246,7 @@ namespace DeadRisingArcTool
                 if (modelDatums.Length > 0)
                 {
                     // Create the render window.
-                    RenderView render = new RenderView(modelDatums);
+                    RenderView render = new RenderView(RenderViewType.Level, modelDatums);
 
                     // TODO: Figure out what the fuck is up with this...
                     try

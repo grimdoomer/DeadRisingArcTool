@@ -22,6 +22,9 @@ const float4   gXfMatrixMapFactor;
 const float3 gXfQuantPosScale;
 const float3 gXfQuantPosOffset;
 
+const float4 gXfHighlightColor;
+const dword gXfEnableHighlighting;
+
 //=============================================================================
 //=============================================================================
 shared Texture2D		XfAlbedoMap;

@@ -27,6 +27,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         // Mouse buttons:
         LeftClick,
         RightClick,
+        MiddleMouse,
 
         // Camera misc:
         CamSpeedIncrease, 
@@ -56,7 +57,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// <summary>
         /// XY coordinates of the mouse cursor
         /// </summary>
-        public int[] MousePosition { get; protected set; } = new int[2];
+        public int[] MousePosition { get; protected set; } = new int[3];
         /// <summary>
         /// True if the xbox gamepad is connected
         /// </summary>
@@ -208,8 +209,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Update the mouse position and button state.
             this.MousePosition[0] = mouseState.X;
             this.MousePosition[1] = mouseState.Y;
+            this.MousePosition[2] = mouseState.Z;
             this.ButtonState[(int)InputAction.LeftClick] = mouseState.Buttons[0];
-            this.ButtonState[(int)InputAction.RightClick] = mouseState.Buttons[2];
+            this.ButtonState[(int)InputAction.RightClick] = mouseState.Buttons[1];
+            this.ButtonState[(int)InputAction.MiddleMouse] = mouseState.Buttons[2];
 
             // If the gamepad is connected update its state.
             if (this.gamepadDevice.IsConnected == true)
