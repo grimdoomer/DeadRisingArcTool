@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
 {
-    public enum BuiltInShaderType
+    public enum ShaderType
     {
         /// <summary>
         /// Used to display colored wireframe meshes
@@ -27,25 +27,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
         Game_LevelGeometry1,    // 0x7976290a
     }
 
-    public class BuiltInShaderAttribute : Attribute
+    public class ShaderAttributeAttribute : Attribute
     {
         /// <summary>
-        /// Type of built in shader
+        /// Type of shader
         /// </summary>
-        public BuiltInShaderType ShaderType { get; private set; }
+        public ShaderType ShaderType { get; private set; }
 
         /// <summary>
-        /// One of <see cref="BuiltInShaderType"/> that this shader maps to
+        /// One of <see cref="Shaders.ShaderType"/> that this shader maps to
         /// </summary>
-        /// <param name="type">Type of built in shader</param>
-        public BuiltInShaderAttribute(BuiltInShaderType type)
+        /// <param name="type">Type of shader</param>
+        public ShaderAttributeAttribute(ShaderType type)
         {
             // Initialize fields.
             this.ShaderType = type;
         }
     }
 
-    public abstract class BuiltInShader : IRenderable
+    public abstract class Shader : IRenderable
     {
         /// <summary>
         /// Compiled vertex shader
@@ -68,33 +68,33 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
         /// </summary>
         public SamplerState[] PixelSampleStates { get; protected set; }
         /// <summary>
-        /// One of <see cref="BuiltInShaderType"/> that this shader maps to
+        /// One of <see cref="Shaders.ShaderType"/> that this shader maps to
         /// </summary>
-        public BuiltInShaderType ShaderType
+        public ShaderType ShaderType
         {
             get
             {
-                // Get the BuiltInShaderAttribute from the parent class type.
-                return ((BuiltInShaderAttribute)this.GetType().GetCustomAttributes(typeof(BuiltInShaderAttribute), true)[0]).ShaderType;
+                // Get the ShaderAttribute from the parent class type.
+                return ((ShaderAttributeAttribute)this.GetType().GetCustomAttributes(typeof(ShaderAttributeAttribute), true)[0]).ShaderType;
             }
         }
 
         #region IRenderable
 
-        public abstract bool InitializeGraphics(IRenderManager manager, Device device);
+        public abstract bool InitializeGraphics(RenderManager manager);
 
-        public virtual bool DrawFrame(IRenderManager manager, Device device)
+        public virtual bool DrawFrame(RenderManager manager)
         {
             // Set the vertex and pixel shaders.
-            device.ImmediateContext.VertexShader.Set(this.VertexShader);
-            device.ImmediateContext.PixelShader.Set(this.PixelShader);
+            manager.Device.ImmediateContext.VertexShader.Set(this.VertexShader);
+            manager.Device.ImmediateContext.PixelShader.Set(this.PixelShader);
 
             // If we have any vertex sampler states set them.
             if (this.VertexSampleStates != null)
             {
                 // Loop and set all the shader sampler states.
                 for (int i = 0; i < this.VertexSampleStates.Length; i++)
-                    device.ImmediateContext.VertexShader.SetSampler(i, this.VertexSampleStates[i]);
+                    manager.Device.ImmediateContext.VertexShader.SetSampler(i, this.VertexSampleStates[i]);
             }
 
             // If we have any pixel shader sampler states set them.
@@ -102,16 +102,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             {
                 // Loop and set all the shader sampler states.
                 for (int i = 0; i < this.PixelSampleStates.Length; i++)
-                    device.ImmediateContext.PixelShader.SetSampler(i, this.PixelSampleStates[i]);
+                    manager.Device.ImmediateContext.PixelShader.SetSampler(i, this.PixelSampleStates[i]);
             }
 
             // Set the vertex declaration.
-            device.ImmediateContext.InputAssembler.InputLayout = this.VertexDeclaration;
+            manager.Device.ImmediateContext.InputAssembler.InputLayout = this.VertexDeclaration;
 
             return true;
         }
 
-        public virtual void CleanupGraphics(IRenderManager manager, Device device)
+        public virtual void CleanupGraphics(RenderManager manager)
         {
             // Dispose of all resource.
             if (this.VertexDeclaration != null)

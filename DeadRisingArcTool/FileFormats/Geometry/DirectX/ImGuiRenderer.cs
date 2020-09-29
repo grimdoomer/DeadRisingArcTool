@@ -55,7 +55,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.WindowSize = new Size(width, height);
         }
 
-        public bool InitializeGraphics(IRenderManager manager, Device device)
+        public bool InitializeGraphics(RenderManager manager)
         {
             // Initialize ImGui stuff.
             IntPtr context = ImGui.CreateContext();
@@ -75,21 +75,21 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
             // Create a vertex buffer for drawing.
             this.vertices = new ImDrawVert[this.vertexBufferSize];
-            this.vertexBuffer = Buffer.Create<ImDrawVert>(device, BindFlags.VertexBuffer, this.vertices);
+            this.vertexBuffer = Buffer.Create<ImDrawVert>(manager.Device, BindFlags.VertexBuffer, this.vertices);
 
             // Create the index buffer.
             this.indices = new ushort[this.indexBufferSize];
-            this.indexBuffer = Buffer.Create<ushort>(device, BindFlags.IndexBuffer, this.indices);
+            this.indexBuffer = Buffer.Create<ushort>(manager.Device, BindFlags.IndexBuffer, this.indices);
 
             // Compile the vertex and pixel shaders.
             CompilationResult vertexByteCode = ShaderBytecode.CompileFromFile("FileFormats\\Geometry\\Shaders\\ImGuiShader.fx", "VS", "vs_4_0", ShaderFlags.None, EffectFlags.None);
-            this.vertexShader = new VertexShader(device, vertexByteCode.Bytecode);
+            this.vertexShader = new VertexShader(manager.Device, vertexByteCode.Bytecode);
 
             CompilationResult pixelByteCode = ShaderBytecode.CompileFromFile("FileFormats\\Geometry\\Shaders\\ImGuiShader.fx", "PS", "ps_4_0", ShaderFlags.None, EffectFlags.None);
-            this.pixelShader = new PixelShader(device, pixelByteCode.Bytecode);
+            this.pixelShader = new PixelShader(manager.Device, pixelByteCode.Bytecode);
 
             // Setup the input layout for the vertex declaration.
-            this.inputLayout = new InputLayout(device, vertexByteCode.Bytecode, new InputElement[]
+            this.inputLayout = new InputLayout(manager.Device, vertexByteCode.Bytecode, new InputElement[]
                 {
                     new InputElement("POSITION",    0, SharpDX.DXGI.Format.R32G32_Float,    0, 0),
                     new InputElement("TEXCOORD",    0, SharpDX.DXGI.Format.R32G32_Float,    8, 0),
@@ -98,7 +98,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
             // Create the shader constant buffer.
             this.shaderConstants.mvp = new float[16];
-            this.shaderConstantsBuffer = Buffer.Create<float>(device, BindFlags.ConstantBuffer, this.shaderConstants.mvp);
+            this.shaderConstantsBuffer = Buffer.Create<float>(manager.Device, BindFlags.ConstantBuffer, this.shaderConstants.mvp);
 
             // Setup the rasterizer state.
             RasterizerStateDescription rasterStateDesc = new RasterizerStateDescription();
@@ -106,7 +106,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             rasterStateDesc.CullMode = CullMode.None;
             rasterStateDesc.IsScissorEnabled = true;
             rasterStateDesc.IsDepthClipEnabled = true;
-            this.rasterState = new RasterizerState(device, rasterStateDesc);
+            this.rasterState = new RasterizerState(manager.Device, rasterStateDesc);
 
             // Setup the blending state.
             BlendStateDescription blendDesc = new BlendStateDescription();
@@ -119,20 +119,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
             blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
             blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
-            this.blendState = new BlendState(device, blendDesc);
+            this.blendState = new BlendState(manager.Device, blendDesc);
 
             // Get the font image info from imgui layer.
             ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int fontWidth, out int fontHeight, out int bytesPerPixel);
-
-            //byte[] pixelData = new byte[fontWidth * fontHeight * 4];
-            //unsafe
-            //{
-            //    ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out byte* pPixels, out fontWidth, out fontHeight, out bytesPerPixel);
-            //    for (int i = 0; i < pixelData.Length; i++)
-            //        pixelData[i] = pPixels[i];
-            //}
-
-            //File.WriteAllBytes("C:\\pixeldata.bin", pixelData);
 
             // Create the font texture.
             Texture2DDescription textureDesc = new Texture2DDescription();
@@ -144,14 +134,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             textureDesc.SampleDescription.Count = 1;
             textureDesc.Usage = ResourceUsage.Default;
             textureDesc.BindFlags = BindFlags.ShaderResource;
-            this.texture = new Texture2D(device, textureDesc);
+            this.texture = new Texture2D(manager.Device, textureDesc);
 
             // Setup the databox that wraps the pixel buffer.
             DataBox box = new DataBox(pixels, fontWidth * 4, fontWidth * 4 * fontHeight);
-            device.ImmediateContext.UpdateSubresource(box, this.texture);
+            manager.Device.ImmediateContext.UpdateSubresource(box, this.texture);
 
             // Setup the resource view for the font texture.
-            this.resourceView = new ShaderResourceView(device, this.texture);
+            this.resourceView = new ShaderResourceView(manager.Device, this.texture);
 
             // Set the texture id so we can retreive it later.
             ImGui.GetIO().Fonts.TexID = this.resourceView.NativePointer;
@@ -166,28 +156,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             samplerDesc.ComparisonFunction = Comparison.Always;
             samplerDesc.MinimumLod = 0.0f;
             samplerDesc.MaximumLod = 0.0f;
-            this.samplerState = new SamplerState(device, samplerDesc);
+            this.samplerState = new SamplerState(manager.Device, samplerDesc);
 
             // Successfully initialized resources.
             return true;
         }
 
-        public bool DrawFrame(IRenderManager manager, Device device)
+        public bool DrawFrame(RenderManager manager)
         {
             // Get the IO structure.
             ImGuiIOPtr io = ImGui.GetIO();
 
             // Update input.
-            InputManager input = manager.GetInputManager();
-            io.MouseDown[0] = input.ButtonState[(int)InputAction.LeftClick];
-            io.MouseDown[1] = input.ButtonState[(int)InputAction.RightClick];
-            io.MouseDown[2] = input.ButtonState[(int)InputAction.MiddleMouse];
+            io.MouseDown[0] = manager.InputManager.ButtonState[(int)InputAction.LeftClick];
+            io.MouseDown[1] = manager.InputManager.ButtonState[(int)InputAction.RightClick];
+            io.MouseDown[2] = manager.InputManager.ButtonState[(int)InputAction.MiddleMouse];
 
-            //io.MousePos = new System.Numerics.Vector2((float)input.MousePosition[0], (float)input.MousePosition[1]);
-
-            if (input.MousePosition[2] != 0)
+            if (manager.InputManager.MousePositionDelta[2] != 0)
             {
-                io.MouseWheel += ((float)input.MousePosition[2] / 120.0f) / 20.0f;
+                io.MouseWheel += ((float)manager.InputManager.MousePositionDelta[2] / 120.0f) / 20.0f;
             }
 
             // Get the ImGui draw data.
@@ -204,7 +191,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
                 // Resize the vertex buffer.
                 this.vertices = new ImDrawVert[this.vertexBufferSize];
-                this.vertexBuffer = Buffer.Create<ImDrawVert>(device, BindFlags.VertexBuffer, this.vertices);
+                this.vertexBuffer = Buffer.Create<ImDrawVert>(manager.Device, BindFlags.VertexBuffer, this.vertices);
             }
 
             // Make sure the index buffer is large enough.
@@ -218,7 +205,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
                 // Resize the index buffer.
                 this.indices = new ushort[this.indexBufferSize];
-                this.indexBuffer = Buffer.Create<ushort>(device, BindFlags.IndexBuffer, this.indices);
+                this.indexBuffer = Buffer.Create<ushort>(manager.Device, BindFlags.IndexBuffer, this.indices);
             }
 
             int vertexPosition = 0;
@@ -249,8 +236,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             }
 
             // Update vertex and index buffers.
-            device.ImmediateContext.UpdateSubresource(this.vertices, this.vertexBuffer);
-            device.ImmediateContext.UpdateSubresource(this.indices, this.indexBuffer);
+            manager.Device.ImmediateContext.UpdateSubresource(this.vertices, this.vertexBuffer);
+            manager.Device.ImmediateContext.UpdateSubresource(this.indices, this.indexBuffer);
 
             // Setup the orthographic projection matrix and copy it to the shader constants buffer.
             Matrix.OrthoOffCenterLH(
@@ -260,24 +247,24 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 drawData.DisplayPos.Y,
                 1.0f, -1.0f, out Matrix mvp);
 
-            device.ImmediateContext.UpdateSubresource(mvp.ToArray(), this.shaderConstantsBuffer);
+            manager.Device.ImmediateContext.UpdateSubresource(mvp.ToArray(), this.shaderConstantsBuffer);
 
             // Setup the directx rendering state.
-            device.ImmediateContext.InputAssembler.InputLayout = this.inputLayout;
-            device.ImmediateContext.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            manager.Device.ImmediateContext.InputAssembler.InputLayout = this.inputLayout;
+            manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
-            device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 20, 0));
-            device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
+            manager.Device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 20, 0));
+            manager.Device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
 
-            device.ImmediateContext.VertexShader.Set(this.vertexShader);
-            device.ImmediateContext.PixelShader.Set(this.pixelShader);
+            manager.Device.ImmediateContext.VertexShader.Set(this.vertexShader);
+            manager.Device.ImmediateContext.PixelShader.Set(this.pixelShader);
 
-            device.ImmediateContext.VertexShader.SetConstantBuffer(0, this.shaderConstantsBuffer);
-            device.ImmediateContext.PixelShader.SetConstantBuffer(0, this.shaderConstantsBuffer);
-            device.ImmediateContext.PixelShader.SetSampler(0, this.samplerState);
+            manager.Device.ImmediateContext.VertexShader.SetConstantBuffer(0, this.shaderConstantsBuffer);
+            manager.Device.ImmediateContext.PixelShader.SetConstantBuffer(0, this.shaderConstantsBuffer);
+            manager.Device.ImmediateContext.PixelShader.SetSampler(0, this.samplerState);
 
-            device.ImmediateContext.OutputMerger.SetBlendState(this.blendState, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 0), 0xFFFFFFFF);
-            device.ImmediateContext.Rasterizer.State = this.rasterState;
+            manager.Device.ImmediateContext.OutputMerger.SetBlendState(this.blendState, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 0), 0xFFFFFFFF);
+            manager.Device.ImmediateContext.Rasterizer.State = this.rasterState;
 
             // Reset the vertex and index buffer positions.
             vertexPosition = 0;
@@ -307,17 +294,21 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                     else
                     {
                         // Apply scissor/clipping rectangle.
-                        device.ImmediateContext.Rasterizer.SetScissorRectangle(
+                        manager.Device.ImmediateContext.Rasterizer.SetScissorRectangle(
                             (int)(cmdList.CmdBuffer[x].ClipRect.X - drawData.DisplayPos.X),
                             (int)(cmdList.CmdBuffer[x].ClipRect.Y - drawData.DisplayPos.Y),
                             (int)(cmdList.CmdBuffer[x].ClipRect.Z - drawData.DisplayPos.X),
                             (int)(cmdList.CmdBuffer[x].ClipRect.W - drawData.DisplayPos.Y));
 
-                        // Bind the font texture.
-                        device.ImmediateContext.PixelShader.SetShaderResource(0, this.resourceView);
+                        // Check if this mesh is being rendered with a texture or not.
+                        if (cmdList.CmdBuffer[x].TextureId != IntPtr.Zero)
+                        {
+                            // Bind the font texture.
+                            manager.Device.ImmediateContext.PixelShader.SetShaderResource(0, CppObject.FromPointer<ShaderResourceView>(cmdList.CmdBuffer[x].TextureId));
+                        }
 
                         // Draw primitives.
-                        device.ImmediateContext.DrawIndexed((int)cmdList.CmdBuffer[x].ElemCount, (int)cmdList.CmdBuffer[x].IdxOffset + indexPosition, (int)cmdList.CmdBuffer[x].VtxOffset + vertexPosition);
+                        manager.Device.ImmediateContext.DrawIndexed((int)cmdList.CmdBuffer[x].ElemCount, (int)cmdList.CmdBuffer[x].IdxOffset + indexPosition, (int)cmdList.CmdBuffer[x].VtxOffset + vertexPosition);
                     }
                 }
 
@@ -331,15 +322,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             return true;
         }
 
-        public void CleanupGraphics(IRenderManager manager, Device device)
+        public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
         }
-
-        //public bool ResizeRenderView(int width, int height)
-        //{
-        //    // Update the window size.
-        //    this.WindowSize = new Size(width, height);
-        //}
     }
 }

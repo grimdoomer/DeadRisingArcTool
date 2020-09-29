@@ -14,19 +14,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
     /// <summary>
     /// Collection of all the built in shaders
     /// </summary>
-    public class BuiltInShaderCollection : IRenderable
+    public class ShaderCollection : IRenderable
     {
         /// <summary>
-        /// Dictionary of <see cref="BuiltInShaderType"/> to <see cref="BuiltInShader"/> object instances
+        /// Dictionary of <see cref="ShaderType"/> to <see cref="Shader"/> object instances
         /// </summary>
-        public Dictionary<BuiltInShaderType, BuiltInShader> Shaders { get; private set; } = new Dictionary<BuiltInShaderType, BuiltInShader>();
+        public Dictionary<ShaderType, Shader> Shaders { get; private set; } = new Dictionary<ShaderType, Shader>();
 
         /// <summary>
-        /// Gets the <see cref="BuiltInShader"/> for the specified <see cref="BuiltInShaderType"/>
+        /// Gets the <see cref="Shader"/> for the specified <see cref="ShaderType"/>
         /// </summary>
-        /// <param name="type">Built in shader type</param>
-        /// <returns>An instance of the specified built in shader</returns>
-        public BuiltInShader GetShader(BuiltInShaderType type)
+        /// <param name="type">Type of shader</param>
+        /// <returns>An instance of the specified shader</returns>
+        public Shader GetShader(ShaderType type)
         {
             // Check if we have an entry for this shader type.
             if (this.Shaders.ContainsKey(type) == false)
@@ -38,17 +38,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
 
         #region IRenderable
 
-        public bool InitializeGraphics(IRenderManager manager, Device device)
+        public bool InitializeGraphics(RenderManager manager)
         {
-            // Get a list of all types that have a BuiltInShaderAttribute.
-            Type[] types = Assembly.GetEntryAssembly().GetTypes().Where(t => t.GetCustomAttribute<BuiltInShaderAttribute>() != null).ToArray();
+            // Get a list of all types that have a ShaderAttribute.
+            Type[] types = Assembly.GetEntryAssembly().GetTypes().Where(t => t.GetCustomAttribute<ShaderAttributeAttribute>() != null).ToArray();
 
             // Loop through all of the types and build the shaders list.
             for (int i = 0; i < types.Length; i++)
             {
                 // Create an instance of the type and call the InitializeGraphics routine.
-                BuiltInShader shader = (BuiltInShader)Activator.CreateInstance(types[i]);
-                if (shader.InitializeGraphics(manager, device) == false)
+                Shader shader = (Shader)Activator.CreateInstance(types[i]);
+                if (shader.InitializeGraphics(manager) == false)
                 {
                     // Failed to initialize the shader, skip for now.
                     continue;
@@ -62,20 +62,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             return true;
         }
 
-        public bool DrawFrame(IRenderManager manager, Device device)
+        public bool DrawFrame(RenderManager manager)
         {
             // ShaderCollection is not renderable.
             throw new NotImplementedException();
         }
 
-        public void CleanupGraphics(IRenderManager manager, Device device)
+        public void CleanupGraphics(RenderManager manager)
         {
             // Cleanup all shaders in the dictionary.
-            BuiltInShaderType[] keys = this.Shaders.Keys.ToArray();
+            ShaderType[] keys = this.Shaders.Keys.ToArray();
             for (int i = 0; i < keys.Length; i++)
             {
                 // Dispose of any resources.
-                this.Shaders[keys[i]].CleanupGraphics(manager, device);
+                this.Shaders[keys[i]].CleanupGraphics(manager);
                 this.Shaders.Remove(keys[i]);
             }
         }

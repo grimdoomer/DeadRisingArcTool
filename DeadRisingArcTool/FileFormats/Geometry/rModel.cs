@@ -15,6 +15,7 @@ using BoundingSphere = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Bou
 using BoundingBox = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingBox;
 using ImGuiNET;
 using ImVector2 = System.Numerics.Vector2;
+using System.Runtime.InteropServices;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
@@ -205,7 +206,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private Buffer primaryVertexBuffer = null;
         private Buffer secondaryVertexBuffer = null;
         private Buffer indexBuffer = null;
-        private BuiltInShader[] shaders = null;
+        private Shader[] shaders = null;
 
         private BlendState transparencyBlendState = null;
 
@@ -221,6 +222,21 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private Color4[] boneMatrixData;
         private Texture2D boneMapMatrix;
         private ShaderResourceView boneMapMatrixShaderView;
+
+        // Animation file being played on the model.
+        private rMotionList activeAnimation = null;
+
+        // Animation timing data.
+        private int selectedAnimation;               // Index of the animation that is currently playing
+        private float animationPlaybackRate = 1.0f;  // Speed to playback the animation at
+        private float animationFrameRate;            // Playback rate of the animation i.e.: 10fps
+        private float animationTimePerFrame;         // Time per frame of the animation
+        private float animationTotalTime;            // Total time the animation will take to complete
+        private float animationCurrentTime;          // Time of the current position in animation playback
+        private float animationFrameCount;           // Number of frames in the animation
+        private float animationCurrentFrame;         // Frame number of the current position in animation playback
+
+        private bool animationPaused = false;       // Indicates if the current animation is paused or not
 
         // Animation skeleton data.
         private Vector4 baseTranslation = new Vector4(0.0f);
@@ -241,11 +257,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private int hoveredPrimitiveIndex = -1;
         private bool[] visiblePrimitives = null;
 
+        private bool showJointSpheres = false;
+        private bool showBoundingBoxes = false;
+
+        // File selection dialog data.
+        private Dictionary<string, FileNameTree> fileSelectFileNames = new Dictionary<string, FileNameTree>();
+        private DatumIndex selectedFileDatum;
+
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
         {
 
         }
+
+        #region GameResource Functions
 
         public override byte[] ToBuffer()
         {
@@ -493,6 +518,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             return model;
         }
 
+        #endregion
+
+        #region Animation playback
+
         private Vector3 GetJointPosition(int index)
         {
             // Check if the joint has a parent and calculate the correct position.
@@ -520,7 +549,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 return this.animatedJoints[index].SRTMatrix;
         }
 
-        private void UpdateAnimationData(IRenderManager manager, Device device, rMotionList animation)
+        private void UpdateAnimationData(RenderManager manager, rMotionList animation)
         {
             // Loop and initialize the animation vectors for every joint in the mesh.
             for (int i = 0; i < this.animatedJoints.Length; i++)
@@ -537,11 +566,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             }
 
             // Loop through all of the animated joints and setup the joint types.
-            int animIndex = manager.GetTime().SelectedAnimation;
-            for (int i = 0; i < animation.animations[animIndex].JointCount; i++)
+            for (int i = 0; i < animation.animations[this.selectedAnimation].JointCount; i++)
             {
                 // Get the key frame descriptor for the current joint.
-                KeyFrameDescriptor keyFrameDesc = animation.animations[animIndex].KeyFrames[i];
+                KeyFrameDescriptor keyFrameDesc = animation.animations[this.selectedAnimation].KeyFrames[i];
 
                 // If this is not the root bone then setup child bone types.
                 if (keyFrameDesc.JointIndex != 255)
@@ -600,23 +628,28 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             }
 
             // Loop through all of the key frames and process any for the root joint.
-            if (animation.animations[animIndex].KeyFrames != null)
+            if (animation.animations[this.selectedAnimation].KeyFrames != null)
             {
-                for (int i = 0; i < animation.animations[animIndex].KeyFrames.Length; i++)
+                for (int i = 0; i < animation.animations[this.selectedAnimation].KeyFrames.Length; i++)
                 {
                     // Make sure this keyframe is for the root node.
-                    KeyFrameDescriptor keyFrameDesc = animation.animations[animIndex].KeyFrames[i];
+                    KeyFrameDescriptor keyFrameDesc = animation.animations[this.selectedAnimation].KeyFrames[i];
                     if (keyFrameDesc.JointIndex != 255)
                         continue;
 
                     // Check the key frame usage and handle accordingly.
                     switch (keyFrameDesc.Usage)
                     {
+                        case 3:
+                            {
+                                // TODO: Root joint rotation?
+                                break;
+                            }
                         case 4:
                             {
                                 // Root joint translation.
-                                this.baseTranslation = InterpolateKeyFrame(animation, animIndex, i,
-                                    manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, this.baseTranslation);
+                                this.baseTranslation = InterpolateKeyFrame(animation, this.selectedAnimation, i,
+                                    this.animationCurrentFrame, this.animationFrameCount, this.baseTranslation);
                                 break;
                             }
                         default:
@@ -630,13 +663,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Loop through all the animated joints and update animation data for the current frame.
             for (int i = 0; i < this.animatedJoints.Length; i++)
             {
-                if (animation.animations[animIndex].KeyFrames != null)
+                if (animation.animations[this.selectedAnimation].KeyFrames != null)
                 {
                     // Loop through all of the keyframe descriptors and process any for this joint number.
-                    for (int x = 0; x < animation.animations[animIndex].KeyFrames.Length; x++)
+                    for (int x = 0; x < animation.animations[this.selectedAnimation].KeyFrames.Length; x++)
                     {
                         // Get the key frame descriptor and check if it corresponds to the current joint number.
-                        KeyFrameDescriptor keyFrameDesc = animation.animations[animIndex].KeyFrames[x];
+                        KeyFrameDescriptor keyFrameDesc = animation.animations[this.selectedAnimation].KeyFrames[x];
                         if (keyFrameDesc.JointIndex != this.animatedJoints[i].JointNumber)
                             continue;
 
@@ -654,22 +687,22 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             case 0:
                                 {
                                     // Joint rotation.
-                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedRotation = InterpolateKeyFrame(animation, animIndex, x,
-                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
+                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedRotation = InterpolateKeyFrame(animation, this.selectedAnimation, x,
+                                        this.animationCurrentFrame, this.animationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
                                     break;
                                 }
                             case 1:
                                 {
                                     // Joint translation.
-                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedTranslation = InterpolateKeyFrame(animation, animIndex, x,
-                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
+                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedTranslation = InterpolateKeyFrame(animation, this.selectedAnimation, x,
+                                        this.animationCurrentFrame, this.animationFrameCount, new Vector4(0.0f, 0.0f, 0.0f, 1.0f));
                                     break;
                                 }
                             case 2:
                                 {
                                     // Joint scale.
-                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedScale = InterpolateKeyFrame(animation, animIndex, x,
-                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, new Vector4(1.0f));
+                                    this.animatedJoints[keyFrameDesc.JointIndex].InterpolatedScale = InterpolateKeyFrame(animation, this.selectedAnimation, x,
+                                        this.animationCurrentFrame, this.animationFrameCount, new Vector4(1.0f));
                                     break;
                                 }
                             case 3:
@@ -679,8 +712,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             case 4:
                                 {
                                     // Root joint translation.
-                                    this.baseTranslation = InterpolateKeyFrame(animation, animIndex, x,
-                                        manager.GetTime().AnimationCurrentFrame, manager.GetTime().AnimationFrameCount, this.baseTranslation);
+                                    this.baseTranslation = InterpolateKeyFrame(animation, this.selectedAnimation, x,
+                                        this.animationCurrentFrame, this.animationFrameCount, this.baseTranslation);
                                     break;
                                 }
                             default:
@@ -999,15 +1032,42 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             return vKeyFrame;
         }
 
+        /// <summary>
+        /// Sets the active animation to be played on the model
+        /// </summary>
+        /// <param name="animation">Animation to play on the model</param>
+        public void SetActiveAnimation(rMotionList animation)
+        {
+            // Set the animation data.
+            this.activeAnimation = animation;
+            if (this.activeAnimation != null)
+            {
+                // Set the selected animation.
+                this.selectedAnimation = 0;
+                this.animationFrameRate = 15.0f;
+                this.animationTimePerFrame = 1.0f / this.animationFrameRate;
+                this.animationTotalTime = this.animationTimePerFrame * animation.animations[0].FrameCount;
+                this.animationCurrentTime = 0.0f;
+                this.animationFrameCount = animation.animations[this.selectedAnimation].FrameCount;
+                this.animationCurrentFrame = 0.0f;
+            }
+            else
+            {
+                // Reset animation counters.
+            }
+        }
+
+        #endregion
+
         #region IRenderable
 
-        public override bool InitializeGraphics(IRenderManager manager, Device device)
+        public override bool InitializeGraphics(RenderManager manager)
         {
             // Create our vertex and index buffers from the model data.
-            this.primaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData1);
+            this.primaryVertexBuffer = Buffer.Create<byte>(manager.Device, BindFlags.VertexBuffer, this.vertexData1);
             if (this.vertexData2 != null)
-                this.secondaryVertexBuffer = Buffer.Create<byte>(device, BindFlags.VertexBuffer, this.vertexData2);
-            this.indexBuffer = Buffer.Create<ushort>(device, BindFlags.IndexBuffer, this.indexData);
+                this.secondaryVertexBuffer = Buffer.Create<byte>(manager.Device, BindFlags.VertexBuffer, this.vertexData2);
+            this.indexBuffer = Buffer.Create<ushort>(manager.Device, BindFlags.IndexBuffer, this.indexData);
 
             // If this is a sky model we need to fix up the textures.
             if (this.FileName.EndsWith("sky.rModel", StringComparison.OrdinalIgnoreCase) == true)
@@ -1056,33 +1116,33 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     desc.ArraySize = this.gameTextures[i].FaceCount;
 
                     // Create the texture using the description and resource data we setup.
-                    this.dxTextures[i] = new Texture2D(device, desc);
-                    device.ImmediateContext.UpdateSubresource(this.gameTextures[i].SubResources[0], this.dxTextures[i]);
+                    this.dxTextures[i] = new Texture2D(manager.Device, desc);
+                    manager.Device.ImmediateContext.UpdateSubresource(this.gameTextures[i].SubResources[0], this.dxTextures[i]);
 
-                    // Create the shader resource that will use this texture.
-                    this.shaderResources[i] = new ShaderResourceView(device, this.dxTextures[i]);
+                    // Create the shader resource that will be use this texture.
+                    this.shaderResources[i] = new ShaderResourceView(manager.Device, this.dxTextures[i]);
                 }
             }
 
             // Load all the geometry shaders that we might need.
-            this.shaders = new BuiltInShader[3];
-            this.shaders[0] = manager.GetBuiltInShader(BuiltInShaderType.SkinnedRigid8W);
-            this.shaders[1] = manager.GetBuiltInShader(BuiltInShaderType.SkinnedRigid4W);
-            this.shaders[2] = manager.GetBuiltInShader(BuiltInShaderType.Game_LevelGeometry1);
+            this.shaders = new Shader[3];
+            this.shaders[0] = manager.ShaderCollection.GetShader(ShaderType.SkinnedRigid8W);
+            this.shaders[1] = manager.ShaderCollection.GetShader(ShaderType.SkinnedRigid4W);
+            this.shaders[2] = manager.ShaderCollection.GetShader(ShaderType.Game_LevelGeometry1);
 
             // Setup the blend state for image transparency.
             BlendStateDescription blendDesc = new BlendStateDescription();
             blendDesc.AlphaToCoverageEnable = false;
             blendDesc.IndependentBlendEnable = false;
             blendDesc.RenderTarget[0].IsBlendEnabled = true;
-            blendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            blendDesc.RenderTarget[0].SourceBlend = BlendOption.One;
             blendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
             blendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
             blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
-            blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.One;
             blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
             blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
-            this.transparencyBlendState = new BlendState(device, blendDesc);
+            this.transparencyBlendState = new BlendState(manager.Device, blendDesc);
 
             // Allocate the primtive bounding box array and initialize each one.
             this.primitiveBoxes = new BoundingBox[this.primitives.Length];
@@ -1090,7 +1150,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             {
                 // Initialize the bounding box.
                 this.primitiveBoxes[i] = new BoundingBox(this.primitives[i].BoundingBoxMin, this.primitives[i].BoundingBoxMax, new Color4(0xFFFF0000));
-                if (this.primitiveBoxes[i].InitializeGraphics(manager, device) == false)
+                if (this.primitiveBoxes[i].InitializeGraphics(manager) == false)
                 {
                     // Failed to initialize the bounding box.
                     return false;
@@ -1117,33 +1177,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 this.animatedJoints[i].Translation = new Vector4(jointPosition.X, jointPosition.Y, jointPosition.Z, 1.0f);
                 this.animatedJoints[i].Rotation = Quaternion.RotationMatrix(this.jointTranslations[i].SRTMatrix).ToVector4();
                 this.animatedJoints[i].Scale = new Vector4(1.0f);
-                this.animatedJoints[i].SRTMatrix = this.jointTranslations[i].SRTMatrix;
+                this.animatedJoints[i].SRTMatrix = Matrix.Identity;// this.jointTranslations[i].SRTMatrix;
 
                 // Create the bounding sphere for the current joint.
                 float jointRadius = this.joints[i].Length > 0.0f ? this.joints[i].Length : 3.0f;
                 this.jointBoundingSpheres[i] = new BoundingSphere(jointPosition, this.animatedJoints[i].Rotation, jointRadius, new Color4(0xFF00FF00));
-                if (this.jointBoundingSpheres[i].InitializeGraphics(manager, device) == false)
+                if (this.jointBoundingSpheres[i].InitializeGraphics(manager) == false)
                 {
                     // Failed to initialize graphics for bounding sphere.
                     return false;
                 }
-            }
-
-            // Check if there is an animation loaded.
-            if (manager.GetMotionList() != null)
-            {
-                // Get the loaded animation.
-                rMotionList animation = manager.GetMotionList();
-
-                // Set the selected animation.
-                int selectedAnimation = 0;
-                manager.GetTime().SelectedAnimation = selectedAnimation;
-                manager.GetTime().AnimationFrameRate = 15.0f;
-                manager.GetTime().AnimationTimePerFrame = 1.0f / manager.GetTime().AnimationFrameRate;
-                manager.GetTime().AnimationTotalTime = manager.GetTime().AnimationTimePerFrame * animation.animations[selectedAnimation].FrameCount;
-                manager.GetTime().AnimationCurrentTime = 0.0f;
-                manager.GetTime().AnimationFrameCount = animation.animations[selectedAnimation].FrameCount;
-                manager.GetTime().AnimationCurrentFrame = 0.0f;
             }
 
             {
@@ -1159,10 +1202,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 desc.MipLevels = 1;
 
                 // Create the texture and update it's pixel buffer with the matrix data.
-                this.boneMapMatrix = new Texture2D(device, desc);
+                this.boneMapMatrix = new Texture2D(manager.Device, desc);
 
                 // Create the shader resource view that will bind this texture.
-                this.boneMapMatrixShaderView = new ShaderResourceView(device, this.boneMapMatrix);
+                this.boneMapMatrixShaderView = new ShaderResourceView(manager.Device, this.boneMapMatrix);
             }
 
             // Loop and build the list of primitives by group id.
@@ -1196,51 +1239,61 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             return true;
         }
 
-        public override bool DrawFrame(IRenderManager manager, Device device)
+        public override bool DrawFrame(RenderManager manager)
         {
             // Check if there is an animation loaded and if so update.
-            rMotionList animation = manager.GetMotionList();
-            if (animation != null)
+            if (this.activeAnimation != null)
             {
                 // Get the input manager and check for animation button input.
-                InputManager input = manager.GetInputManager();
-                if (input.ButtonPressed(InputAction.NextAnimation) == true || input.ButtonPressed(InputAction.PreviousAnimation) == true)
+                if (manager.InputManager.ButtonPressed(InputAction.NextAnimation) == true || manager.InputManager.ButtonPressed(InputAction.PreviousAnimation) == true)
                 {
                     // Handle input accordingly.
-                    if (input.ButtonPressed(InputAction.NextAnimation) == true)
+                    if (manager.InputManager.ButtonPressed(InputAction.NextAnimation) == true)
                     {
                         // Increment or wrap the selected animation index.
-                        if (++manager.GetTime().SelectedAnimation >= animation.animations.Length)
-                            manager.GetTime().SelectedAnimation = 0;
+                        if (++this.selectedAnimation >= this.activeAnimation.animations.Length)
+                            this.selectedAnimation = 0;
                     }
                     else
                     {
                         // Decrement or wrap the selected animation index.
-                        if (--manager.GetTime().SelectedAnimation < 0)
-                            manager.GetTime().SelectedAnimation = animation.animations.Length - 1;
+                        if (--this.selectedAnimation < 0)
+                            this.selectedAnimation = this.activeAnimation.animations.Length - 1;
                     }
 
                     // Reset position and time counters.
-                    manager.GetTime().AnimationTotalTime = manager.GetTime().AnimationTimePerFrame * animation.animations[manager.GetTime().SelectedAnimation].FrameCount;
-                    manager.GetTime().AnimationCurrentTime = 0.0f;
-                    manager.GetTime().AnimationFrameCount = animation.animations[manager.GetTime().SelectedAnimation].FrameCount;
-                    manager.GetTime().AnimationCurrentFrame = 0.0f;
+                    this.animationTotalTime = this.animationTimePerFrame * this.activeAnimation.animations[this.selectedAnimation].FrameCount;
+                    this.animationCurrentTime = 0.0f;
+                    this.animationFrameCount = this.activeAnimation.animations[this.selectedAnimation].FrameCount;
+                    this.animationCurrentFrame = 0.0f;
                 }
 
-                // Update the current animation frame counter.
-                manager.GetTime().AnimationCurrentTime += manager.GetTime().TimeDelta;
-                manager.GetTime().AnimationCurrentFrame = manager.GetTime().AnimationCurrentTime / manager.GetTime().AnimationTimePerFrame;
+                // Only update the animation time if we are not paused.
+                if (this.animationPaused == false)
+                {
+                    // Update the current animation frame counter.
+                    this.animationCurrentTime += manager.RenderTime.TimeDelta * this.animationPlaybackRate;
+                }
+
+                // Calculate the current frame position based on the current time.
+                this.animationCurrentFrame = this.animationCurrentTime / this.animationTimePerFrame;
 
                 // Check if we need to reset the frame counters.
-                if (manager.GetTime().AnimationCurrentTime >= manager.GetTime().AnimationTotalTime)
+                if (this.animationCurrentFrame >= this.animationFrameCount)
                 {
                     // Reset the frame and time counters.
-                    manager.GetTime().AnimationCurrentTime = 0.0f;
-                    manager.GetTime().AnimationCurrentFrame = manager.GetTime().AnimationCurrentTime / manager.GetTime().AnimationTimePerFrame;
+                    this.animationCurrentTime = 0.0f;
+                    this.animationCurrentFrame = 0.0f; // this.animationCurrentTime / this.animationTimePerFrame;
+                }
+                else if (this.animationCurrentTime < 0.0f)
+                {
+                    // Loop the frame and time counters backwards.
+                    this.animationCurrentTime = this.animationTotalTime - this.animationTimePerFrame;
+                    this.animationCurrentFrame = this.animationFrameCount - 1;
                 }
 
                 // Update animation data for all joints.
-                UpdateAnimationData(manager, device, animation);
+                UpdateAnimationData(manager, this.activeAnimation);
             }
 
             // Loop through all of the joints and update the bone matrix data.
@@ -1255,17 +1308,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             }
 
             // Update the bone matrix map texture.
-            device.ImmediateContext.UpdateSubresource(this.boneMatrixData, this.boneMapMatrix, rowPitch: 16 * 4);
+            manager.Device.ImmediateContext.UpdateSubresource(this.boneMatrixData, this.boneMapMatrix, rowPitch: 16 * 4);
 
             // Set the primitive type.
-            device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;
+            manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleStrip;
 
             // Set alpha blending state.
-            device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState, new SharpDX.Mathematics.Interop.RawColor4(1.0f, 1.0f, 1.0f, 1.0f));
+            manager.Device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState, new SharpDX.Mathematics.Interop.RawColor4(1.0f, 1.0f, 1.0f, 1.0f));
 
             // Set the bounding box parameters for this model.
-            manager.GetShaderConstants().gXfQuantPosScale = this.header.BoundingBoxMax - this.header.BoundingBoxMin;
-            manager.GetShaderConstants().gXfQuantPosOffset = this.header.BoundingBoxMin;
+            manager.ShaderConstants.gXfQuantPosScale = this.header.BoundingBoxMax - this.header.BoundingBoxMin;
+            manager.ShaderConstants.gXfQuantPosOffset = this.header.BoundingBoxMin;
 
             // Update shader constants now to avoid doing it every frame for non-highlighted objects.
             manager.UpdateShaderConstants();
@@ -1278,82 +1331,79 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     continue;
 
                 // Set the depth stencil to normal z-test.
-                manager.SetDepthStencil(0);
+                //manager.SetDepthStencil(0);
 
                 // Set the vertex and index buffers.
-                device.ImmediateContext.InputAssembler.SetVertexBuffers(0,
+                manager.Device.ImmediateContext.InputAssembler.SetVertexBuffers(0,
                     new VertexBufferBinding(this.primaryVertexBuffer, this.primitives[i].VertexStride1, this.primitives[i].VertexStream1Offset),
                     new VertexBufferBinding(this.secondaryVertexBuffer, this.primitives[i].VertexStride2, this.primitives[i].VertexStream2Offset));
-                device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
+                manager.Device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
 
                 // Check the flags on the material for this primitive to determine what shader to render with.
                 int shaderFlags = (this.materials[this.primitives[i].MaterialIndex].Flags >> 27) & 7;
                 switch (shaderFlags)
                 {
-                    case 0: this.shaders[1].DrawFrame(manager, device); break;
-                    case 1: this.shaders[0].DrawFrame(manager, device); break;
-                    case 2: this.shaders[2].DrawFrame(manager, device); break;
+                    case 0: this.shaders[1].DrawFrame(manager); break;
+                    case 1: this.shaders[0].DrawFrame(manager); break;
+                    case 2: this.shaders[2].DrawFrame(manager); break;
                 }
 
                 // Get the material for the primitive.
                 Material material = this.materials[this.primitives[i].MaterialIndex];
 
                 // Set the textures being used by the material.
-                device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.BaseMapTexture]);
+                manager.Device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.BaseMapTexture]);
 
                 // Set the bone map matrix data.
                 float matrixUnitSize = 1.0f / (float)NextPowerOfTwo(this.joints.Length);
                 float matrixRowSize = matrixUnitSize / 4.0f;
-                manager.SetMatrixMapFactor(new Vector4(0.0f, 0.0f, matrixUnitSize, matrixRowSize));
-                device.ImmediateContext.VertexShader.SetShaderResource(0, this.boneMapMatrixShaderView);
+                manager.ShaderConstants.gXfMatrixMapFactor = new Vector4(0.0f, 0.0f, matrixUnitSize, matrixRowSize);
+                manager.Device.ImmediateContext.VertexShader.SetShaderResource(0, this.boneMapMatrixShaderView);
 
                 // Draw the primtive.
-                device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
+                manager.Device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
 
                 // Check if we should highlight the primitive based on UI.
                 if (this.hoveredPrimitiveIndex == i)
                 {
                     // Set the depth stencil for object bleeding.
-                    manager.SetDepthStencil(1);
+                    //manager.SetDepthStencil(1);
 
                     // Set the highlighting shader variables.
-                    manager.GetShaderConstants().gXfHighlightColor = new Vector4(1.0f, 0.0f, 0.0f, 0.5f);
-                    manager.GetShaderConstants().gXfHighlightingEnabled = 1;
+                    manager.ShaderConstants.gXfHighlightColor = new Vector4(1.0f, 0.0f, 0.0f, 0.5f);
+                    manager.ShaderConstants.gXfHighlightingEnabled = 1;
 
                     // Update shader constants.
                     manager.UpdateShaderConstants();
 
                     // Draw the object again with no depth test and using the highlight color.
-                    device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
+                    manager.Device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
 
                     // Turn highlighting off and update the shader constants buffer.
-                    manager.GetShaderConstants().gXfHighlightingEnabled = 0;
+                    manager.ShaderConstants.gXfHighlightingEnabled = 0;
                     manager.UpdateShaderConstants();
                 }
             }
 
-            // Get the debug draw flags and check if we should draw extra stuff.
-            DebugDrawOptions options = manager.GetDebugDrawOptions();
-
             // Joint bounding speheres:
-            if (options.HasFlag(DebugDrawOptions.DrawJointBoundingSpheres) == true)
+            if (this.showJointSpheres == true)
             {
                 // Loop and draw bounding sphere for all the joints in the mesh.
                 for (int i = 0; i < this.jointBoundingSpheres.Length; i++)
                 {
                     // Draw the bounding sphere.
-                    this.jointBoundingSpheres[i].DrawFrame(manager, device);
+                    this.jointBoundingSpheres[i].DrawFrame(manager);
                 }
             }
 
             // Primitive bounding boxes:
-            if (options.HasFlag(DebugDrawOptions.DrawPrimitiveBoundingBox) == true)
+            if (this.showBoundingBoxes == true)
             {
                 // Loop and draw the bounding boxes for all the primitives in the mesh.
                 for (int i = 0; i < this.primitiveBoxes.Length; i++)
                 {
                     // Draw the bounding box.
-                    this.primitiveBoxes[i].DrawFrame(manager, device);
+                    this.primitiveBoxes[i].DrawFrame(manager);
                 }
             }
 
@@ -1361,165 +1411,488 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             return true;
         }
 
-        public override void CleanupGraphics(IRenderManager manager, Device device)
+        public override void CleanupGraphics(RenderManager manager)
         {
             // TODO:
         }
 
         #endregion
 
-        #region ImGui
+        #region UI Rendering
 
-        public void CreateJointsImGui(IRenderManager manager)
+        public void DrawUI(RenderManager manager)
         {
             // Reset hovered index.
             this.hoveredPrimitiveIndex = -1;
 
-            // Create the joints section.
-            if (ImGui.CollapsingHeader("Joints", ImGuiTreeNodeFlags.DefaultOpen) == true)
+            // Create the object properties window.
+            ImGui.Begin("Object Properties - " + this.FileName);
             {
-                // Loop and print info on each joint.
-                ImGui.Indent();
-                for (int i = 0; i < this.joints.Length; i++)
+                // Display checkboxes for bounding spheres and boxes.
+                ImGui.Checkbox("Show joint spheres", ref this.showJointSpheres);
+                ImGui.Checkbox("Show bounding boxes", ref this.showBoundingBoxes);
+
+                // Create the tab page header.
+                if (ImGui.BeginTabBar("##tabs", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton) == true)
                 {
-                    Vector4[] matrixAsVectors = new Vector4[4]
+                    #region Materials
+
+                    // Materials section.
+                    if (ImGui.BeginTabItem("Materials") == true)
                     {
-                        this.animatedJoints[i].SRTMatrix.Row1,
-                        this.animatedJoints[i].SRTMatrix.Row2,
-                        this.animatedJoints[i].SRTMatrix.Row3,
-                        this.animatedJoints[i].SRTMatrix.Row4
-                    };
+                        ImGui.BeginChild("##materialsbox");
 
-                    // Print the joint info.
-                    ImGui.BeginGroup();
-                    ImGui.Text("Parent: " + this.joints[i].ParentIndex.ToString());
-                    ImGui.Text("Index: " + this.joints[i].Index.ToString());
-                    ImGui.Text("Radius: " + this.joints[i].Length.ToString());
-                    ImGui.InputFloat3("Offset", ref this.joints[i].Offset, "%.3f", ImGuiInputTextFlags.ReadOnly);
-                    ImGui.InputFloat4("SRT Matrix", ref matrixAsVectors[0]);
-                    ImGui.InputFloat4("", ref matrixAsVectors[1]);
-                    ImGui.InputFloat4("", ref matrixAsVectors[2]);
-                    ImGui.InputFloat4("", ref matrixAsVectors[3]);
-                    ImGui.Separator();
-                    ImGui.EndGroup();
-
-                    // When the user hovers over the group change the color of the bounding sphere.
-                    if (ImGui.IsItemHovered() == true)
-                    {
-                        // Change sphere color to red.
-                        this.jointBoundingSpheres[i].Color = new Color4(0xFF0000FF);
-                    }
-                    else
-                    {
-                        // Normal color green.
-                        this.jointBoundingSpheres[i].Color = new Color4(0xFF00FF00);
-                    }
-                }
-                ImGui.Unindent();
-            }
-
-            // Materials section.
-            if (ImGui.CollapsingHeader("Materials", ImGuiTreeNodeFlags.DefaultOpen) == true)
-            {
-                // Display a combobox to select the material to display.
-                if (ImGui.BeginCombo("Material", this.selectedMaterialIndex.ToString()) == true)
-                {
-                    // Loop for the number of materials and list them in the combo box.
-                    for (int i = 0; i < this.materials.Length; i++)
-                    {
-                        // Add the combo box option.
-                        if (ImGui.Selectable("Material " + i.ToString(), this.selectedMaterialIndex == i) == true)
-                            this.selectedMaterialIndex = i;
-
-                        // Set focus when opening the combo box.
-                        if (this.selectedMaterialIndex == i)
-                            ImGui.SetItemDefaultFocus();
-                    }
-                    ImGui.EndCombo();
-                }
-                ImGui.Separator();
-
-                // Display the material properties for the selected material.
-                ImGui.Indent();
-                ImGui.Text("Shader Technique: " + this.materials[this.selectedMaterialIndex].ShaderTechnique.ToString());
-                // TODO: Textures
-                ImGui.InputFloat("Transparency", ref this.materials[this.selectedMaterialIndex].Transparency);
-                ImGui.InputFloat("##Unk11", ref this.materials[this.selectedMaterialIndex].Unk11);
-                ImGui.InputFloat("Fresnel Factor", ref this.materials[this.selectedMaterialIndex].FresnelFactor);
-                ImGui.InputFloat("Fresnel Bias", ref this.materials[this.selectedMaterialIndex].FresnelBias);
-                ImGui.InputFloat("Specular Power", ref this.materials[this.selectedMaterialIndex].SpecularPow);
-                ImGui.InputFloat("##EnvmapPower", ref this.materials[this.selectedMaterialIndex].EnvmapPower);
-                ImGui.InputFloat4("Lightmap Scale", ref this.materials[this.selectedMaterialIndex].LightMapScale);
-                ImGui.InputFloat("Detail Factor", ref this.materials[this.selectedMaterialIndex].DetailFactor);
-                ImGui.InputFloat("Detail Wrap", ref this.materials[this.selectedMaterialIndex].DetailWrap);
-                ImGui.InputFloat("##Unk22", ref this.materials[this.selectedMaterialIndex].Unk22);
-                ImGui.InputFloat("##Unk23", ref this.materials[this.selectedMaterialIndex].Unk23);
-                ImGui.InputFloat4("Transmit", ref this.materials[this.selectedMaterialIndex].Transmit);
-                ImGui.InputFloat4("Parallax", ref this.materials[this.selectedMaterialIndex].Parallax);
-                ImGui.InputFloat("##Unk32", ref this.materials[this.selectedMaterialIndex].Unk32);
-                ImGui.InputFloat("##Unk33", ref this.materials[this.selectedMaterialIndex].Unk33);
-                ImGui.InputFloat("##Unk34", ref this.materials[this.selectedMaterialIndex].Unk34);
-                ImGui.InputFloat("##Unk35", ref this.materials[this.selectedMaterialIndex].Unk35);
-                ImGui.Unindent();
-            }
-
-            // Primitives section.
-            if (ImGui.CollapsingHeader("Primitives", ImGuiTreeNodeFlags.DefaultOpen) == true)
-            {
-                // Create the scrollable treeview for primtive selection.
-                ImVector2 boxSize = ImGui.GetItemRectSize();
-                ImGui.BeginChild("PrimitiveTree", new ImVector2(boxSize.X - 7, 200), true);
-
-                // Add primitives by group into the treeview.
-                for (int i = 0; i < this.primtiveGroupIds.Length; i++)
-                {
-                    // Create a new tree node for the group id.
-                    if (ImGui.TreeNodeEx("Group " + this.primtiveGroupIds[i].ToString(), ImGuiTreeNodeFlags.DefaultOpen) == true)
-                    {
-                        // Add a checkbox that toggles the visibility of all primitives in the group.
-                        ImGui.SameLine(175.0f);
-                        if (ImGui.Checkbox("##group" + i.ToString(), ref this.visibleGroupIds[i]) == true)
+                        // Create a scrollable list for material selection.
+                        ImVector2 boxSize = ImGui.GetItemRectSize();
+                        ImGui.BeginChild("MaterialsSelection", new ImVector2(boxSize.X - 17, 200), true);
+                        for (int i = 0; i < this.materials.Length; i++)
                         {
-                            // Loop and change the visible state of all primitives in the group.
-                            foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
-                                this.visiblePrimitives[primId] = this.visibleGroupIds[i];
+                            // Create a option for this material.
+                            if (ImGui.Selectable("Material " + i.ToString(), this.selectedMaterialIndex == i) == true)
+                            {
+                                // Set the selected material index.
+                                this.selectedMaterialIndex = i;
+                            }
+                        }
+                        ImGui.EndChild();
+
+                        // Display the material properties for the selected material.
+                        ImGui.Text("Shader Technique: " + this.materials[this.selectedMaterialIndex].ShaderTechnique.ToString());
+
+                        Tuple<string, int>[] textureInfo = new Tuple<string, int>[]
+                            {
+                                new Tuple<string, int>("Basemap", this.materials[this.selectedMaterialIndex].BaseMapTexture),
+                                new Tuple<string, int>("Bumpmap", this.materials[this.selectedMaterialIndex].NormalMapTexture),
+                                new Tuple<string, int>("Maskmap", this.materials[this.selectedMaterialIndex].MaskMapTexture),
+                                new Tuple<string, int>("Lightmap", this.materials[this.selectedMaterialIndex].LightmapTexture),
+                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex5),
+                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex6),
+                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex7),
+                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex8),
+                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex9),
+                            };
+
+                        // Loop and setup texture previews for all texture placeholders.
+                        ImGui.Separator();
+                        ImGui.Columns(3, "texturecolumns", false);
+                        for (int i = 0; i < textureInfo.Length; i++)
+                        {
+                            // If the texture is set show a preview, else show the empty placeholder texture.
+                            ImGui.Text(textureInfo[i].Item1);
+                            if (textureInfo[i].Item2 != 0 && this.shaderResources[textureInfo[i].Item2] != null)
+                            {
+                                ImGui.Image(this.shaderResources[textureInfo[i].Item2].NativePointer, new ImVector2(150, 150));
+                                if (ImGui.IsItemHovered() == true)
+                                {
+                                    // Create a tooltip window for a larger preview of the image.
+                                    ImGui.BeginTooltip();
+                                    ImGui.Image(this.shaderResources[textureInfo[i].Item2].NativePointer, new ImVector2(512, 512));
+                                    ImGui.EndTooltip();
+                                }
+                            }
+                            else
+                            {
+                                // Use the place holder texture.
+                                ImGui.Image(manager.CheckerboardTextureResource.NativePointer, new ImVector2(150, 150));
+                            }
+                            ImGui.NextColumn();
+                        }
+                        ImGui.Columns(1);
+                        ImGui.Separator();
+
+                        ImGui.InputFloat("Transparency", ref this.materials[this.selectedMaterialIndex].Transparency);
+                        ImGui.InputFloat("##Unk11", ref this.materials[this.selectedMaterialIndex].Unk11);
+                        ImGui.InputFloat("Fresnel Factor", ref this.materials[this.selectedMaterialIndex].FresnelFactor);
+                        ImGui.InputFloat("Fresnel Bias", ref this.materials[this.selectedMaterialIndex].FresnelBias);
+                        ImGui.InputFloat("Specular Power", ref this.materials[this.selectedMaterialIndex].SpecularPow);
+                        ImGui.InputFloat("##EnvmapPower", ref this.materials[this.selectedMaterialIndex].EnvmapPower);
+                        ImGui.InputFloat4("Lightmap Scale", ref this.materials[this.selectedMaterialIndex].LightMapScale);
+                        ImGui.InputFloat("Detail Factor", ref this.materials[this.selectedMaterialIndex].DetailFactor);
+                        ImGui.InputFloat("Detail Wrap", ref this.materials[this.selectedMaterialIndex].DetailWrap);
+                        ImGui.InputFloat("##Unk22", ref this.materials[this.selectedMaterialIndex].Unk22);
+                        ImGui.InputFloat("##Unk23", ref this.materials[this.selectedMaterialIndex].Unk23);
+                        ImGui.InputFloat4("Transmit", ref this.materials[this.selectedMaterialIndex].Transmit);
+                        ImGui.InputFloat4("Parallax", ref this.materials[this.selectedMaterialIndex].Parallax);
+                        ImGui.InputFloat("##Unk32", ref this.materials[this.selectedMaterialIndex].Unk32);
+                        ImGui.InputFloat("##Unk33", ref this.materials[this.selectedMaterialIndex].Unk33);
+                        ImGui.InputFloat("##Unk34", ref this.materials[this.selectedMaterialIndex].Unk34);
+                        ImGui.InputFloat("##Unk35", ref this.materials[this.selectedMaterialIndex].Unk35);
+
+                        ImGui.EndChild();
+                        ImGui.EndTabItem();
+                    }
+
+                    #endregion
+
+                    #region Primitives
+
+                    // Primitives section.
+                    if (ImGui.BeginTabItem("Primitives") == true)
+                    {
+                        ImGui.BeginChild("##primitivesbox");
+
+                        // Create the scrollable treeview for primtive selection.
+                        ImVector2 boxSize = ImGui.GetItemRectSize();
+                        ImGui.BeginChild("PrimitiveTree", new ImVector2(boxSize.X - 7, 200), true);
+
+                        // Add primitives by group into the treeview.
+                        for (int i = 0; i < this.primtiveGroupIds.Length; i++)
+                        {
+                            // Create a new tree node for the group id.
+                            if (ImGui.TreeNodeEx("Group " + this.primtiveGroupIds[i].ToString(), ImGuiTreeNodeFlags.DefaultOpen) == true)
+                            {
+                                // Add a checkbox that toggles the visibility of all primitives in the group.
+                                ImGui.SameLine(175.0f);
+                                if (ImGui.Checkbox("##group" + i.ToString(), ref this.visibleGroupIds[i]) == true)
+                                {
+                                    // Loop and change the visible state of all primitives in the group.
+                                    foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
+                                        this.visiblePrimitives[primId] = this.visibleGroupIds[i];
+                                }
+
+                                // Loop and create tree nodes for all the primitives in this group.
+                                foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
+                                {
+                                    // Create tree node for primitive.
+                                    ImGui.AlignTextToFramePadding();
+                                    if (ImGui.Selectable("Primitive " + primId.ToString(), this.selectedPrimitiveIndex == primId,
+                                        ImGuiSelectableFlags.None, new ImVector2(140.0f, 17.0f)) == true)
+                                    {
+                                        // Set the selected primitive index.
+                                        this.selectedPrimitiveIndex = primId;
+                                    }
+
+                                    // If the user hovers a primitive node highlight that primitive mesh.
+                                    if (ImGui.IsItemHovered() == true)
+                                    {
+                                        // Set the hovered primitive index.
+                                        this.hoveredPrimitiveIndex = primId;
+                                    }
+
+                                    // Add a checkbox that toggles visibility of the primitive.
+                                    ImGui.SameLine(175.0f);
+                                    ImGui.Checkbox("##primitive" + primId.ToString(), ref this.visiblePrimitives[primId]);
+                                    //ImGui.TreePop();
+
+                                    System.Numerics.Vector2 size = ImGui.GetItemRectSize();
+                                }
+
+                                ImGui.TreePop();
+                            }
+                        }
+                        ImGui.EndChild();
+
+                        // Primitive info.
+                        if (this.selectedPrimitiveIndex != -1)
+                        {
+                            // TODO: Change to drop down and add goto button for materials
+                            ImGui.InputScalarInt16("Group ID", ref this.primitives[this.selectedPrimitiveIndex].GroupID);
+                            ImGui.InputScalarInt16("Material index", ref this.primitives[this.selectedPrimitiveIndex].MaterialIndex);
+
+                            bool enabled = this.primitives[this.selectedPrimitiveIndex].Enabled != 0;
+                            if (ImGui.Checkbox("Enabled", ref enabled) == true)
+                                this.primitives[this.selectedPrimitiveIndex].Enabled = enabled == true ? (byte)1 : (byte)0;
+
+                            ImGui.InputInt("Vertex count", ref this.primitives[this.selectedPrimitiveIndex].VertexCount, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                            ImGui.InputInt("Starting vertex", ref this.primitives[this.selectedPrimitiveIndex].StartingVertex, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                            ImGui.InputInt("Base vertex", ref this.primitives[this.selectedPrimitiveIndex].BaseVertexLocation, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                            ImGui.InputInt("Index count", ref this.primitives[this.selectedPrimitiveIndex].IndexCount, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                            ImGui.InputInt("Starting index", ref this.primitives[this.selectedPrimitiveIndex].StartingIndexLocation, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                            ImGui.InputFloat4("Bounding box min", ref this.primitives[this.selectedPrimitiveIndex].BoundingBoxMin, "%.3f", ImGuiInputTextFlags.ReadOnly);
+                            ImGui.InputFloat4("Bounding box min", ref this.primitives[this.selectedPrimitiveIndex].BoundingBoxMax, "%.3f", ImGuiInputTextFlags.ReadOnly);
                         }
 
-                        // Loop and create tree nodes for all the primitives in this group.
-                        foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
-                        {
-                            // Create tree node for primitive.
-                            ImGui.AlignTextToFramePadding();
-                            if (ImGui.Selectable("Primitive " + primId.ToString(), this.selectedPrimitiveIndex == primId, 
-                                ImGuiSelectableFlags.None, new System.Numerics.Vector2(140.0f, 17.0f)) == true)
-                            {
-                                // Set the selected primitive index.
-                                this.selectedPrimitiveIndex = primId;
-                            }
+                        ImGui.EndChild();
+                        ImGui.EndTabItem();
+                    }
 
-                            // If the user hovers a primitive node highlight that primitive mesh.
+                    #endregion
+
+                    #region Joints
+
+                    // Create the joints tab.
+                    if (ImGui.BeginTabItem("Joints") == true)
+                    {
+                        // Loop and print info on each joint.
+                        ImGui.BeginChild("##jointsbox");
+                        for (int i = 0; i < this.joints.Length; i++)
+                        {
+                            Vector4[] matrixAsVectors = new Vector4[4]
+                            {
+                                this.animatedJoints[i].SRTMatrix.Row1,
+                                this.animatedJoints[i].SRTMatrix.Row2,
+                                this.animatedJoints[i].SRTMatrix.Row3,
+                                this.animatedJoints[i].SRTMatrix.Row4
+                            };
+
+                            // Print the joint info.
+                            ImGui.BeginGroup();
+                            ImGui.Text("Parent: " + this.joints[i].ParentIndex.ToString());
+                            ImGui.Text("Index: " + this.joints[i].Index.ToString());
+                            ImGui.Text("Radius: " + this.joints[i].Length.ToString());
+                            ImGui.InputFloat3("Offset", ref this.joints[i].Offset, "%.3f", ImGuiInputTextFlags.ReadOnly);
+                            ImGui.InputFloat4("SRT Matrix", ref matrixAsVectors[0]);
+                            ImGui.InputFloat4("", ref matrixAsVectors[1]);
+                            ImGui.InputFloat4("", ref matrixAsVectors[2]);
+                            ImGui.InputFloat4("", ref matrixAsVectors[3]);
+                            ImGui.Separator();
+                            ImGui.EndGroup();
+
+                            // When the user hovers over the group change the color of the bounding sphere.
                             if (ImGui.IsItemHovered() == true)
                             {
-                                // Set the hovered primitive index.
-                                this.hoveredPrimitiveIndex = primId;
+                                // Change sphere color to red.
+                                this.jointBoundingSpheres[i].Color = new Color4(0xFF0000FF);
+                            }
+                            else
+                            {
+                                // Normal color green.
+                                this.jointBoundingSpheres[i].Color = new Color4(0xFF00FF00);
+                            }
+                        }
+                        ImGui.EndChild();
+
+                        ImGui.EndTabItem();
+                    }
+
+                    #endregion
+
+                    #region Animation
+
+                    // Only display the animation tab if the model has joints that can be animated.
+                    if (this.joints.Length > 0)
+                    {
+                        // Animation section.
+                        if (ImGui.BeginTabItem("Animation") == true)
+                        {
+                            // Setup the animation file selection control.
+                            ImGui.AlignTextToFramePadding();
+                            ImGui.Text("Animation file: " + (this.activeAnimation != null ? this.activeAnimation.FileName : ""));
+                            ImGui.SameLine();
+                            if (ImGui.Button("...") == true)
+                            {
+                                // Build the file name tree.
+                                this.selectedFileDatum = new DatumIndex(DatumIndex.Unassigned);
+                                this.fileSelectFileNames["animation"] = FileNameTree.BuildFileNameTree(ResourceType.rMotionList);
+
+                                // Show the select file dialog.
+                                ImGui.OpenPopup("Select animation");
                             }
 
-                            // Add a checkbox that toggles visibility of the primitive.
-                            ImGui.SameLine(175.0f);
-                            ImGui.Checkbox("##primitive" + primId.ToString(), ref this.visiblePrimitives[primId]);
-                            //ImGui.TreePop();
+                            // Display file selection dialog.
+                            ShowResourceSelectionDialog("Select animation", "animation", (datum) =>
+                            {
+                            // Parse the animation file from the archive.
+                            SetActiveAnimation(ArchiveCollection.Instance.GetFileAsResource<rMotionList>(datum));
+                            });
 
-                            System.Numerics.Vector2 size = ImGui.GetItemRectSize();
+                            // Display animation properties is there is a selected animation.
+                            if (this.activeAnimation != null)
+                            {
+                                // Create a combobox for the selected animation.
+                                if (ImGui.BeginCombo("Animation", "Animation " + this.selectedAnimation.ToString()) == true)
+                                {
+                                    // Add option entries for the animations.
+                                    for (int i = 0; i < this.activeAnimation.animations.Length; i++)
+                                    {
+                                        // If the animation has 0 frames don't display it as an option.
+                                        if (this.activeAnimation.animations[i].FrameCount == 0)
+                                            continue;
+
+                                        bool isSelected = this.selectedAnimation == i;
+                                        if (ImGui.Selectable("Animation " + i.ToString(), isSelected) == true)
+                                            SetActiveAnimationIndex(i);
+
+                                        // Set focus on the selected item when first opening.
+                                        if (isSelected == true)
+                                            ImGui.SetItemDefaultFocus();
+                                    }
+                                    ImGui.EndCombo();
+                                }
+
+                                // Add buttons for next/previous animation.
+                                ImGui.SameLine();
+                                if (ImGui.ArrowButton("previous_anim", ImGuiDir.Left) == true)
+                                {
+                                    // Loop until we find an animation with a non-zero frame count.
+                                    do
+                                    {
+                                        // Decrement or wrap the selected animation index.
+                                        if (--this.selectedAnimation < 0)
+                                            this.selectedAnimation = this.activeAnimation.animations.Length - 1;
+                                    }
+                                    while (this.activeAnimation.animations[this.selectedAnimation].FrameCount == 0);
+
+                                    SetActiveAnimationIndex(this.selectedAnimation);
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.ArrowButton("next_anim", ImGuiDir.Right) == true)
+                                {
+                                    // Loop until we find an animation with a non-zero frame count.
+                                    do
+                                    {
+                                        // Increment or wrap the selected animation index.
+                                        if (++this.selectedAnimation >= this.activeAnimation.animations.Length)
+                                            this.selectedAnimation = 0;
+                                    }
+                                    while (this.activeAnimation.animations[this.selectedAnimation].FrameCount == 0);
+
+                                    SetActiveAnimationIndex(this.selectedAnimation);
+                                }
+
+                                // Animation playback info.
+                                ImGui.Separator();
+                                ImGui.Text("Frame count: " + this.animationFrameCount.ToString());
+                                ImGui.Text("Total time: " + this.animationTotalTime.ToString() + " sec");
+                                if (ImGui.InputFloat("Playback speed", ref this.animationPlaybackRate, 0.25f) == true)
+                                {
+                                    // Make sure the playback rate never goes below 0.
+                                    if (this.animationPlaybackRate < 0.0f)
+                                        this.animationPlaybackRate = 0.0f;
+                                }
+                                if (ImGui.SliderFloat("", ref this.animationCurrentFrame, 0.0f, this.animationFrameCount) == true)
+                                    this.animationCurrentTime = this.animationCurrentFrame * this.animationTimePerFrame;
+
+                                // Add playback buttons.
+                                if (ImGui.ArrowButton("prev_frame", ImGuiDir.Left) == true)
+                                {
+                                    this.animationCurrentTime -= this.animationTimePerFrame;
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.Button("[Play]") == true)
+                                    this.animationPaused = false;
+
+                                ImGui.SameLine();
+                                if (ImGui.Button("[Pause]") == true)
+                                    this.animationPaused = true;
+
+                                ImGui.SameLine();
+                                if (ImGui.Button("[Stop]") == true)
+                                {
+                                    this.animationPaused = true;
+                                    SetActiveAnimationIndex(this.selectedAnimation);
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.ArrowButton("next_frame", ImGuiDir.Right) == true)
+                                {
+                                    this.animationCurrentTime += this.animationTimePerFrame;
+                                }
+                            }
+
+                            ImGui.EndTabItem();
+                        }
+                    }
+
+                    #endregion
+
+                    ImGui.EndTabBar();
+                }
+            }
+            ImGui.End();
+        }
+
+        private void ShowResourceSelectionDialog(string title, string listId, Action<DatumIndex> onFileSelected)
+        {
+            // Always center the window when appearing.
+            ImVector2 center = new ImVector2(ImGui.GetIO().DisplaySize.X * 0.5f, ImGui.GetIO().DisplaySize.Y * 0.5f);
+            ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new ImVector2(0.5f, 0.5f));
+            ImGui.SetNextWindowSize(new ImVector2(600, 420), ImGuiCond.Appearing);
+
+            // Show the file selection dialog.
+            if (ImGui.BeginPopupModal(title) == true)
+            {
+                // Create a tree view for the file names list.
+                ImGui.BeginChild("FileTree", new ImVector2(0, 360), true);
+                foreach (FileNameTreeNode node in this.fileSelectFileNames[listId].Nodes)
+                    ProcessTreeNodes(node);
+                ImGui.EndChild();
+
+                // Create the cancel and okay buttons.
+                if (ImGui.Button("Cancel", new ImVector2(120, 0)) == true)
+                {
+                    // Close the dialog and clear the file name list.
+                    ImGui.CloseCurrentPopup();
+                    this.fileSelectFileNames[listId] = null;
+                }
+
+                // If there is no selected file in the treeview, disable the okay button.
+                if (this.selectedFileDatum.Datum == DatumIndex.Unassigned)
+                {
+                    ImGui.PushItemFlag(ImGuiItemFlags.Disabled, true);
+                    ImGui.PushStyleVar(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button("Ok", new ImVector2(120, 0)) == true)
+                {
+                    // Call the callback with the selected file datum.
+                    onFileSelected(this.selectedFileDatum);
+
+                    // Close the dialog and clear the file name list.
+                    ImGui.CloseCurrentPopup();
+                    this.fileSelectFileNames[listId] = null;
+                }
+
+                // Restore style if needed.
+                if (this.selectedFileDatum.Datum == DatumIndex.Unassigned)
+                {
+                    ImGui.PopItemFlag();
+                    ImGui.PopStyleVar();
+                }
+
+                ImGui.EndPopup();
+            }
+
+            void ProcessTreeNodes(FileNameTreeNode node)
+            {
+                // Check if this node is a leaf or not.
+                if (node.Nodes.Count == 0)
+                {
+                    // Create a node for the file.
+                    if (ImGui.Selectable(node.Name, this.selectedFileDatum == node.FileDatum) == true)
+                    {
+                        // Set the selected file datum.
+                        this.selectedFileDatum = node.FileDatum;
+                    }
+                }
+                else
+                {
+                    // Create a tree node for this node.
+                    if (ImGui.TreeNodeEx(node.Name) == true)
+                    {
+                        // Loop through all the child nodes and process recursively.
+                        foreach (FileNameTreeNode child in node.Nodes)
+                        {
+                            // Recursively process the node.
+                            ProcessTreeNodes(child);
                         }
 
                         ImGui.TreePop();
                     }
                 }
-                ImGui.EndChild();
             }
         }
 
         #endregion
+
+        #region Utilities
+
+        public void SetActiveAnimationIndex(int index)
+        {
+            // If there is no active animation bail out.
+            if (this.activeAnimation == null)
+                return;
+
+            // Set the selected animation index and reset the animation timers.
+            this.selectedAnimation = index;
+            this.animationTotalTime = this.animationTimePerFrame * this.activeAnimation.animations[this.selectedAnimation].FrameCount;
+            this.animationCurrentTime = 0.0f;
+            this.animationFrameCount = this.activeAnimation.animations[this.selectedAnimation].FrameCount;
+            this.animationCurrentFrame = 0.0f;
+        }
 
         private static int NextPowerOfTwo(int value)
         {
@@ -1535,5 +1908,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Return the next highest power of 2.
             return 1 << (msb + 1);
         }
+
+        #endregion
     }
 }

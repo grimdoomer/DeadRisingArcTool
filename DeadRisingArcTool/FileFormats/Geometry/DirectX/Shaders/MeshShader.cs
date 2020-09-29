@@ -14,8 +14,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
     /// <summary>
     /// A skinned rigid mesh with 4 bone weights per vertex
     /// </summary>
-    [BuiltInShader(BuiltInShaderType.SkinnedRigid4W)]
-    public class SkinnedRigid4WMesh : BuiltInShader
+    [ShaderAttribute(ShaderType.SkinnedRigid4W)]
+    public class SkinnedRigid4WMesh : Shader
     {
         public static readonly InputElement[] VertexFormat = new InputElement[]
         {
@@ -31,14 +31,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             new InputElement("TEXCOORD",        3, Format.R32G32B32A32_Float,   0,  0),
         };
 
-        public override bool InitializeGraphics(IRenderManager manager, Device device)
+        public override bool InitializeGraphics(RenderManager manager)
         {
             // Compile our vertex and pixel shaders.
             ShaderBytecode vertexByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfMesh4W.vs");
-            this.VertexShader = new VertexShader(device, vertexByteCode);
+            this.VertexShader = new VertexShader(manager.Device, vertexByteCode);
 
             ShaderBytecode pixelByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfMesh4W.ps");
-            this.PixelShader = new PixelShader(device, pixelByteCode);
+            this.PixelShader = new PixelShader(manager.Device, pixelByteCode);
 
             // Setup the sampler states for the vertex shader.
             SamplerStateDescription vertexDesc = new SamplerStateDescription();
@@ -51,7 +51,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             vertexDesc.MipLodBias = 0;
             vertexDesc.MaximumAnisotropy = 1;
             vertexDesc.ComparisonFunction = Comparison.Never;
-            this.VertexSampleStates = new SamplerState[] { new SamplerState(device, vertexDesc) };
+            this.VertexSampleStates = new SamplerState[] { new SamplerState(manager.Device, vertexDesc) };
 
             SamplerStateDescription pixelDesc = new SamplerStateDescription();
             pixelDesc.AddressU = TextureAddressMode.Wrap;
@@ -62,10 +62,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             pixelDesc.Filter = Filter.Anisotropic;
             pixelDesc.MipLodBias = 0;
             pixelDesc.MaximumAnisotropy = 3;
-            this.PixelSampleStates = new SamplerState[] { new SamplerState(device, pixelDesc) };
+            this.PixelSampleStates = new SamplerState[] { new SamplerState(manager.Device, pixelDesc) };
 
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
-            this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, SkinnedRigid4WMesh.VertexFormat);
+            this.VertexDeclaration = new InputLayout(manager.Device, vertexByteCode.Data, SkinnedRigid4WMesh.VertexFormat);
 
             // Successfully initialized.
             return true;
@@ -75,8 +75,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
     /// <summary>
     /// A skinned rigid mesh with 8 bone weights per vertex
     /// </summary>
-    [BuiltInShader(BuiltInShaderType.SkinnedRigid8W)]
-    public class SkinnedRigid8WMesh : BuiltInShader
+    [ShaderAttribute(ShaderType.SkinnedRigid8W)]
+    public class SkinnedRigid8WMesh : Shader
     {
         public static readonly InputElement[] VertexFormat = new InputElement[]
         {
@@ -94,14 +94,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             new InputElement("TEXCOORD",        3, Format.R32G32B32A32_Float,   0,  0),
         };
 
-        public override bool InitializeGraphics(IRenderManager manager, Device device)
+        public override bool InitializeGraphics(RenderManager manager)
         {
             // Compile our vertex and pixel shaders.
             ShaderBytecode vertexByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfMesh8W.vs");
-            this.VertexShader = new VertexShader(device, vertexByteCode);
+            this.VertexShader = new VertexShader(manager.Device, vertexByteCode);
 
             ShaderBytecode pixelByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfMesh8W.ps");
-            this.PixelShader = new PixelShader(device, pixelByteCode);
+            this.PixelShader = new PixelShader(manager.Device, pixelByteCode);
 
             // Setup the sampler states for the vertex shader.
             SamplerStateDescription vertexDesc = new SamplerStateDescription();
@@ -114,7 +114,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             vertexDesc.MipLodBias = 0;
             vertexDesc.MaximumAnisotropy = 1;
             vertexDesc.ComparisonFunction = Comparison.Never;
-            this.VertexSampleStates = new SamplerState[] { new SamplerState(device, vertexDesc) };
+            this.VertexSampleStates = new SamplerState[] { new SamplerState(manager.Device, vertexDesc) };
 
             SamplerStateDescription pixelDesc = new SamplerStateDescription();
             pixelDesc.AddressU = TextureAddressMode.Wrap;
@@ -125,10 +125,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             pixelDesc.Filter = Filter.Anisotropic;
             pixelDesc.MipLodBias = 0;
             pixelDesc.MaximumAnisotropy = 3;
-            this.PixelSampleStates = new SamplerState[] { new SamplerState(device, pixelDesc) };
+            this.PixelSampleStates = new SamplerState[] { new SamplerState(manager.Device, pixelDesc) };
 
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
-            this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, SkinnedRigid8WMesh.VertexFormat);
+            this.VertexDeclaration = new InputLayout(manager.Device, vertexByteCode.Data, SkinnedRigid8WMesh.VertexFormat);
 
             // Successfully initialized.
             return true;

@@ -3,6 +3,7 @@ using DeadRisingArcTool.FileFormats;
 using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats.Geometry;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.Forms;
 using DeadRisingArcTool.UI;

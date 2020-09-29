@@ -14,6 +14,7 @@ using DeadRisingArcTool.FileFormats;
 using System.Reflection;
 using DeadRisingArcTool.Utilities;
 using DeadRisingArcTool.FileFormats.Geometry.Collada;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 
 namespace DeadRisingArcTool.Controls
 {
@@ -96,7 +97,7 @@ namespace DeadRisingArcTool.Controls
             // TODO: Figure out what the fuck is up with this...
             try
             {
-                render.Visible = true;
+                render.Show();
             }
             catch (ObjectDisposedException ex)
             {

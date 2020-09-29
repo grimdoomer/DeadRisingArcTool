@@ -809,7 +809,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
 
         #region IRenderable
 
-        public override bool InitializeGraphics(IRenderManager manager, Device device)
+        public override bool InitializeGraphics(RenderManager manager)
         {
             return true;
         }

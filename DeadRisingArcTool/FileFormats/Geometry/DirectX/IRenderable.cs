@@ -12,21 +12,21 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// <summary>
         /// Called during DirectX initialization, create any resources needed to render this object
         /// </summary>
-        /// <param name="device">The DirectX <see cref="Device"/> used for rendering</param>
+        /// <param name="manager">Rendering context</param>
         /// <returns>True if initialization was successful, false otherwise</returns>
-        bool InitializeGraphics(IRenderManager manager, Device device);
+        bool InitializeGraphics(RenderManager manager);
 
         /// <summary>
         /// Called during the render loop, draws the object to screen
         /// </summary>
-        /// <param name="device">The DirectX <see cref="Device"/> used for rendering</param>
+        /// <param name="manager">Rendering context</param>
         /// <returns></returns>
-        bool DrawFrame(IRenderManager manager, Device device);
+        bool DrawFrame(RenderManager manager);
 
         /// <summary>
         /// Called during teardown, dispose of any rendering resources created
         /// </summary>
-        /// <param name="device">The DirectX <see cref="Device"/> used for rendering</param>
-        void CleanupGraphics(IRenderManager manager, Device device);
+        /// <param name="manager">Rendering context</param>
+        void CleanupGraphics(RenderManager manager);
     }
 }

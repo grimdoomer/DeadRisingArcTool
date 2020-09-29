@@ -13,8 +13,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
     /// <summary>
     /// Shader used for level geometry
     /// </summary>
-    [BuiltInShader(BuiltInShaderType.Game_LevelGeometry1)]
-    public class LevelGeometry1Shader : BuiltInShader
+    [ShaderAttribute(ShaderType.Game_LevelGeometry1)]
+    public class LevelGeometry1Shader : Shader
     {
         public static readonly InputElement[] VertexFormat = new InputElement[]
         {
@@ -28,14 +28,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             new InputElement("TEXCOORD",    3, Format.R32G32_Float,         20, 1),
         };
 
-        public override bool InitializeGraphics(IRenderManager manager, Device device)
+        public override bool InitializeGraphics(RenderManager manager)
         {
             // Compile our vertex and pixel shaders.
             ShaderBytecode vertexByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfLevelMesh.vs");
-            this.VertexShader = new VertexShader(device, vertexByteCode);
+            this.VertexShader = new VertexShader(manager.Device, vertexByteCode);
 
             ShaderBytecode pixelByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfLevelMesh.ps");
-            this.PixelShader = new PixelShader(device, pixelByteCode);
+            this.PixelShader = new PixelShader(manager.Device, pixelByteCode);
 
             // Setup the sampler states for the vertex shader.
             SamplerStateDescription samplerDesc = new SamplerStateDescription();
@@ -47,10 +47,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             samplerDesc.Filter = Filter.Anisotropic;
             samplerDesc.MipLodBias = 0;
             samplerDesc.MaximumAnisotropy = 3;
-            this.PixelSampleStates = new SamplerState[] { new SamplerState(device, samplerDesc) };
+            this.PixelSampleStates = new SamplerState[] { new SamplerState(manager.Device, samplerDesc) };
 
             // Setup our vertex declaration and bind it to the inputs for the vertex shader.
-            this.VertexDeclaration = new InputLayout(device, vertexByteCode.Data, LevelGeometry1Shader.VertexFormat);
+            this.VertexDeclaration = new InputLayout(manager.Device, vertexByteCode.Data, LevelGeometry1Shader.VertexFormat);
 
             // Successfully initialized.
             return true;

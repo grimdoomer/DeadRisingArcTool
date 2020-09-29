@@ -35,7 +35,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         private D3DColoredVertex[] vertices;
         private SharpDX.Direct3D11.Buffer vertexBuffer;
 
-        private BuiltInShader shader;
+        private Shader shader;
 
         public BoundingSphere(Vector3 position, Vector4 rotation, float radius, Color4 color)
         {
@@ -46,7 +46,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             this.Color = color;
         }
 
-        public bool InitializeGraphics(IRenderManager manager, Device device)
+        public bool InitializeGraphics(RenderManager manager)
         {
             // Allocate vertex array.
             this.vertices = new D3DColoredVertex[(RingSegments + 1)];
@@ -57,10 +57,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             desc.CpuAccessFlags = CpuAccessFlags.Read | CpuAccessFlags.Write;
             desc.StructureByteStride = 28;
             desc.Usage = ResourceUsage.Default;
-            this.vertexBuffer = SharpDX.Direct3D11.Buffer.Create<D3DColoredVertex>(device, BindFlags.VertexBuffer, this.vertices);
+            this.vertexBuffer = SharpDX.Direct3D11.Buffer.Create<D3DColoredVertex>(manager.Device, BindFlags.VertexBuffer, this.vertices);
 
             // Get the wireframe shader.
-            this.shader = manager.GetBuiltInShader(BuiltInShaderType.Wireframe);
+            this.shader = manager.ShaderCollection.GetShader(ShaderType.Wireframe);
 
             return true;
         }
@@ -97,33 +97,33 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             device.ImmediateContext.Draw(this.vertices.Length, 0);
         }
 
-        public bool DrawFrame(IRenderManager manager, Device device)
+        public bool DrawFrame(RenderManager manager)
         {
             // If the radius of this sphere is 0 skip drawing it.
             if (this.Radius == 0.0f)
                 return true;
 
             // Set the primitive type to line strip.
-            device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineStrip;
+            manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineStrip;
 
             // Set the vertex buffer.
-            device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 28, 0));
+            manager.Device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 28, 0));
 
             // Setup the wireframe shader.
-            this.shader.DrawFrame(manager, device);
+            this.shader.DrawFrame(manager);
 
             Vector3 xaxis = new Vector3(this.Radius, 0.0f, 0.0f);
             Vector3 yaxis = new Vector3(0.0f, this.Radius, 0.0f);
             Vector3 zaxis = new Vector3(0.0f, 0.0f, this.Radius);
 
-            DrawRing(device, xaxis, zaxis);
-            DrawRing(device, xaxis, yaxis);
-            DrawRing(device, yaxis, zaxis);
+            DrawRing(manager.Device, xaxis, zaxis);
+            DrawRing(manager.Device, xaxis, yaxis);
+            DrawRing(manager.Device, yaxis, zaxis);
 
             return true;
         }
 
-        public void CleanupGraphics(IRenderManager manager, Device device)
+        public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
         }

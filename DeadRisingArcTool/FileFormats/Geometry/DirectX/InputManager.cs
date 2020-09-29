@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using SharpDX;
 using SharpDX.Direct3D11;
 using SharpDX.DirectInput;
 using SharpDX.XInput;
@@ -46,6 +48,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
     public class InputManager : IRenderable
     {
+        [DllImport("user32.dll")]
+        public static extern bool GetCursorPos(ref System.Drawing.Point point);
+
+        [DllImport("user32.dll")]
+        public static extern bool ScreenToClient(IntPtr handle, ref System.Drawing.Point point);
+
         /// <summary>
         /// Button state from the previous input poll operation
         /// </summary>
@@ -54,10 +62,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// Input state for the current input poll operation
         /// </summary>
         public bool[] ButtonState { get; protected set; } = new bool[(int)InputAction.InputAction_Max];
+        private System.Drawing.Point mousePosition;
         /// <summary>
-        /// XY coordinates of the mouse cursor
+        /// XY coordinates of the mouse position within the application window
         /// </summary>
-        public int[] MousePosition { get; protected set; } = new int[3];
+        public System.Drawing.Point MousePosition { get { return this.mousePosition; } }
+        /// <summary>
+        /// Change in XY coordinates and mouse wheel position since the last update
+        /// </summary>
+        public int[] MousePositionDelta { get; protected set; } = new int[3];
         /// <summary>
         /// True if the xbox gamepad is connected
         /// </summary>
@@ -127,7 +140,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
         #region IRenderable
 
-        public bool InitializeGraphics(IRenderManager manager, Device device)
+        public bool InitializeGraphics(RenderManager manager)
         {
             // Initialize the direct input object.
             this.directInput = new DirectInput();
@@ -153,7 +166,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             return true;
         }
 
-        public bool DrawFrame(IRenderManager manager, Device device)
+        public bool DrawFrame(RenderManager manager)
         {
             // Try to acquire the input devices.
             try
@@ -206,10 +219,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.mouseDevice.Poll();
             MouseState mouseState = this.mouseDevice.GetCurrentState();
 
+            // Update cursor position.
+            GetCursorPos(ref this.mousePosition);
+            ScreenToClient(this.formHandle, ref this.mousePosition);
+
             // Update the mouse position and button state.
-            this.MousePosition[0] = mouseState.X;
-            this.MousePosition[1] = mouseState.Y;
-            this.MousePosition[2] = mouseState.Z;
+            this.MousePositionDelta[0] = mouseState.X;
+            this.MousePositionDelta[1] = mouseState.Y;
+            this.MousePositionDelta[2] = mouseState.Z;
             this.ButtonState[(int)InputAction.LeftClick] = mouseState.Buttons[0];
             this.ButtonState[(int)InputAction.RightClick] = mouseState.Buttons[1];
             this.ButtonState[(int)InputAction.MiddleMouse] = mouseState.Buttons[2];
@@ -288,7 +305,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             return true;
         }
 
-        public void CleanupGraphics(IRenderManager manager, Device device)
+        public void CleanupGraphics(RenderManager manager)
         {
             // Release device access.
             this.keyboardDevice.Unacquire();

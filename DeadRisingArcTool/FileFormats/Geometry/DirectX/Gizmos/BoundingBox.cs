@@ -34,7 +34,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         private SharpDX.Direct3D11.Buffer vertexBuffer;
         private SharpDX.Direct3D11.Buffer indexBuffer;
 
-        private BuiltInShader shader;
+        private Shader shader;
 
         // Bounding box triangle indices.
         private readonly int[] BoxIndices = new int[24]
@@ -89,7 +89,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                 this.vertices[i].Color = this.Color;
         }
 
-        public bool InitializeGraphics(IRenderManager manager, Device device)
+        public bool InitializeGraphics(RenderManager manager)
         {
             // Build the initial vertex array.
             BuildVertexBuffer();
@@ -100,7 +100,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             desc.CpuAccessFlags = CpuAccessFlags.Read | CpuAccessFlags.Write;
             desc.StructureByteStride = 28;
             desc.Usage = ResourceUsage.Default;
-            this.vertexBuffer = SharpDX.Direct3D11.Buffer.Create<D3DColoredVertex>(device, BindFlags.VertexBuffer, this.vertices);
+            this.vertexBuffer = SharpDX.Direct3D11.Buffer.Create<D3DColoredVertex>(manager.Device, BindFlags.VertexBuffer, this.vertices);
 
             // Setup the index buffer using the indice data.
             desc = new BufferDescription();
@@ -108,36 +108,36 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             desc.CpuAccessFlags = CpuAccessFlags.Read | CpuAccessFlags.Write;
             desc.StructureByteStride = 4;
             desc.Usage = ResourceUsage.Default;
-            this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<int>(device, BindFlags.IndexBuffer, this.BoxIndices);
+            this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<int>(manager.Device, BindFlags.IndexBuffer, this.BoxIndices);
 
             // Get the wireframe shader.
-            this.shader = manager.GetBuiltInShader(BuiltInShaderType.Wireframe);
+            this.shader = manager.ShaderCollection.GetShader(ShaderType.Wireframe);
 
             return true;
         }
 
-        public bool DrawFrame(IRenderManager manager, Device device)
+        public bool DrawFrame(RenderManager manager)
         {
             // Update the vertex buffer.
-            device.ImmediateContext.UpdateSubresource(this.vertices, this.vertexBuffer);
+            manager.Device.ImmediateContext.UpdateSubresource(this.vertices, this.vertexBuffer);
 
             // Set the primitive type to line list.
-            device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
+            manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
 
             // Set the vertex and index buffers.
-            device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 28, 0));
-            device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R32_UInt, 0);
+            manager.Device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 28, 0));
+            manager.Device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R32_UInt, 0);
 
             // Setup the wireframe shader.
-            this.shader.DrawFrame(manager, device);
+            this.shader.DrawFrame(manager);
 
             // Draw the cube.
-            device.ImmediateContext.DrawIndexed(24, 0, 0);
+            manager.Device.ImmediateContext.DrawIndexed(24, 0, 0);
 
             return true;
         }
 
-        public void CleanupGraphics(IRenderManager manager, Device device)
+        public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
         }

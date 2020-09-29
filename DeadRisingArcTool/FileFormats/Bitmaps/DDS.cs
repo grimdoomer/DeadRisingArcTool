@@ -217,6 +217,32 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 return null;
             }
 
+            // Parse the dds image.
+            DDSImage image = FromStream(reader);
+
+            // Close the reader and return.
+            reader.Close();
+            return image;
+        }
+
+        public static DDSImage FromBuffer(byte[] data)
+        {
+            // Create a new memory stream from the buffer.
+            using (MemoryStream ms = new MemoryStream(data))
+            {
+                EndianReader reader = new EndianReader(ms);
+
+                // Parse the dds image from memory.
+                DDSImage image = FromStream(reader);
+
+                // Close the reader and return.
+                reader.Close();
+                return image;
+            }
+        }
+
+        private static DDSImage FromStream(EndianReader reader)
+        {
             // Create a new DDSImage we can populate with info.
             DDSImage image = new DDSImage();
             image.header = new DDS_HEADER();
@@ -267,8 +293,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             // Read the pixel buffer.
             image.PixelBuffer = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
 
-            // Close the file and return the image.
-            reader.Close();
+            // Return the image.
             return image;
         }
 

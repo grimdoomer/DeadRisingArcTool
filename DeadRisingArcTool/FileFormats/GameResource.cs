@@ -367,17 +367,17 @@ namespace DeadRisingArcTool.FileFormats
 
         #region IRenderable
 
-        public virtual bool InitializeGraphics(IRenderManager manager, Device device)
+        public virtual bool InitializeGraphics(RenderManager manager)
         {
             return false;
         }
 
-        public virtual bool DrawFrame(IRenderManager manager, Device device)
+        public virtual bool DrawFrame(RenderManager manager)
         {
             return false;
         }
 
-        public virtual void CleanupGraphics(IRenderManager manager, Device device)
+        public virtual void CleanupGraphics(RenderManager manager)
         {
 
         }

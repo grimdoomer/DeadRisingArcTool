@@ -173,10 +173,10 @@
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\BoundingSphere.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\InputManager.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\IRenderable.cs" />
-    <Compile Include="FileFormats\Geometry\DirectX\IRenderManager.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\RenderManager.cs" />
     <Compile Include="FileFormats\Geometry\rShader.cs" />
-    <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShaderCollection.cs" />
-    <Compile Include="FileFormats\Geometry\DirectX\Shaders\BuiltInShader.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Shaders\ShaderCollection.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Shaders\Shader.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\LevelGeometryShader.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\MeshShader.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Shaders\WireframeShader.cs" />
@@ -218,7 +218,9 @@
     <Compile Include="UI\Forms\RenameFileDialog.Designer.cs">
       <DependentUpon>RenameFileDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Forms\RenderView.cs" />
+    <Compile Include="UI\Forms\RenderView.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="UI\Forms\RenderView.Designer.cs">
       <DependentUpon>RenderView.cs</DependentUpon>
     </Compile>
@@ -231,6 +233,7 @@
     <Compile Include="Utilities\DirectXExtensions.cs" />
     <Compile Include="Utilities\HexAttribute.cs" />
     <Compile Include="Utilities\IOExtensions.cs" />
+    <Compile Include="Utilities\FileNameTree.cs" />
     <Compile Include="Utilities\ZlibUtilities.cs" />
     <EmbeddedResource Include="UI\Controls\AnimationEditor.resx">
       <DependentUpon>AnimationEditor.cs</DependentUpon>
@@ -333,6 +336,7 @@
     <Content Include="IDA\DumpObjectInfo.py" />
     <Content Include="IDA\ObjectTypes.txt" />
     <Content Include="IDA\SSEHelper.py" />
+    <None Include="Resources\CheckerBoard.dds" />
     <None Include="Resources\object.png" />
     <None Include="Resources\texture.png" />
     <None Include="Resources\file.png" />
