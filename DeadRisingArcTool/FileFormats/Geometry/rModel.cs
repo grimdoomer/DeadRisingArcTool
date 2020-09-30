@@ -16,6 +16,7 @@ using BoundingBox = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Boundi
 using ImGuiNET;
 using ImVector2 = System.Numerics.Vector2;
 using System.Runtime.InteropServices;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.UI;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
@@ -263,6 +264,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         // File selection dialog data.
         private Dictionary<string, FileNameTree> fileSelectFileNames = new Dictionary<string, FileNameTree>();
         private DatumIndex selectedFileDatum;
+
+        // Dialog box to display generic messages.
+        private ImGuiMessageBox dialogBox;
 
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
@@ -1425,6 +1429,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Reset hovered index.
             this.hoveredPrimitiveIndex = -1;
 
+            ImGui.ShowMetricsWindow();
+
             // Create the object properties window.
             ImGui.Begin("Object Properties - " + this.FileName);
             {
@@ -1682,9 +1688,31 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             // Display file selection dialog.
                             ShowResourceSelectionDialog("Select animation", "animation", (datum) =>
                             {
-                            // Parse the animation file from the archive.
-                            SetActiveAnimation(ArchiveCollection.Instance.GetFileAsResource<rMotionList>(datum));
+                                // Parse the animation file from the archive, and make sure it has the same number of joints.
+                                rMotionList newAnimation = ArchiveCollection.Instance.GetFileAsResource<rMotionList>(datum);
+                                AnimationDescriptor animDesc = newAnimation.animations.First(desc => desc.JointCount > 0);
+                                if (animDesc.JointCount != this.joints.Length)
+                                {
+                                    // Animation has incorrect joint count, display an error to the user.
+                                    this.dialogBox = new ImGuiMessageBox("Invalid animation",
+                                        "The selected animation file does not have the same number of joints as the model!", ImGuiMessageBoxOptions.Ok);
+                                    this.dialogBox.ShowMessageBox();
+                                    return false;
+                                }
+
+                                // Set the animation file as the active animation to play.
+                                SetActiveAnimation(newAnimation);
+                                return true;
                             });
+
+                            if (this.dialogBox != null)
+                            {
+                                if (this.dialogBox.DrawMessageBox() == true)
+                                {
+                                    // Dialog box completed.
+                                    this.dialogBox = null;
+                                }
+                            }
 
                             // Display animation properties is there is a selected animation.
                             if (this.activeAnimation != null)
@@ -1794,7 +1822,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             ImGui.End();
         }
 
-        private void ShowResourceSelectionDialog(string title, string listId, Action<DatumIndex> onFileSelected)
+        private void ShowResourceSelectionDialog(string title, string listId, Func<DatumIndex, bool> onFileSelected)
         {
             // Always center the window when appearing.
             ImVector2 center = new ImVector2(ImGui.GetIO().DisplaySize.X * 0.5f, ImGui.GetIO().DisplaySize.Y * 0.5f);
@@ -1829,11 +1857,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 if (ImGui.Button("Ok", new ImVector2(120, 0)) == true)
                 {
                     // Call the callback with the selected file datum.
-                    onFileSelected(this.selectedFileDatum);
-
-                    // Close the dialog and clear the file name list.
-                    ImGui.CloseCurrentPopup();
-                    this.fileSelectFileNames[listId] = null;
+                    if (onFileSelected(this.selectedFileDatum) == true)
+                    {
+                        // Close the dialog and clear the file name list.
+                        ImGui.CloseCurrentPopup();
+                        this.fileSelectFileNames[listId] = null;
+                    }
                 }
 
                 // Restore style if needed.
