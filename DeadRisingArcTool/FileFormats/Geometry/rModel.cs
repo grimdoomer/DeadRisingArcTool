@@ -262,8 +262,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private bool showBoundingBoxes = false;
 
         // File selection dialog data.
-        private Dictionary<string, FileNameTree> fileSelectFileNames = new Dictionary<string, FileNameTree>();
-        private DatumIndex selectedFileDatum;
+        private ImGuiResourceSelectDialog fileSelectDialog = null;
 
         // Dialog box to display generic messages.
         private ImGuiMessageBox dialogBox;
@@ -1429,7 +1428,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Reset hovered index.
             this.hoveredPrimitiveIndex = -1;
 
-            ImGui.ShowMetricsWindow();
+            //ImGui.ShowMetricsWindow();
 
             // Create the object properties window.
             ImGui.Begin("Object Properties - " + this.FileName);
@@ -1677,40 +1676,39 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                             ImGui.SameLine();
                             if (ImGui.Button("...") == true)
                             {
-                                // Build the file name tree.
-                                this.selectedFileDatum = new DatumIndex(DatumIndex.Unassigned);
-                                this.fileSelectFileNames["animation"] = FileNameTree.BuildFileNameTree(ResourceType.rMotionList);
+                                // Create the file select dialog.
+                                this.fileSelectDialog = new ImGuiResourceSelectDialog("Select animation", ResourceType.rMotionList);
+                                this.fileSelectDialog.OnResourceSelected += new ImGuiResourceSelectDialog.OnResourceSelectedHandler((DatumIndex datum, out string errorMsg) =>
+                                {
+                                    // Satisfy the compiler.
+                                    errorMsg = null;
 
-                                // Show the select file dialog.
-                                ImGui.OpenPopup("Select animation");
+                                    // Parse the animation file from the archive, and make sure it has the same number of joints.
+                                    rMotionList newAnimation = ArchiveCollection.Instance.GetFileAsResource<rMotionList>(datum);
+                                    AnimationDescriptor animDesc = newAnimation.animations.First(desc => desc.JointCount > 0);
+                                    if (animDesc.JointCount != this.joints.Length)
+                                    {
+                                        // Animation has incorrect joint count, display an error to the user.
+                                        errorMsg = "The selected animation file does not have the same number of joints as the model!";
+                                        return false;
+                                    }
+
+                                    // Set the animation file as the active animation to play.
+                                    SetActiveAnimation(newAnimation);
+                                    return true;
+                                });
+
+                                // Display the dialog.
+                                this.fileSelectDialog.ShowDialog();
                             }
 
-                            // Display file selection dialog.
-                            ShowResourceSelectionDialog("Select animation", "animation", (datum) =>
+                            // Draw the file select dialog if it is being used.
+                            if (this.fileSelectDialog != null)
                             {
-                                // Parse the animation file from the archive, and make sure it has the same number of joints.
-                                rMotionList newAnimation = ArchiveCollection.Instance.GetFileAsResource<rMotionList>(datum);
-                                AnimationDescriptor animDesc = newAnimation.animations.First(desc => desc.JointCount > 0);
-                                if (animDesc.JointCount != this.joints.Length)
+                                if (this.fileSelectDialog.DrawDialog() == true)
                                 {
-                                    // Animation has incorrect joint count, display an error to the user.
-                                    this.dialogBox = new ImGuiMessageBox("Invalid animation",
-                                        "The selected animation file does not have the same number of joints as the model!", ImGuiMessageBoxOptions.Ok);
-                                    this.dialogBox.ShowMessageBox();
-                                    return false;
-                                }
-
-                                // Set the animation file as the active animation to play.
-                                SetActiveAnimation(newAnimation);
-                                return true;
-                            });
-
-                            if (this.dialogBox != null)
-                            {
-                                if (this.dialogBox.DrawMessageBox() == true)
-                                {
-                                    // Dialog box completed.
-                                    this.dialogBox = null;
+                                    // Destroy the file select dialog.
+                                    this.fileSelectDialog = null;
                                 }
                             }
 
@@ -1820,89 +1818,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 }
             }
             ImGui.End();
-        }
-
-        private void ShowResourceSelectionDialog(string title, string listId, Func<DatumIndex, bool> onFileSelected)
-        {
-            // Always center the window when appearing.
-            ImVector2 center = new ImVector2(ImGui.GetIO().DisplaySize.X * 0.5f, ImGui.GetIO().DisplaySize.Y * 0.5f);
-            ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new ImVector2(0.5f, 0.5f));
-            ImGui.SetNextWindowSize(new ImVector2(600, 420), ImGuiCond.Appearing);
-
-            // Show the file selection dialog.
-            if (ImGui.BeginPopupModal(title) == true)
-            {
-                // Create a tree view for the file names list.
-                ImGui.BeginChild("FileTree", new ImVector2(0, 360), true);
-                foreach (FileNameTreeNode node in this.fileSelectFileNames[listId].Nodes)
-                    ProcessTreeNodes(node);
-                ImGui.EndChild();
-
-                // Create the cancel and okay buttons.
-                if (ImGui.Button("Cancel", new ImVector2(120, 0)) == true)
-                {
-                    // Close the dialog and clear the file name list.
-                    ImGui.CloseCurrentPopup();
-                    this.fileSelectFileNames[listId] = null;
-                }
-
-                // If there is no selected file in the treeview, disable the okay button.
-                if (this.selectedFileDatum.Datum == DatumIndex.Unassigned)
-                {
-                    ImGui.PushItemFlag(ImGuiItemFlags.Disabled, true);
-                    ImGui.PushStyleVar(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
-                }
-
-                ImGui.SameLine();
-                if (ImGui.Button("Ok", new ImVector2(120, 0)) == true)
-                {
-                    // Call the callback with the selected file datum.
-                    if (onFileSelected(this.selectedFileDatum) == true)
-                    {
-                        // Close the dialog and clear the file name list.
-                        ImGui.CloseCurrentPopup();
-                        this.fileSelectFileNames[listId] = null;
-                    }
-                }
-
-                // Restore style if needed.
-                if (this.selectedFileDatum.Datum == DatumIndex.Unassigned)
-                {
-                    ImGui.PopItemFlag();
-                    ImGui.PopStyleVar();
-                }
-
-                ImGui.EndPopup();
-            }
-
-            void ProcessTreeNodes(FileNameTreeNode node)
-            {
-                // Check if this node is a leaf or not.
-                if (node.Nodes.Count == 0)
-                {
-                    // Create a node for the file.
-                    if (ImGui.Selectable(node.Name, this.selectedFileDatum == node.FileDatum) == true)
-                    {
-                        // Set the selected file datum.
-                        this.selectedFileDatum = node.FileDatum;
-                    }
-                }
-                else
-                {
-                    // Create a tree node for this node.
-                    if (ImGui.TreeNodeEx(node.Name) == true)
-                    {
-                        // Loop through all the child nodes and process recursively.
-                        foreach (FileNameTreeNode child in node.Nodes)
-                        {
-                            // Recursively process the node.
-                            ProcessTreeNodes(child);
-                        }
-
-                        ImGui.TreePop();
-                    }
-                }
-            }
         }
 
         #endregion

@@ -114,7 +114,9 @@
   <ItemGroup>
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\ImGuiRenderer.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\UI\ImGuiDialogBox.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\ImGuiMessageBox.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\UI\ImGuiResourceSelectDialog.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\InputSemanticAttribute.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexHelper.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexDeclaration.cs" />
