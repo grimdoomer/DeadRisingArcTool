@@ -121,7 +121,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x70 */ public float FresnelFactor;
         /* 0x74 */ public float FresnelBias;
         /* 0x78 */ public float SpecularPow;
-        /* 0x7C */ public float EnvmapPower;    // not sure where I found this name...
+        /* 0x7C */ public float EnvmapPower;
         /* 0x80 */ public Vector4 LightMapScale;
         /* 0x90 */ public float DetailFactor;
         /* 0x94 */ public float DetailWrap;
@@ -243,9 +243,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private Vector4 baseTranslation = new Vector4(0.0f);
         private AnimatedJoint[] animatedJoints;
 
-        private Vector4 modelPosition = new Vector4(0.0f);
-        private Vector4 modelRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-        private Vector4 modelScale = new Vector4(1.0f);
+        public Vector4 modelPosition = new Vector4(0.0f);
+        public Vector4 modelRotation = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+        public Vector4 modelScale = new Vector4(1.0f);
 
         // UI data.
         private int[] primtiveGroupIds = null;
@@ -263,9 +263,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
         // File selection dialog data.
         private ImGuiResourceSelectDialog fileSelectDialog = null;
-
-        // Dialog box to display generic messages.
-        private ImGuiMessageBox dialogBox;
 
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
@@ -1319,9 +1316,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Set alpha blending state.
             manager.Device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState, new SharpDX.Mathematics.Interop.RawColor4(1.0f, 1.0f, 1.0f, 1.0f));
 
+            // Set the world transform based on the model position.
+            Matrix world = Matrix.Transformation(new Vector3(0.0f), new Quaternion(0.0f), this.modelScale.ToVector3(), 
+                new Vector3(0.0f), this.modelRotation.ToQuaternion(), this.modelPosition.ToVector3());
+            manager.ShaderConstants.gXfViewProj = Matrix.Transpose(world * manager.Camera.ViewMatrix * manager.ProjectionMatrix);
+
             // Set the bounding box parameters for this model.
             manager.ShaderConstants.gXfQuantPosScale = this.header.BoundingBoxMax - this.header.BoundingBoxMin;
             manager.ShaderConstants.gXfQuantPosOffset = this.header.BoundingBoxMin;
+
+            // Set the bone map matrix data.
+            float matrixUnitSize = 1.0f / (float)NextPowerOfTwo(this.joints.Length);
+            float matrixRowSize = matrixUnitSize / 4.0f;
+            manager.ShaderConstants.gXfMatrixMapFactor = new Vector4(0.0f, 0.0f, matrixUnitSize, matrixRowSize);
+            manager.Device.ImmediateContext.VertexShader.SetShaderResource(0, this.boneMapMatrixShaderView);
 
             // Update shader constants now to avoid doing it every frame for non-highlighted objects.
             manager.UpdateShaderConstants();
@@ -1356,12 +1364,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Set the textures being used by the material.
                 manager.Device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.BaseMapTexture]);
-
-                // Set the bone map matrix data.
-                float matrixUnitSize = 1.0f / (float)NextPowerOfTwo(this.joints.Length);
-                float matrixRowSize = matrixUnitSize / 4.0f;
-                manager.ShaderConstants.gXfMatrixMapFactor = new Vector4(0.0f, 0.0f, matrixUnitSize, matrixRowSize);
-                manager.Device.ImmediateContext.VertexShader.SetShaderResource(0, this.boneMapMatrixShaderView);
 
                 // Draw the primtive.
                 manager.Device.ImmediateContext.DrawIndexed(this.primitives[i].IndexCount, this.primitives[i].StartingIndexLocation, this.primitives[i].BaseVertexLocation);
@@ -1423,401 +1425,393 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
         #region UI Rendering
 
-        public void DrawUI(RenderManager manager)
+        public override void DrawObjectPropertiesUI(RenderManager manager)
         {
             // Reset hovered index.
             this.hoveredPrimitiveIndex = -1;
 
-            //ImGui.ShowMetricsWindow();
+            // Display checkboxes for bounding spheres and boxes.
+            ImGui.Checkbox("Show joint spheres", ref this.showJointSpheres);
+            ImGui.Checkbox("Show bounding boxes", ref this.showBoundingBoxes);
 
-            // Create the object properties window.
-            ImGui.Begin("Object Properties - " + this.FileName);
+            // Create the tab page header.
+            if (ImGui.BeginTabBar("##tabs", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton) == true)
             {
-                // Display checkboxes for bounding spheres and boxes.
-                ImGui.Checkbox("Show joint spheres", ref this.showJointSpheres);
-                ImGui.Checkbox("Show bounding boxes", ref this.showBoundingBoxes);
+                #region Materials
 
-                // Create the tab page header.
-                if (ImGui.BeginTabBar("##tabs", ImGuiTabBarFlags.NoCloseWithMiddleMouseButton) == true)
+                // Materials section.
+                if (ImGui.BeginTabItem("Materials") == true)
                 {
-                    #region Materials
+                    ImGui.BeginChild("##materialsbox");
 
-                    // Materials section.
-                    if (ImGui.BeginTabItem("Materials") == true)
+                    // Create a scrollable list for material selection.
+                    ImVector2 boxSize = ImGui.GetItemRectSize();
+                    ImGui.BeginChild("MaterialsSelection", new ImVector2(boxSize.X - 17, 200), true);
+                    for (int i = 0; i < this.materials.Length; i++)
                     {
-                        ImGui.BeginChild("##materialsbox");
-
-                        // Create a scrollable list for material selection.
-                        ImVector2 boxSize = ImGui.GetItemRectSize();
-                        ImGui.BeginChild("MaterialsSelection", new ImVector2(boxSize.X - 17, 200), true);
-                        for (int i = 0; i < this.materials.Length; i++)
+                        // Create a option for this material.
+                        if (ImGui.Selectable("Material " + i.ToString(), this.selectedMaterialIndex == i) == true)
                         {
-                            // Create a option for this material.
-                            if (ImGui.Selectable("Material " + i.ToString(), this.selectedMaterialIndex == i) == true)
-                            {
-                                // Set the selected material index.
-                                this.selectedMaterialIndex = i;
-                            }
+                            // Set the selected material index.
+                            this.selectedMaterialIndex = i;
                         }
-                        ImGui.EndChild();
-
-                        // Display the material properties for the selected material.
-                        ImGui.Text("Shader Technique: " + this.materials[this.selectedMaterialIndex].ShaderTechnique.ToString());
-
-                        Tuple<string, int>[] textureInfo = new Tuple<string, int>[]
-                            {
-                                new Tuple<string, int>("Basemap", this.materials[this.selectedMaterialIndex].BaseMapTexture),
-                                new Tuple<string, int>("Bumpmap", this.materials[this.selectedMaterialIndex].NormalMapTexture),
-                                new Tuple<string, int>("Maskmap", this.materials[this.selectedMaterialIndex].MaskMapTexture),
-                                new Tuple<string, int>("Lightmap", this.materials[this.selectedMaterialIndex].LightmapTexture),
-                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex5),
-                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex6),
-                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex7),
-                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex8),
-                                new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex9),
-                            };
-
-                        // Loop and setup texture previews for all texture placeholders.
-                        ImGui.Separator();
-                        ImGui.Columns(3, "texturecolumns", false);
-                        for (int i = 0; i < textureInfo.Length; i++)
-                        {
-                            // If the texture is set show a preview, else show the empty placeholder texture.
-                            ImGui.Text(textureInfo[i].Item1);
-                            if (textureInfo[i].Item2 != 0 && this.shaderResources[textureInfo[i].Item2] != null)
-                            {
-                                ImGui.Image(this.shaderResources[textureInfo[i].Item2].NativePointer, new ImVector2(150, 150));
-                                if (ImGui.IsItemHovered() == true)
-                                {
-                                    // Create a tooltip window for a larger preview of the image.
-                                    ImGui.BeginTooltip();
-                                    ImGui.Image(this.shaderResources[textureInfo[i].Item2].NativePointer, new ImVector2(512, 512));
-                                    ImGui.EndTooltip();
-                                }
-                            }
-                            else
-                            {
-                                // Use the place holder texture.
-                                ImGui.Image(manager.CheckerboardTextureResource.NativePointer, new ImVector2(150, 150));
-                            }
-                            ImGui.NextColumn();
-                        }
-                        ImGui.Columns(1);
-                        ImGui.Separator();
-
-                        ImGui.InputFloat("Transparency", ref this.materials[this.selectedMaterialIndex].Transparency);
-                        ImGui.InputFloat("##Unk11", ref this.materials[this.selectedMaterialIndex].Unk11);
-                        ImGui.InputFloat("Fresnel Factor", ref this.materials[this.selectedMaterialIndex].FresnelFactor);
-                        ImGui.InputFloat("Fresnel Bias", ref this.materials[this.selectedMaterialIndex].FresnelBias);
-                        ImGui.InputFloat("Specular Power", ref this.materials[this.selectedMaterialIndex].SpecularPow);
-                        ImGui.InputFloat("##EnvmapPower", ref this.materials[this.selectedMaterialIndex].EnvmapPower);
-                        ImGui.InputFloat4("Lightmap Scale", ref this.materials[this.selectedMaterialIndex].LightMapScale);
-                        ImGui.InputFloat("Detail Factor", ref this.materials[this.selectedMaterialIndex].DetailFactor);
-                        ImGui.InputFloat("Detail Wrap", ref this.materials[this.selectedMaterialIndex].DetailWrap);
-                        ImGui.InputFloat("##Unk22", ref this.materials[this.selectedMaterialIndex].Unk22);
-                        ImGui.InputFloat("##Unk23", ref this.materials[this.selectedMaterialIndex].Unk23);
-                        ImGui.InputFloat4("Transmit", ref this.materials[this.selectedMaterialIndex].Transmit);
-                        ImGui.InputFloat4("Parallax", ref this.materials[this.selectedMaterialIndex].Parallax);
-                        ImGui.InputFloat("##Unk32", ref this.materials[this.selectedMaterialIndex].Unk32);
-                        ImGui.InputFloat("##Unk33", ref this.materials[this.selectedMaterialIndex].Unk33);
-                        ImGui.InputFloat("##Unk34", ref this.materials[this.selectedMaterialIndex].Unk34);
-                        ImGui.InputFloat("##Unk35", ref this.materials[this.selectedMaterialIndex].Unk35);
-
-                        ImGui.EndChild();
-                        ImGui.EndTabItem();
                     }
+                    ImGui.EndChild();
 
-                    #endregion
+                    // Display the material properties for the selected material.
+                    ImGui.Text("Shader Technique: " + this.materials[this.selectedMaterialIndex].ShaderTechnique.ToString());
 
-                    #region Primitives
+                    Tuple<string, int>[] textureInfo = new Tuple<string, int>[]
+                        {
+                            new Tuple<string, int>("Basemap", this.materials[this.selectedMaterialIndex].BaseMapTexture),
+                            new Tuple<string, int>("Bumpmap", this.materials[this.selectedMaterialIndex].NormalMapTexture),
+                            new Tuple<string, int>("Maskmap", this.materials[this.selectedMaterialIndex].MaskMapTexture),
+                            new Tuple<string, int>("Lightmap", this.materials[this.selectedMaterialIndex].LightmapTexture),
+                            new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex5),
+                            new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex6),
+                            new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex7),
+                            new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex8),
+                            new Tuple<string, int>("", this.materials[this.selectedMaterialIndex].TextureIndex9),
+                        };
 
-                    // Primitives section.
-                    if (ImGui.BeginTabItem("Primitives") == true)
+                    // Loop and setup texture previews for all texture placeholders.
+                    ImGui.Separator();
+                    ImGui.Columns(3, "texturecolumns", false);
+                    for (int i = 0; i < textureInfo.Length; i++)
                     {
-                        ImGui.BeginChild("##primitivesbox");
-
-                        // Create the scrollable treeview for primtive selection.
-                        ImVector2 boxSize = ImGui.GetItemRectSize();
-                        ImGui.BeginChild("PrimitiveTree", new ImVector2(boxSize.X - 7, 200), true);
-
-                        // Add primitives by group into the treeview.
-                        for (int i = 0; i < this.primtiveGroupIds.Length; i++)
+                        // If the texture is set show a preview, else show the empty placeholder texture.
+                        ImGui.Text(textureInfo[i].Item1);
+                        if (textureInfo[i].Item2 != 0 && this.shaderResources[textureInfo[i].Item2] != null)
                         {
-                            // Create a new tree node for the group id.
-                            if (ImGui.TreeNodeEx("Group " + this.primtiveGroupIds[i].ToString(), ImGuiTreeNodeFlags.DefaultOpen) == true)
-                            {
-                                // Add a checkbox that toggles the visibility of all primitives in the group.
-                                ImGui.SameLine(175.0f);
-                                if (ImGui.Checkbox("##group" + i.ToString(), ref this.visibleGroupIds[i]) == true)
-                                {
-                                    // Loop and change the visible state of all primitives in the group.
-                                    foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
-                                        this.visiblePrimitives[primId] = this.visibleGroupIds[i];
-                                }
-
-                                // Loop and create tree nodes for all the primitives in this group.
-                                foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
-                                {
-                                    // Create tree node for primitive.
-                                    ImGui.AlignTextToFramePadding();
-                                    if (ImGui.Selectable("Primitive " + primId.ToString(), this.selectedPrimitiveIndex == primId,
-                                        ImGuiSelectableFlags.None, new ImVector2(140.0f, 17.0f)) == true)
-                                    {
-                                        // Set the selected primitive index.
-                                        this.selectedPrimitiveIndex = primId;
-                                    }
-
-                                    // If the user hovers a primitive node highlight that primitive mesh.
-                                    if (ImGui.IsItemHovered() == true)
-                                    {
-                                        // Set the hovered primitive index.
-                                        this.hoveredPrimitiveIndex = primId;
-                                    }
-
-                                    // Add a checkbox that toggles visibility of the primitive.
-                                    ImGui.SameLine(175.0f);
-                                    ImGui.Checkbox("##primitive" + primId.ToString(), ref this.visiblePrimitives[primId]);
-                                    //ImGui.TreePop();
-
-                                    System.Numerics.Vector2 size = ImGui.GetItemRectSize();
-                                }
-
-                                ImGui.TreePop();
-                            }
-                        }
-                        ImGui.EndChild();
-
-                        // Primitive info.
-                        if (this.selectedPrimitiveIndex != -1)
-                        {
-                            // TODO: Change to drop down and add goto button for materials
-                            ImGui.InputScalarInt16("Group ID", ref this.primitives[this.selectedPrimitiveIndex].GroupID);
-                            ImGui.InputScalarInt16("Material index", ref this.primitives[this.selectedPrimitiveIndex].MaterialIndex);
-
-                            bool enabled = this.primitives[this.selectedPrimitiveIndex].Enabled != 0;
-                            if (ImGui.Checkbox("Enabled", ref enabled) == true)
-                                this.primitives[this.selectedPrimitiveIndex].Enabled = enabled == true ? (byte)1 : (byte)0;
-
-                            ImGui.InputInt("Vertex count", ref this.primitives[this.selectedPrimitiveIndex].VertexCount, 0, 0, ImGuiInputTextFlags.ReadOnly);
-                            ImGui.InputInt("Starting vertex", ref this.primitives[this.selectedPrimitiveIndex].StartingVertex, 0, 0, ImGuiInputTextFlags.ReadOnly);
-                            ImGui.InputInt("Base vertex", ref this.primitives[this.selectedPrimitiveIndex].BaseVertexLocation, 0, 0, ImGuiInputTextFlags.ReadOnly);
-                            ImGui.InputInt("Index count", ref this.primitives[this.selectedPrimitiveIndex].IndexCount, 0, 0, ImGuiInputTextFlags.ReadOnly);
-                            ImGui.InputInt("Starting index", ref this.primitives[this.selectedPrimitiveIndex].StartingIndexLocation, 0, 0, ImGuiInputTextFlags.ReadOnly);
-                            ImGui.InputFloat4("Bounding box min", ref this.primitives[this.selectedPrimitiveIndex].BoundingBoxMin, "%.3f", ImGuiInputTextFlags.ReadOnly);
-                            ImGui.InputFloat4("Bounding box min", ref this.primitives[this.selectedPrimitiveIndex].BoundingBoxMax, "%.3f", ImGuiInputTextFlags.ReadOnly);
-                        }
-
-                        ImGui.EndChild();
-                        ImGui.EndTabItem();
-                    }
-
-                    #endregion
-
-                    #region Joints
-
-                    // Create the joints tab.
-                    if (ImGui.BeginTabItem("Joints") == true)
-                    {
-                        // Loop and print info on each joint.
-                        ImGui.BeginChild("##jointsbox");
-                        for (int i = 0; i < this.joints.Length; i++)
-                        {
-                            Vector4[] matrixAsVectors = new Vector4[4]
-                            {
-                                this.animatedJoints[i].SRTMatrix.Row1,
-                                this.animatedJoints[i].SRTMatrix.Row2,
-                                this.animatedJoints[i].SRTMatrix.Row3,
-                                this.animatedJoints[i].SRTMatrix.Row4
-                            };
-
-                            // Print the joint info.
-                            ImGui.BeginGroup();
-                            ImGui.Text("Parent: " + this.joints[i].ParentIndex.ToString());
-                            ImGui.Text("Index: " + this.joints[i].Index.ToString());
-                            ImGui.Text("Radius: " + this.joints[i].Length.ToString());
-                            ImGui.InputFloat3("Offset", ref this.joints[i].Offset, "%.3f", ImGuiInputTextFlags.ReadOnly);
-                            ImGui.InputFloat4("SRT Matrix", ref matrixAsVectors[0]);
-                            ImGui.InputFloat4("", ref matrixAsVectors[1]);
-                            ImGui.InputFloat4("", ref matrixAsVectors[2]);
-                            ImGui.InputFloat4("", ref matrixAsVectors[3]);
-                            ImGui.Separator();
-                            ImGui.EndGroup();
-
-                            // When the user hovers over the group change the color of the bounding sphere.
+                            ImGui.Image(this.shaderResources[textureInfo[i].Item2].NativePointer, new ImVector2(150, 150));
                             if (ImGui.IsItemHovered() == true)
                             {
-                                // Change sphere color to red.
-                                this.jointBoundingSpheres[i].Color = new Color4(0xFF0000FF);
-                            }
-                            else
-                            {
-                                // Normal color green.
-                                this.jointBoundingSpheres[i].Color = new Color4(0xFF00FF00);
+                                // Create a tooltip window for a larger preview of the image.
+                                ImGui.BeginTooltip();
+                                ImGui.Image(this.shaderResources[textureInfo[i].Item2].NativePointer, new ImVector2(512, 512));
+                                ImGui.EndTooltip();
                             }
                         }
-                        ImGui.EndChild();
+                        else
+                        {
+                            // Use the place holder texture.
+                            ImGui.Image(manager.CheckerboardTextureResource.NativePointer, new ImVector2(150, 150));
+                        }
+                        ImGui.NextColumn();
+                    }
+                    ImGui.Columns(1);
+                    ImGui.Separator();
+
+                    ImGui.InputFloat("Transparency", ref this.materials[this.selectedMaterialIndex].Transparency);
+                    ImGui.InputFloat("##Unk11", ref this.materials[this.selectedMaterialIndex].Unk11);
+                    ImGui.InputFloat("Fresnel Factor", ref this.materials[this.selectedMaterialIndex].FresnelFactor);
+                    ImGui.InputFloat("Fresnel Bias", ref this.materials[this.selectedMaterialIndex].FresnelBias);
+                    ImGui.InputFloat("Specular Power", ref this.materials[this.selectedMaterialIndex].SpecularPow);
+                    ImGui.InputFloat("Envmap Power", ref this.materials[this.selectedMaterialIndex].EnvmapPower);
+                    ImGui.InputFloat4("Lightmap Scale", ref this.materials[this.selectedMaterialIndex].LightMapScale);
+                    ImGui.InputFloat("Detail Factor", ref this.materials[this.selectedMaterialIndex].DetailFactor);
+                    ImGui.InputFloat("Detail Wrap", ref this.materials[this.selectedMaterialIndex].DetailWrap);
+                    ImGui.InputFloat("##Unk22", ref this.materials[this.selectedMaterialIndex].Unk22);
+                    ImGui.InputFloat("##Unk23", ref this.materials[this.selectedMaterialIndex].Unk23);
+                    ImGui.InputFloat4("Transmit", ref this.materials[this.selectedMaterialIndex].Transmit);
+                    ImGui.InputFloat4("Parallax", ref this.materials[this.selectedMaterialIndex].Parallax);
+                    ImGui.InputFloat("##Unk32", ref this.materials[this.selectedMaterialIndex].Unk32);
+                    ImGui.InputFloat("##Unk33", ref this.materials[this.selectedMaterialIndex].Unk33);
+                    ImGui.InputFloat("##Unk34", ref this.materials[this.selectedMaterialIndex].Unk34);
+                    ImGui.InputFloat("##Unk35", ref this.materials[this.selectedMaterialIndex].Unk35);
+
+                    ImGui.EndChild();
+                    ImGui.EndTabItem();
+                }
+
+                #endregion
+
+                #region Primitives
+
+                // Primitives section.
+                if (ImGui.BeginTabItem("Primitives") == true)
+                {
+                    ImGui.BeginChild("##primitivesbox");
+
+                    // Create the scrollable treeview for primtive selection.
+                    ImVector2 boxSize = ImGui.GetItemRectSize();
+                    ImGui.BeginChild("PrimitiveTree", new ImVector2(boxSize.X - 7, 200), true);
+
+                    // Add primitives by group into the treeview.
+                    for (int i = 0; i < this.primtiveGroupIds.Length; i++)
+                    {
+                        // Add a checkbox that toggles the visibility of all primitives in the group.
+                        if (ImGui.Checkbox("##group" + i.ToString(), ref this.visibleGroupIds[i]) == true)
+                        {
+                            // Loop and change the visible state of all primitives in the group.
+                            foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
+                                this.visiblePrimitives[primId] = this.visibleGroupIds[i];
+                        }
+                        ImGui.SameLine();
+
+                        // Create a new tree node for the group id.
+                        if (ImGui.TreeNodeEx("Group " + this.primtiveGroupIds[i].ToString(), ImGuiTreeNodeFlags.DefaultOpen) == true)
+                        {
+                            // Loop and create tree nodes for all the primitives in this group.
+                            foreach (int primId in this.primitivesByGroup[this.primtiveGroupIds[i]])
+                            {
+                                // Add a checkbox that toggles visibility of the primitive.
+                                ImGui.Checkbox("##primitive" + primId.ToString(), ref this.visiblePrimitives[primId]);
+                                ImGui.SameLine();
+
+                                // Create tree node for primitive.
+                                ImGui.AlignTextToFramePadding();
+                                if (ImGui.Selectable("Primitive " + primId.ToString(), this.selectedPrimitiveIndex == primId,
+                                    ImGuiSelectableFlags.None, new ImVector2(140.0f, 17.0f)) == true)
+                                {
+                                    // Set the selected primitive index.
+                                    this.selectedPrimitiveIndex = primId;
+                                }
+
+                                // If the user hovers a primitive node highlight that primitive mesh.
+                                if (ImGui.IsItemHovered() == true)
+                                {
+                                    // Set the hovered primitive index.
+                                    this.hoveredPrimitiveIndex = primId;
+                                }
+                            }
+
+                            ImGui.TreePop();
+                        }
+                    }
+                    ImGui.EndChild();
+
+                    // Primitive info.
+                    if (this.selectedPrimitiveIndex != -1)
+                    {
+                        // TODO: Change to drop down and add goto button for materials
+                        ImGui.InputScalarInt16("Group ID", ref this.primitives[this.selectedPrimitiveIndex].GroupID);
+                        ImGui.InputScalarInt16("Material index", ref this.primitives[this.selectedPrimitiveIndex].MaterialIndex);
+
+                        bool enabled = this.primitives[this.selectedPrimitiveIndex].Enabled != 0;
+                        if (ImGui.Checkbox("Enabled", ref enabled) == true)
+                            this.primitives[this.selectedPrimitiveIndex].Enabled = enabled == true ? (byte)1 : (byte)0;
+
+                        ImGui.InputInt("Vertex count", ref this.primitives[this.selectedPrimitiveIndex].VertexCount, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                        ImGui.InputInt("Starting vertex", ref this.primitives[this.selectedPrimitiveIndex].StartingVertex, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                        ImGui.InputInt("Base vertex", ref this.primitives[this.selectedPrimitiveIndex].BaseVertexLocation, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                        ImGui.InputInt("Index count", ref this.primitives[this.selectedPrimitiveIndex].IndexCount, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                        ImGui.InputInt("Starting index", ref this.primitives[this.selectedPrimitiveIndex].StartingIndexLocation, 0, 0, ImGuiInputTextFlags.ReadOnly);
+                        ImGui.InputFloat4("Bounding box min", ref this.primitives[this.selectedPrimitiveIndex].BoundingBoxMin, "%.3f", ImGuiInputTextFlags.ReadOnly);
+                        ImGui.InputFloat4("Bounding box min", ref this.primitives[this.selectedPrimitiveIndex].BoundingBoxMax, "%.3f", ImGuiInputTextFlags.ReadOnly);
+                    }
+
+                    ImGui.EndChild();
+                    ImGui.EndTabItem();
+                }
+
+                #endregion
+
+                #region Joints
+
+                // Create the joints tab.
+                if (ImGui.BeginTabItem("Joints") == true)
+                {
+                    // Loop and print info on each joint.
+                    ImGui.BeginChild("##jointsbox");
+                    for (int i = 0; i < this.joints.Length; i++)
+                    {
+                        Vector4[] matrixAsVectors = new Vector4[4]
+                        {
+                            this.animatedJoints[i].SRTMatrix.Row1,
+                            this.animatedJoints[i].SRTMatrix.Row2,
+                            this.animatedJoints[i].SRTMatrix.Row3,
+                            this.animatedJoints[i].SRTMatrix.Row4
+                        };
+
+                        // Print the joint info.
+                        ImGui.BeginGroup();
+                        ImGui.Text("Parent: " + this.joints[i].ParentIndex.ToString());
+                        ImGui.Text("Index: " + this.joints[i].Index.ToString());
+                        ImGui.Text("Radius: " + this.joints[i].Length.ToString());
+                        ImGui.InputFloat3("Offset", ref this.joints[i].Offset, "%.3f", ImGuiInputTextFlags.ReadOnly);
+                        ImGui.InputFloat4("SRT Matrix", ref matrixAsVectors[0]);
+                        ImGui.InputFloat4("", ref matrixAsVectors[1]);
+                        ImGui.InputFloat4("", ref matrixAsVectors[2]);
+                        ImGui.InputFloat4("", ref matrixAsVectors[3]);
+                        ImGui.Separator();
+                        ImGui.EndGroup();
+
+                        // When the user hovers over the group change the color of the bounding sphere.
+                        if (ImGui.IsItemHovered() == true)
+                        {
+                            // Change sphere color to red.
+                            this.jointBoundingSpheres[i].Color = new Color4(0xFF0000FF);
+                        }
+                        else
+                        {
+                            // Normal color green.
+                            this.jointBoundingSpheres[i].Color = new Color4(0xFF00FF00);
+                        }
+                    }
+                    ImGui.EndChild();
+
+                    ImGui.EndTabItem();
+                }
+
+                #endregion
+
+                #region Animation
+
+                // Only display the animation tab if the model has joints that can be animated.
+                if (this.joints.Length > 0)
+                {
+                    // Animation section.
+                    if (ImGui.BeginTabItem("Animation") == true)
+                    {
+                        // Setup the animation file selection control.
+                        ImGui.AlignTextToFramePadding();
+                        ImGui.Text("Animation file: " + (this.activeAnimation != null ? this.activeAnimation.FileName : ""));
+                        ImGui.SameLine();
+                        if (ImGui.Button("...") == true)
+                        {
+                            // Create the file select dialog.
+                            this.fileSelectDialog = new ImGuiResourceSelectDialog("Select animation", ResourceType.rMotionList);
+                            this.fileSelectDialog.OnResourceSelected += new ImGuiResourceSelectDialog.OnResourceSelectedHandler((DatumIndex datum, out string errorMsg) =>
+                            {
+                                // Satisfy the compiler.
+                                errorMsg = null;
+
+                                // Please forgive me for I have BLOCKED ON THE UI THREAD.
+
+                                // Parse the animation file from the archive, and make sure it has the same number of joints.
+                                rMotionList newAnimation = ArchiveCollection.Instance.GetFileAsResource<rMotionList>(datum);
+                                AnimationDescriptor animDesc = newAnimation.animations.First(desc => desc.JointCount > 0);
+                                if (animDesc.JointCount != this.joints.Length)
+                                {
+                                    // Animation has incorrect joint count, display an error to the user.
+                                    errorMsg = "The selected animation file does not have the same number of joints as the model!";
+                                    return false;
+                                }
+
+                                // Set the animation file as the active animation to play.
+                                SetActiveAnimation(newAnimation);
+                                return true;
+                            });
+
+                            // Display the dialog.
+                            this.fileSelectDialog.ShowDialog();
+                        }
+
+                        // Draw the file select dialog if it is being used.
+                        if (this.fileSelectDialog != null)
+                        {
+                            if (this.fileSelectDialog.DrawDialog() == true)
+                            {
+                                // Destroy the file select dialog.
+                                this.fileSelectDialog = null;
+                            }
+                        }
+
+                        // Display animation properties is there is a selected animation.
+                        if (this.activeAnimation != null)
+                        {
+                            // Create a combobox for the selected animation.
+                            if (ImGui.BeginCombo("Animation", "Animation " + this.selectedAnimation.ToString()) == true)
+                            {
+                                // Add option entries for the animations.
+                                for (int i = 0; i < this.activeAnimation.animations.Length; i++)
+                                {
+                                    // If the animation has 0 frames don't display it as an option.
+                                    if (this.activeAnimation.animations[i].FrameCount == 0)
+                                        continue;
+
+                                    bool isSelected = this.selectedAnimation == i;
+                                    if (ImGui.Selectable("Animation " + i.ToString(), isSelected) == true)
+                                        SetActiveAnimationIndex(i);
+
+                                    // Set focus on the selected item when first opening.
+                                    if (isSelected == true)
+                                        ImGui.SetItemDefaultFocus();
+                                }
+                                ImGui.EndCombo();
+                            }
+
+                            // Add buttons for next/previous animation.
+                            ImGui.SameLine();
+                            if (ImGui.ArrowButton("previous_anim", ImGuiDir.Left) == true)
+                            {
+                                // Loop until we find an animation with a non-zero frame count.
+                                do
+                                {
+                                    // Decrement or wrap the selected animation index.
+                                    if (--this.selectedAnimation < 0)
+                                        this.selectedAnimation = this.activeAnimation.animations.Length - 1;
+                                }
+                                while (this.activeAnimation.animations[this.selectedAnimation].FrameCount == 0);
+
+                                SetActiveAnimationIndex(this.selectedAnimation);
+                            }
+
+                            ImGui.SameLine();
+                            if (ImGui.ArrowButton("next_anim", ImGuiDir.Right) == true)
+                            {
+                                // Loop until we find an animation with a non-zero frame count.
+                                do
+                                {
+                                    // Increment or wrap the selected animation index.
+                                    if (++this.selectedAnimation >= this.activeAnimation.animations.Length)
+                                        this.selectedAnimation = 0;
+                                }
+                                while (this.activeAnimation.animations[this.selectedAnimation].FrameCount == 0);
+
+                                SetActiveAnimationIndex(this.selectedAnimation);
+                            }
+
+                            // Animation playback info.
+                            ImGui.Separator();
+                            ImGui.Text("Frame count: " + this.animationFrameCount.ToString());
+                            ImGui.Text("Total time: " + this.animationTotalTime.ToString() + " sec");
+                            if (ImGui.InputFloat("Playback speed", ref this.animationPlaybackRate, 0.25f) == true)
+                            {
+                                // Make sure the playback rate never goes below 0.
+                                if (this.animationPlaybackRate < 0.0f)
+                                    this.animationPlaybackRate = 0.0f;
+                            }
+                            if (ImGui.SliderFloat("", ref this.animationCurrentFrame, 0.0f, this.animationFrameCount) == true)
+                                this.animationCurrentTime = this.animationCurrentFrame * this.animationTimePerFrame;
+
+                            // Add playback buttons.
+                            if (ImGui.ArrowButton("prev_frame", ImGuiDir.Left) == true)
+                            {
+                                this.animationCurrentTime -= this.animationTimePerFrame;
+                            }
+
+                            ImGui.SameLine();
+                            if (ImGui.Button("[Play]") == true)
+                                this.animationPaused = false;
+
+                            ImGui.SameLine();
+                            if (ImGui.Button("[Pause]") == true)
+                                this.animationPaused = true;
+
+                            ImGui.SameLine();
+                            if (ImGui.Button("[Stop]") == true)
+                            {
+                                this.animationPaused = true;
+                                SetActiveAnimationIndex(this.selectedAnimation);
+                            }
+
+                            ImGui.SameLine();
+                            if (ImGui.ArrowButton("next_frame", ImGuiDir.Right) == true)
+                            {
+                                this.animationCurrentTime += this.animationTimePerFrame;
+                            }
+                        }
 
                         ImGui.EndTabItem();
                     }
-
-                    #endregion
-
-                    #region Animation
-
-                    // Only display the animation tab if the model has joints that can be animated.
-                    if (this.joints.Length > 0)
-                    {
-                        // Animation section.
-                        if (ImGui.BeginTabItem("Animation") == true)
-                        {
-                            // Setup the animation file selection control.
-                            ImGui.AlignTextToFramePadding();
-                            ImGui.Text("Animation file: " + (this.activeAnimation != null ? this.activeAnimation.FileName : ""));
-                            ImGui.SameLine();
-                            if (ImGui.Button("...") == true)
-                            {
-                                // Create the file select dialog.
-                                this.fileSelectDialog = new ImGuiResourceSelectDialog("Select animation", ResourceType.rMotionList);
-                                this.fileSelectDialog.OnResourceSelected += new ImGuiResourceSelectDialog.OnResourceSelectedHandler((DatumIndex datum, out string errorMsg) =>
-                                {
-                                    // Satisfy the compiler.
-                                    errorMsg = null;
-
-                                    // Parse the animation file from the archive, and make sure it has the same number of joints.
-                                    rMotionList newAnimation = ArchiveCollection.Instance.GetFileAsResource<rMotionList>(datum);
-                                    AnimationDescriptor animDesc = newAnimation.animations.First(desc => desc.JointCount > 0);
-                                    if (animDesc.JointCount != this.joints.Length)
-                                    {
-                                        // Animation has incorrect joint count, display an error to the user.
-                                        errorMsg = "The selected animation file does not have the same number of joints as the model!";
-                                        return false;
-                                    }
-
-                                    // Set the animation file as the active animation to play.
-                                    SetActiveAnimation(newAnimation);
-                                    return true;
-                                });
-
-                                // Display the dialog.
-                                this.fileSelectDialog.ShowDialog();
-                            }
-
-                            // Draw the file select dialog if it is being used.
-                            if (this.fileSelectDialog != null)
-                            {
-                                if (this.fileSelectDialog.DrawDialog() == true)
-                                {
-                                    // Destroy the file select dialog.
-                                    this.fileSelectDialog = null;
-                                }
-                            }
-
-                            // Display animation properties is there is a selected animation.
-                            if (this.activeAnimation != null)
-                            {
-                                // Create a combobox for the selected animation.
-                                if (ImGui.BeginCombo("Animation", "Animation " + this.selectedAnimation.ToString()) == true)
-                                {
-                                    // Add option entries for the animations.
-                                    for (int i = 0; i < this.activeAnimation.animations.Length; i++)
-                                    {
-                                        // If the animation has 0 frames don't display it as an option.
-                                        if (this.activeAnimation.animations[i].FrameCount == 0)
-                                            continue;
-
-                                        bool isSelected = this.selectedAnimation == i;
-                                        if (ImGui.Selectable("Animation " + i.ToString(), isSelected) == true)
-                                            SetActiveAnimationIndex(i);
-
-                                        // Set focus on the selected item when first opening.
-                                        if (isSelected == true)
-                                            ImGui.SetItemDefaultFocus();
-                                    }
-                                    ImGui.EndCombo();
-                                }
-
-                                // Add buttons for next/previous animation.
-                                ImGui.SameLine();
-                                if (ImGui.ArrowButton("previous_anim", ImGuiDir.Left) == true)
-                                {
-                                    // Loop until we find an animation with a non-zero frame count.
-                                    do
-                                    {
-                                        // Decrement or wrap the selected animation index.
-                                        if (--this.selectedAnimation < 0)
-                                            this.selectedAnimation = this.activeAnimation.animations.Length - 1;
-                                    }
-                                    while (this.activeAnimation.animations[this.selectedAnimation].FrameCount == 0);
-
-                                    SetActiveAnimationIndex(this.selectedAnimation);
-                                }
-
-                                ImGui.SameLine();
-                                if (ImGui.ArrowButton("next_anim", ImGuiDir.Right) == true)
-                                {
-                                    // Loop until we find an animation with a non-zero frame count.
-                                    do
-                                    {
-                                        // Increment or wrap the selected animation index.
-                                        if (++this.selectedAnimation >= this.activeAnimation.animations.Length)
-                                            this.selectedAnimation = 0;
-                                    }
-                                    while (this.activeAnimation.animations[this.selectedAnimation].FrameCount == 0);
-
-                                    SetActiveAnimationIndex(this.selectedAnimation);
-                                }
-
-                                // Animation playback info.
-                                ImGui.Separator();
-                                ImGui.Text("Frame count: " + this.animationFrameCount.ToString());
-                                ImGui.Text("Total time: " + this.animationTotalTime.ToString() + " sec");
-                                if (ImGui.InputFloat("Playback speed", ref this.animationPlaybackRate, 0.25f) == true)
-                                {
-                                    // Make sure the playback rate never goes below 0.
-                                    if (this.animationPlaybackRate < 0.0f)
-                                        this.animationPlaybackRate = 0.0f;
-                                }
-                                if (ImGui.SliderFloat("", ref this.animationCurrentFrame, 0.0f, this.animationFrameCount) == true)
-                                    this.animationCurrentTime = this.animationCurrentFrame * this.animationTimePerFrame;
-
-                                // Add playback buttons.
-                                if (ImGui.ArrowButton("prev_frame", ImGuiDir.Left) == true)
-                                {
-                                    this.animationCurrentTime -= this.animationTimePerFrame;
-                                }
-
-                                ImGui.SameLine();
-                                if (ImGui.Button("[Play]") == true)
-                                    this.animationPaused = false;
-
-                                ImGui.SameLine();
-                                if (ImGui.Button("[Pause]") == true)
-                                    this.animationPaused = true;
-
-                                ImGui.SameLine();
-                                if (ImGui.Button("[Stop]") == true)
-                                {
-                                    this.animationPaused = true;
-                                    SetActiveAnimationIndex(this.selectedAnimation);
-                                }
-
-                                ImGui.SameLine();
-                                if (ImGui.ArrowButton("next_frame", ImGuiDir.Right) == true)
-                                {
-                                    this.animationCurrentTime += this.animationTimePerFrame;
-                                }
-                            }
-
-                            ImGui.EndTabItem();
-                        }
-                    }
-
-                    #endregion
-
-                    ImGui.EndTabBar();
                 }
+
+                #endregion
+
+                ImGui.EndTabBar();
             }
-            ImGui.End();
         }
 
         #endregion

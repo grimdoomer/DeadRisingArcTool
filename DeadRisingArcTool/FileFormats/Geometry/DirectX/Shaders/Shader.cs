@@ -111,6 +111,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             return true;
         }
 
+        public virtual void DrawObjectPropertiesUI(RenderManager manager)
+        {
+
+        }
+
         public virtual void CleanupGraphics(RenderManager manager)
         {
             // Dispose of all resource.

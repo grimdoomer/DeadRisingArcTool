@@ -25,7 +25,6 @@ namespace DeadRisingArcTool.FileFormats.Misc
         ResourceType.rHavokConstraintLayout,
         ResourceType.rHavokLinkCollisionLayout,
         ResourceType.rHavokVertexLayout,
-        ResourceType.rItemLayout,
         ResourceType.rMobLayout,
         ResourceType.rSprLayout,
         ResourceType.rSMAdd,
@@ -37,7 +36,7 @@ namespace DeadRisingArcTool.FileFormats.Misc
         /// </summary>
         public byte[] Buffer { get; set; }
 
-        protected XmlFile(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
+        public XmlFile(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
         {
             // Initialize fields.

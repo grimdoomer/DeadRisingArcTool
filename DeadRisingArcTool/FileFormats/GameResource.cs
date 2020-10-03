@@ -377,6 +377,11 @@ namespace DeadRisingArcTool.FileFormats
             return false;
         }
 
+        public virtual void DrawObjectPropertiesUI(RenderManager manager)
+        {
+
+        }
+
         public virtual void CleanupGraphics(RenderManager manager)
         {
 

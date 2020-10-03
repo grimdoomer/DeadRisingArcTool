@@ -38,7 +38,7 @@ namespace DeadRisingArcTool.Controls
                     ResourceType.rMapLink)]
     public partial class TextEditor : GameResourceEditorControl
     {
-        public XmlFile TextFile { get { return (XmlFile)this.GameResource; } }
+        //public XmlFile TextFile { get { return (XmlFile)this.GameResource; } }
 
         public TextEditor()
         {
@@ -58,8 +58,15 @@ namespace DeadRisingArcTool.Controls
             // Only allow editing for patch files.
             this.textbox.ReadOnly = !this.ArcFile.IsPatchFile;
 
+            // Get the xml text buffer from the file.
+            byte[] buffer = null;
+            if (this.GameResource.GetType() == typeof(XmlFile))
+                buffer = ((XmlFile)this.GameResource).Buffer;
+            else if (this.GameResource.GetType() == typeof(rItemLayout))
+                buffer = ((rItemLayout)this.GameResource).Buffer;
+
             // The game resource is a XmlFile.
-            this.textbox.Text = Encoding.Default.GetString(this.TextFile.Buffer);
+            this.textbox.Text = Encoding.Default.GetString(buffer);
             this.HasBeenModified = false;
             this.textbox.IsChanged = false;
         }
@@ -70,11 +77,11 @@ namespace DeadRisingArcTool.Controls
             this.EditorOwner.SetUIState(false);
 
             // Update the xml file buffer.
-            this.TextFile.Buffer = Encoding.ASCII.GetBytes(this.textbox.Text);
+            byte[] buffer = Encoding.ASCII.GetBytes(this.textbox.Text);
 
             // Get a list of duplicate datums that we should update and update all of them.
             DatumIndex[] datums = this.EditorOwner.GetDatumsToUpdateForResource(this.GameResource.FileName);
-            if (ArchiveCollection.Instance.InjectFile(datums, this.TextFile.Buffer) == false)
+            if (ArchiveCollection.Instance.InjectFile(datums, buffer) == false)
             {
                 // Failed to update files.
                 return false;

@@ -28,5 +28,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// </summary>
         /// <param name="manager">Rendering context</param>
         void CleanupGraphics(RenderManager manager);
+
+        /// <summary>
+        /// Called when the object properties UI for the object should be drawn.
+        /// </summary>
+        /// <param name="manager">Rendering context</param>
+        void DrawObjectPropertiesUI(RenderManager manager);
     }
 }

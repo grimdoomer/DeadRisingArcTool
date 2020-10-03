@@ -114,12 +114,18 @@
   <ItemGroup>
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\ImGuiRenderer.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\RenderableGameResource.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\UI\Controls\ImGuiControl.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\UI\Controls\ImGuiResourceSelectTree.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\ImGuiDialogBox.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\ImGuiMessageBox.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\ImGuiResourceSelectDialog.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\InputSemanticAttribute.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexHelper.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexDeclaration.cs" />
+    <Compile Include="FileFormats\Misc\GameItems.cs" />
+    <Compile Include="FileFormats\Misc\rItemLayout.cs" />
+    <Compile Include="FileFormats\Misc\XmlFieldAttribute.cs" />
     <Compile Include="UI\Controls\AnimationEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>

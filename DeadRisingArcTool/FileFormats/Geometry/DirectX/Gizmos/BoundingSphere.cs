@@ -123,6 +123,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             return true;
         }
 
+        public void DrawObjectPropertiesUI(RenderManager manager)
+        {
+
+        }
+
         public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();

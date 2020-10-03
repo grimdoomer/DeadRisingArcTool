@@ -68,6 +68,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
             throw new NotImplementedException();
         }
 
+        public void DrawObjectPropertiesUI(RenderManager manager)
+        {
+
+        }
+
         public void CleanupGraphics(RenderManager manager)
         {
             // Cleanup all shaders in the dictionary.

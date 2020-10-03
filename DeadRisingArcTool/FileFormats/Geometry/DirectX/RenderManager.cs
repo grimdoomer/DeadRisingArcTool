@@ -1,6 +1,7 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Bitmaps;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.UI.Controls;
 using DeadRisingArcTool.Forms;
 using DeadRisingArcTool.Utilities;
 using ImGuiNET;
@@ -17,6 +18,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using Device = SharpDX.Direct3D11.Device;
+using ImVector2 = System.Numerics.Vector2;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
@@ -163,12 +165,15 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
         protected ImGuiRenderer uiRenderer = null;
 
-        // List of resources to render.
+        // List of resources to render each frame.
         protected DatumIndex[] datumsToRender;
-        protected List<GameResource> resourcesToRender = new List<GameResource>();
+        protected List<RenderableGameResource> resourcesToRender = new List<RenderableGameResource>();
 
-        // Dictionary of file names to loaded IRenderable objects.
+        // Dictionary of file names to loaded GameResource objects.
         protected Dictionary<string, GameResource> loadedResources = new Dictionary<string, GameResource>();
+
+        // File tree for files that we can render in the view.
+        private ImGuiResourceSelectTree renderableFilesTree = null;
 
         public RenderManager(IntPtr formHandle, Size viewSize, RenderViewType viewType, params DatumIndex[] datumsToRender)
         {
@@ -286,8 +291,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Load textures for UI components.
             LoadTexture(Properties.Resources.CheckerBoard, out this.checkerboardTexture, out this.checkerboardTextureResource);
 
-            // Initialize model data.
-            return InitializeModelData();
+            // Initialize game data.
+            return InitializeGameData();
         }
 
         private void CreateDepthStencil()
@@ -356,7 +361,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             return true;
         }
 
-        private bool InitializeModelData()
+        private bool InitializeGameData()
         {
             // If there are no models to render bail out.
             if (this.datumsToRender.Length == 0)
@@ -374,12 +379,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                     throw new NotImplementedException();
                 }
 
-                // Let the object initialize and required directx resources.
-                if (resource.InitializeGraphics(this) == false)
+                // Create a renderable resource from the game file and initialize directx resources for it.
+                RenderableGameResource renderableResource = new RenderableGameResource(resource);
+                if (renderableResource.InitializeGraphics(this) == false)
                 {
-                    // Failed to initialize graphics for resource.
-                    // TODO: Bubble this up to the user.
-                    throw new NotImplementedException();
+                    // Failed to initialize resources.
+                    // TODO: bubble this up to the user.
+                    throw new Exception("Failed to initialize directx resources for game file");
                 }
 
                 // If we are rendering a single model try to auto load an animation for it.
@@ -388,27 +394,72 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                     Archive.Archive arcFile;
                     ArchiveFileEntry fileEntry;
 
-                    ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(this.datumsToRender[0], out arcFile, out fileEntry);
-
-                    string animationFileName = fileEntry.FileName.Replace("rModel", "rMotionList").Replace("model", "motion");
-                    //animationFileName = "motion\\em\\em49\\em4900\\em4900.rMotionList";
+                    // Best effort approach: check if the animation is in the same folder with the same file name.
+                    string animationFileName = resource.FileName.Replace("rModel", "rMotionList").Replace("model", "motion");
                     ArchiveCollection.Instance.GetArchiveFileEntryFromFileName(animationFileName, out arcFile, out fileEntry);
 
+                    // If we found the animation set it as the animation for the model.
                     if (fileEntry != null)
                         ((rModel)resource).SetActiveAnimation(arcFile.GetFileAsResource<rMotionList>(fileEntry.FileName));
+
+                    // Set the object properties UI to active by default for single models.
+                    renderableResource.UIVisible = true;
                 }
 
                 // Add the resource to the collection to render.
-                this.resourcesToRender.Add(resource);
+                this.loadedResources.Add(resource.FileName, resource);
+                this.resourcesToRender.Add(renderableResource);
             }
 
             // HACK: For now just cast the first resource to an rModel and use it for reference.
-            rModel firstModel = (rModel)this.resourcesToRender[0];
+            rModel firstModel = (rModel)this.resourcesToRender[0].GameResource;
 
             // Position the camera and make it look at the model.
             this.Camera.Position = new Vector3(firstModel.primitives[0].BoundingBoxMin.X, firstModel.primitives[0].BoundingBoxMin.Y, firstModel.primitives[0].BoundingBoxMin.Z);
             this.Camera.LookAt = (firstModel.header.BoundingBoxMax - firstModel.header.BoundingBoxMin).ToVector3();
             this.Camera.SpeedModifier = Math.Abs(firstModel.primitives[0].BoundingBoxMin.X / 100000.0f);
+
+            // If we are in level viewer mode build the file name tree for renderable files.
+            if (this.ViewType == RenderViewType.Level)
+            {
+                // Build a list of file names that can be rendered.
+                Dictionary<string, DatumIndex> fileNames = new Dictionary<string, DatumIndex>(StringComparer.InvariantCultureIgnoreCase);
+                for (int i = 0; i < ArchiveCollection.Instance.Archives.Length; i++)
+                {
+                    // Loop through all of the files in the archive.
+                    Archive.Archive archive = ArchiveCollection.Instance.Archives[i];
+                    for (int x = 0; x < archive.FileEntries.Length; x++)
+                    {
+                        // Check the file type and handle accordingly.
+                        if (archive.FileEntries[x].FileType == ResourceType.rAreaHitLayout || archive.FileEntries[x].FileType == ResourceType.rItemLayout)
+                        {
+                            // Add the file to the list.
+                            if (fileNames.Keys.Contains(archive.FileEntries[x].FileName) == false)
+                            {
+                                // Add the file name to the list.
+                                fileNames.Add(archive.FileEntries[x].FileName, new DatumIndex(archive.ArchiveId, archive.FileEntries[x].FileId));
+                            }
+                        }
+                        else if (archive.FileEntries[x].FileType == ResourceType.rModel)
+                        {
+                            // Only add models that are in the scroll folder.
+                            if (archive.FileEntries[x].FileName.StartsWith("scroll", StringComparison.InvariantCultureIgnoreCase) == true &&
+                                fileNames.ContainsKey(archive.FileEntries[x].FileName) == false)
+                            {
+                                // Add the scroll model to the list.
+                                fileNames.Add(archive.FileEntries[x].FileName, new DatumIndex(archive.ArchiveId, archive.FileEntries[x].FileId));
+                            }
+                        }
+                    }
+                }
+
+                // Build the file name tree.
+                FileNameTree fileNameTree = FileNameTree.BuildFileNameTree(fileNames);
+                this.renderableFilesTree = new ImGuiResourceSelectTree(fileNameTree);
+                this.renderableFilesTree.Checkboxes = true;
+                this.renderableFilesTree.OnTreeNodeCheckedChanged += new OnTreeNodeCheckedChangedEvent(renderableFilesTree_OnTreeNodeCheckedChanged);
+                this.renderableFilesTree.OnTreeNodeDoubleClicked += new OnTreeNodeDoubleClickedEvent(renderableFilesTree_OnTreeNodeDoubleClicked);
+            }
 
             // Successfully initialized model data.
             return true;
@@ -461,9 +512,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.Device.ImmediateContext.OutputMerger.SetDepthStencilState(this.DepthStencilState, 0);
             this.Device.ImmediateContext.Rasterizer.State = this.RasterizerState;
 
-            // The pixel shader constants do not change between primtive draw calls, update them now.
-            this.ShaderConstants.gXfViewProj = Matrix.Transpose(this.WorldMatrix * this.Camera.ViewMatrix * this.ProjectionMatrix);
-
             // Loop through all of the resources to render and draw each one.
             for (int i = 0; i < this.resourcesToRender.Count; i++)
             {
@@ -471,81 +519,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 this.resourcesToRender[i].DrawFrame(this);
             }
 
+            // Update the WVP matrix so we are back at the origin for rendering the UI.
+            this.ShaderConstants.gXfViewProj = Matrix.Transpose(this.WorldMatrix * this.Camera.ViewMatrix * this.ProjectionMatrix);
+            UpdateShaderConstants();
+
             // Do ImGui rendering for UI.
             this.uiRenderer.DrawFrame(this);
 
             // Present the final frame.
             this.SwapChain.Present(0, PresentFlags.None);
         }
-
-        private void RenderGuiLayer(bool isFocused)
-        {
-            // Get the IO structure.
-            ImGuiIOPtr io = ImGui.GetIO();
-
-            io.DisplaySize = new System.Numerics.Vector2(this.ViewSize.Width / 1.0f, this.ViewSize.Height / 1.0f);
-            io.DisplayFramebufferScale = new System.Numerics.Vector2(1.0f, 1.0f);
-            io.DeltaTime = this.RenderTime.TimeDelta;
-
-            // Only update input if the window is in focus.
-            if (isFocused == true)
-            {
-                // Update the mouse position.
-                io.MousePos = new System.Numerics.Vector2(this.InputManager.MousePosition.X, this.InputManager.MousePosition.Y);
-            }
-
-            // Draw ImGui layer.
-            ImGui.NewFrame();
-            {
-                // Create the camera properties window.
-                ImGui.Begin("Camera");
-                {
-                    // Set window size and position.
-                    System.Numerics.Vector2 optionsSize = new System.Numerics.Vector2(470.0f, 180.0f);
-                    ImGui.SetWindowSize(optionsSize, ImGuiCond.Appearing);
-                    ImGui.SetWindowPos(new System.Numerics.Vector2(10, 10), ImGuiCond.Appearing);
-
-                    // Position:
-                    Vector3 camPosition = this.Camera.Position;
-                    if (ImGui.InputFloat3("Position", ref camPosition) == true)
-                        this.Camera.Position = camPosition;
-
-                    // Angle:
-                    Vector2 camRotation = this.Camera.Rotation;
-                    if (ImGui.InputFloat2("Rotation", ref camRotation) == true)
-                        this.Camera.Rotation = camRotation;
-
-                    // Speed:
-                    float camSpeed = this.Camera.Speed;
-                    if (ImGui.InputFloat("Movement Speed", ref camSpeed) == true)
-                        this.Camera.Speed = camSpeed;
-
-                    // Field of view:
-                    if (ImGui.InputFloat("Field of view", ref this.fieldOfView, 1.0f) == true)
-                        this.ResizeView(this.ViewSize);
-
-                    // Draw distance min:
-                    if (ImGui.InputFloat("Draw distance min", ref this.drawDistanceMin) == true)
-                        this.ResizeView(this.ViewSize);
-
-                    // Draw distance max:
-                    if (ImGui.InputFloat("Draw distance max", ref this.drawDistanceMax) == true)
-                        this.ResizeView(this.ViewSize);
-                }
-                ImGui.End();
-
-                // Check if we are rendering a single model or not and handle accordingly.
-                if (this.ViewType == RenderViewType.SingleModel)
-                {
-                    // Joints.
-                    ((rModel)resourcesToRender[0]).DrawUI(this);
-                }
-            }
-
-            ImGui.Render();
-        }
-
-        #endregion
 
         public void ResizeView(Size newSize)
         {
@@ -573,9 +556,158 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.RenderView = new RenderTargetView(this.Device, this.BackBuffer);
 
             // Update the projection matrix.
-            this.ProjectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(this.FieldOfView), 
+            this.ProjectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(this.FieldOfView),
                 (float)this.ViewSize.Width / (float)this.ViewSize.Height, this.DrawDistanceMin, this.DrawDistanceMax);
         }
+
+        #endregion
+
+        #region UI rendering
+
+        private void RenderGuiLayer(bool isFocused)
+        {
+            // Get the IO structure.
+            ImGuiIOPtr io = ImGui.GetIO();
+
+            io.DisplaySize = new System.Numerics.Vector2(this.ViewSize.Width / 1.0f, this.ViewSize.Height / 1.0f);
+            io.DisplayFramebufferScale = new System.Numerics.Vector2(1.0f, 1.0f);
+            io.DeltaTime = this.RenderTime.TimeDelta;
+
+            // Only update input if the window is in focus.
+            if (isFocused == true)
+            {
+                // Update the mouse position.
+                io.MousePos = new System.Numerics.Vector2(this.InputManager.MousePosition.X, this.InputManager.MousePosition.Y);
+            }
+
+            // Draw ImGui layer.
+            ImGui.NewFrame();
+            {
+                ImVector2 nextWindowPos;
+
+                // Create the camera properties window.
+                bool bOpen = true;
+                ImGui.Begin("Camera", ref bOpen, ImGuiWindowFlags.AlwaysAutoResize);
+                {
+                    // Set window size and position.
+                    //ImVector2 optionsSize = new ImVector2(470.0f, 180.0f);
+                    //ImGui.SetWindowSize(optionsSize, ImGuiCond.Appearing);
+                    ImGui.SetWindowPos(new ImVector2(10, 10), ImGuiCond.Appearing);
+
+                    // Position:
+                    Vector3 camPosition = this.Camera.Position;
+                    if (ImGui.InputFloat3("Position", ref camPosition) == true)
+                        this.Camera.Position = camPosition;
+
+                    // Angle:
+                    Vector2 camRotation = this.Camera.Rotation;
+                    if (ImGui.InputFloat2("Rotation", ref camRotation) == true)
+                        this.Camera.Rotation = camRotation;
+
+                    // Speed:
+                    float camSpeed = this.Camera.Speed;
+                    if (ImGui.InputFloat("Movement Speed", ref camSpeed) == true)
+                        this.Camera.Speed = camSpeed;
+
+                    // Field of view:
+                    if (ImGui.InputFloat("Field of view", ref this.fieldOfView, 1.0f) == true)
+                        this.ResizeView(this.ViewSize);
+
+                    // Draw distance min:
+                    if (ImGui.InputFloat("Draw distance min", ref this.drawDistanceMin) == true)
+                        this.ResizeView(this.ViewSize);
+
+                    // Draw distance max:
+                    if (ImGui.InputFloat("Draw distance max", ref this.drawDistanceMax) == true)
+                        this.ResizeView(this.ViewSize);
+
+                    // Calculate the position of the next window.
+                    ImVector2 cameraWndSize = ImGui.GetWindowSize();
+                    nextWindowPos = new ImVector2(10, 20 + cameraWndSize.Y);
+                }
+                ImGui.End();
+
+                // Check if we are rendering a single model or not and handle accordingly.
+                if (this.ViewType == RenderViewType.Level)
+                {
+                    // Draw the resource select UI.
+                    DrawResourceSelectUI(nextWindowPos);
+                }
+
+                // Loop and draw the UI for any objects with a properties window open.
+                for (int i = 0; i < this.resourcesToRender.Count; i++)
+                {
+                    this.resourcesToRender[i].DrawObjectPropertiesUI(this);
+                }
+            }
+
+            ImGui.Render();
+        }
+
+        private void DrawResourceSelectUI(ImVector2 position)
+        {
+            // Create the resource select window.
+            ImGui.Begin("Objects");
+            {
+                // Set the window size and position.
+                ImGui.SetWindowPos(position, ImGuiCond.Appearing);
+                ImGui.SetWindowSize(new ImVector2(470.0f, 300), ImGuiCond.Appearing);
+
+                // Draw the resource select tree.
+                this.renderableFilesTree.DrawControl();
+            }
+            ImGui.End();
+        }
+
+        void renderableFilesTree_OnTreeNodeCheckedChanged(FileNameTreeNode node)
+        {
+            // Check if the node has a datum assigned to it.
+            if (node.FileDatum.Datum == DatumIndex.Unassigned)
+                return;
+
+            // Get the file name for the datum index.
+            ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(node.FileDatum, out Archive.Archive archive, out ArchiveFileEntry fileEntry);
+
+            // Check if we are displaying or hiding the resource.
+            if (node.Checked == true)
+            {
+                // Check if we already have the resource file loaded.
+                if (this.loadedResources.ContainsKey(fileEntry.FileName) == false)
+                {
+                    // Load the resource and call graphics init.
+                    GameResource resource = ArchiveCollection.Instance.GetFileAsResource<GameResource>(node.FileDatum);
+                    if (resource.InitializeGraphics(this) == false)
+                    {
+                        // TODO: Bubble this up to the user.
+                        throw new Exception("Failed to load resource");
+                    }
+
+                    // Add it to the list of loaded resources.
+                    this.loadedResources.Add(fileEntry.FileName, resource);
+                }
+
+                // Add the resource to the list of resources to render.
+                this.resourcesToRender.Add(new RenderableGameResource(this.loadedResources[fileEntry.FileName]));
+            }
+            else
+            {
+                // Remove the resource by name.
+                this.resourcesToRender.RemoveAll(res => res.GameResource.FileName.Equals(fileEntry.FileName, StringComparison.InvariantCultureIgnoreCase));
+            }
+        }
+
+        void renderableFilesTree_OnTreeNodeDoubleClicked(FileNameTreeNode node)
+        {
+            // Try to find a renderable resource with this datum index.
+            RenderableGameResource resource = this.resourcesToRender.FirstOrDefault(res => res.GameResource.Datum.Datum == node.FileDatum.Datum);
+            if (resource != null)
+            {
+                // Show the object properties UI for the object.
+                resource.UIVisible = true;
+            }
+        }
+
+        #endregion
 
         #region Manager Functions
 
