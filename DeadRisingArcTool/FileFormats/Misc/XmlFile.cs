@@ -21,7 +21,6 @@ namespace DeadRisingArcTool.FileFormats.Misc
         ResourceType.rUBCellXml,
         ResourceType.rEventTimeSchedule,
         ResourceType.rHavokVehicleData,
-        ResourceType.rAreaHitLayout,
         ResourceType.rHavokConstraintLayout,
         ResourceType.rHavokLinkCollisionLayout,
         ResourceType.rHavokVertexLayout,

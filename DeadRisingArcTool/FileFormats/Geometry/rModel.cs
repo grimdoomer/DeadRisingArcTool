@@ -116,8 +116,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 	    /* 0x60 */ public int TextureIndex9;	// texture index, subtract 1 (0 indicates null?)
 	    /* 0x64 */ // padding
         /* 0x68 */ public float Transparency;
-        //[Hex]
-        /* 0x6C */ public float Unk11;
+        [Hex]
+        /* 0x6C */ public int Unk11;
         /* 0x70 */ public float FresnelFactor;
         /* 0x74 */ public float FresnelBias;
         /* 0x78 */ public float SpecularPow;
@@ -433,7 +433,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     model.materials[i].TextureIndex9 = reader.ReadInt32();
                     reader.BaseStream.Position += 4;
                     model.materials[i].Transparency = reader.ReadSingle();
-                    model.materials[i].Unk11 = reader.ReadSingle();
+                    model.materials[i].Unk11 = reader.ReadInt32();
                     model.materials[i].FresnelFactor = reader.ReadSingle();
                     model.materials[i].FresnelBias = reader.ReadSingle();
                     model.materials[i].SpecularPow = reader.ReadSingle();
@@ -1503,7 +1503,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     ImGui.Separator();
 
                     ImGui.InputFloat("Transparency", ref this.materials[this.selectedMaterialIndex].Transparency);
-                    ImGui.InputFloat("##Unk11", ref this.materials[this.selectedMaterialIndex].Unk11);
+                    ImGui.InputInt("##Unk11", ref this.materials[this.selectedMaterialIndex].Unk11);
                     ImGui.InputFloat("Fresnel Factor", ref this.materials[this.selectedMaterialIndex].FresnelFactor);
                     ImGui.InputFloat("Fresnel Bias", ref this.materials[this.selectedMaterialIndex].FresnelBias);
                     ImGui.InputFloat("Specular Power", ref this.materials[this.selectedMaterialIndex].SpecularPow);

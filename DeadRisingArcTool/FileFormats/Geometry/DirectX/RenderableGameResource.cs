@@ -23,6 +23,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// Rotation to be applied to the resource
         /// </summary>
         public Quaternion Rotation { get; set; } = new Quaternion(0.0f);
+
         protected bool uiVisible = false;
         /// <summary>
         /// Determins if the object properties UI is currently being displayed for the object
@@ -76,6 +77,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 // Create the object properties window.
                 if (ImGui.Begin("Object Properties - " + this.GameResource.FileName, ref this.uiVisible) == true)
                 {
+                    // Set the window position and size on first open.
+                    ImGui.SetWindowPos(new System.Numerics.Vector2(manager.ViewSize.Width - (manager.ViewSize.Width / 4) - 10, 10), ImGuiCond.Once);
+                    ImGui.SetWindowSize(new System.Numerics.Vector2(manager.ViewSize.Width / 4, manager.ViewSize.Height - 20), ImGuiCond.Once);
+
                     // Render the properties UI.
                     this.GameResource.DrawObjectPropertiesUI(manager);
 

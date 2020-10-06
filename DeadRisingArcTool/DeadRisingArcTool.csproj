@@ -124,6 +124,7 @@
     <Compile Include="FileFormats\Geometry\Vertex\VertexHelper.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexDeclaration.cs" />
     <Compile Include="FileFormats\Misc\GameItems.cs" />
+    <Compile Include="FileFormats\Misc\rAreaHitLayout.cs" />
     <Compile Include="FileFormats\Misc\rItemLayout.cs" />
     <Compile Include="FileFormats\Misc\XmlFieldAttribute.cs" />
     <Compile Include="UI\Controls\AnimationEditor.cs">

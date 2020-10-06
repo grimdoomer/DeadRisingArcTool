@@ -586,13 +586,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 ImVector2 nextWindowPos;
 
                 // Create the camera properties window.
-                bool bOpen = true;
-                ImGui.Begin("Camera", ref bOpen, ImGuiWindowFlags.AlwaysAutoResize);
+                ImGui.Begin("Camera");
                 {
                     // Set window size and position.
-                    //ImVector2 optionsSize = new ImVector2(470.0f, 180.0f);
-                    //ImGui.SetWindowSize(optionsSize, ImGuiCond.Appearing);
-                    ImGui.SetWindowPos(new ImVector2(10, 10), ImGuiCond.Appearing);
+                    ImGui.SetWindowSize(new ImVector2((this.ViewSize.Width / 4) - 20 - 30, 0), ImGuiCond.Once);
+                    ImGui.SetWindowPos(new ImVector2(10, 10), ImGuiCond.Once);
 
                     // Position:
                     Vector3 camPosition = this.Camera.Position;
@@ -650,8 +648,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             ImGui.Begin("Objects");
             {
                 // Set the window size and position.
-                ImGui.SetWindowPos(position, ImGuiCond.Appearing);
-                ImGui.SetWindowSize(new ImVector2(470.0f, 300), ImGuiCond.Appearing);
+                ImGui.SetWindowPos(position, ImGuiCond.Once);
+                ImGui.SetWindowSize(new ImVector2((this.ViewSize.Width / 4) - 20 - 30, this.ViewSize.Height - position.Y - 10), ImGuiCond.Once);
 
                 // Draw the resource select tree.
                 this.renderableFilesTree.DrawControl();
