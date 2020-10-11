@@ -64,6 +64,8 @@ namespace DeadRisingArcTool.Controls
                 buffer = ((XmlFile)this.GameResource).Buffer;
             else if (this.GameResource.GetType() == typeof(rItemLayout))
                 buffer = ((rItemLayout)this.GameResource).Buffer;
+            else if (this.GameResource.GetType() == typeof(rAreaHitLayout))
+                buffer = ((rAreaHitLayout)this.GameResource).Buffer;
 
             // The game resource is a XmlFile.
             this.textbox.Text = Encoding.Default.GetString(buffer);

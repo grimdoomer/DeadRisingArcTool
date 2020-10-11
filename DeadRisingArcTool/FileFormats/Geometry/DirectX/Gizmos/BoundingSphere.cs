@@ -16,6 +16,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public Color4 Color;
     }
 
+    public enum RenderStyle
+    {
+        Wireframe,
+        Solid
+    }
+
     public class BoundingSphere : IRenderable
     {
         private const int RingSegments = 32;

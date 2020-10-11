@@ -30,30 +30,18 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         /// </summary>
         public Color4 Color { get { return this.color; } set { this.color = value; BuildVertexBuffer(); } }
 
-        private D3DColoredVertex[] vertices = new D3DColoredVertex[8];
+        private RenderStyle style = RenderStyle.Wireframe;
+        /// <summary>
+        /// Render style for the box
+        /// </summary>
+        public RenderStyle Style { get { return this.style; } set { this.style = value; BuildVertexBuffer(); } }
+
+        private D3DColoredVertex[] vertices;
+        private int[] indices;
         private SharpDX.Direct3D11.Buffer vertexBuffer;
         private SharpDX.Direct3D11.Buffer indexBuffer;
 
         private Shader shader;
-
-        // Bounding box triangle indices.
-        private readonly int[] BoxIndices = new int[24]
-        {
-            0, 1,
-            1, 2,
-            2, 3,
-            3, 0,
-
-            4, 5,
-            5, 6,
-            6, 7,
-            7, 4,
-
-            0, 4,
-            1, 5,
-            2, 6,
-            3, 7
-        };
 
         public BoundingBox(Vector4 boundMin, Vector4 boundMax, Color4 color)
         {
@@ -74,15 +62,69 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             float halfDepth = box.Depth / 2.0f;
 
             // Build the vertex array from the bounding box info.
-            this.vertices[0].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y - halfHeight, box.Center.Z + halfDepth);
-            this.vertices[1].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y - halfHeight, box.Center.Z + halfDepth);
-            this.vertices[2].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y - halfHeight, box.Center.Z - halfDepth);
-            this.vertices[3].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y - halfHeight, box.Center.Z - halfDepth);
+            this.vertices = new D3DColoredVertex[8];
+            this.vertices[0].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y - halfHeight, box.Center.Z + halfDepth); // BL-R
+            this.vertices[1].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y - halfHeight, box.Center.Z + halfDepth); // BR-R
+            this.vertices[2].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y - halfHeight, box.Center.Z - halfDepth); // BR-F
+            this.vertices[3].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y - halfHeight, box.Center.Z - halfDepth); // BL-F
 
-            this.vertices[4].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y + halfHeight, box.Center.Z + halfDepth);
-            this.vertices[5].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y + halfHeight, box.Center.Z + halfDepth);
-            this.vertices[6].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y + halfHeight, box.Center.Z - halfDepth);
-            this.vertices[7].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y + halfHeight, box.Center.Z - halfDepth);
+            this.vertices[4].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y + halfHeight, box.Center.Z + halfDepth); // TL-R
+            this.vertices[5].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y + halfHeight, box.Center.Z + halfDepth); // TR-R
+            this.vertices[6].Position = new Vector3(box.Center.X + halfWidth, box.Center.Y + halfHeight, box.Center.Z - halfDepth); // TR-F
+            this.vertices[7].Position = new Vector3(box.Center.X - halfWidth, box.Center.Y + halfHeight, box.Center.Z - halfDepth); // TL-F
+
+            // Check the render style and build the index buffer accordingly.
+            if (this.style == RenderStyle.Wireframe)
+            {
+                // Setup the index buffer as a line list.
+                this.indices = new int[24]
+                {
+                    0, 1,
+                    1, 2,
+                    2, 3,
+                    3, 0,
+
+                    4, 5,
+                    5, 6,
+                    6, 7,
+                    7, 4,
+
+                    0, 4,
+                    1, 5,
+                    2, 6,
+                    3, 7
+                };
+            }
+            else
+            {
+                // Setup the index buffer as a triangle list.
+                this.indices = new int[36]
+                {
+                    // Right face:
+                    0, 4, 7,
+                    7, 3, 0,
+
+                    // Front face:
+                    7, 6, 2,
+                    3, 7, 2,
+
+                    // Left face:
+                    6, 5, 1,
+                    2, 6, 1,
+
+                    // Back face:
+                    5, 4, 0,
+                    1, 5, 0,
+
+                    // Bottom:
+                    0, 3, 2,
+                    2, 1, 0,
+
+                    // Top:
+                    6, 7, 4,
+                    4, 5, 6
+                };
+            }
 
             // Set vertex colors.
             for (int i = 0; i < this.vertices.Length; i++)
@@ -108,7 +150,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             desc.CpuAccessFlags = CpuAccessFlags.Read | CpuAccessFlags.Write;
             desc.StructureByteStride = 4;
             desc.Usage = ResourceUsage.Default;
-            this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<int>(manager.Device, BindFlags.IndexBuffer, this.BoxIndices);
+            this.indexBuffer = SharpDX.Direct3D11.Buffer.Create<int>(manager.Device, BindFlags.IndexBuffer, this.indices);
 
             // Get the wireframe shader.
             this.shader = manager.ShaderCollection.GetShader(ShaderType.Wireframe);
@@ -118,11 +160,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 
         public bool DrawFrame(RenderManager manager)
         {
-            // Update the vertex buffer.
+            // Update the vertex and index buffers.
             manager.Device.ImmediateContext.UpdateSubresource(this.vertices, this.vertexBuffer);
+            manager.Device.ImmediateContext.UpdateSubresource(this.indices, this.indexBuffer);
 
-            // Set the primitive type to line list.
-            manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
+            // Set the primitive type based on the render style.
+            manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = this.style == RenderStyle.Wireframe ? 
+                SharpDX.Direct3D.PrimitiveTopology.LineList : SharpDX.Direct3D.PrimitiveTopology.TriangleList;
 
             // Set the vertex and index buffers.
             manager.Device.ImmediateContext.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(this.vertexBuffer, 28, 0));
@@ -132,7 +176,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             this.shader.DrawFrame(manager);
 
             // Draw the cube.
-            manager.Device.ImmediateContext.DrawIndexed(24, 0, 0);
+            manager.Device.ImmediateContext.DrawIndexed(this.indices.Length, 0, 0);
 
             return true;
         }

@@ -113,6 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
+    <Compile Include="FileFormats\Bitmaps\rSprAnm.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\ImGuiRenderer.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\RenderableGameResource.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\Controls\ImGuiControl.cs" />
@@ -161,6 +162,12 @@
     </Compile>
     <Compile Include="UI\Controls\ShaderEditor.Designer.cs">
       <DependentUpon>ShaderEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Controls\SpriteEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\SpriteEditor.Designer.cs">
+      <DependentUpon>SpriteEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\Controls\TextEditor.cs">
       <SubType>UserControl</SubType>
@@ -259,6 +266,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Controls\ShaderEditor.resx">
       <DependentUpon>ShaderEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Controls\SpriteEditor.resx">
+      <DependentUpon>SpriteEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Controls\TextEditor.resx">
       <DependentUpon>TextEditor.cs</DependentUpon>

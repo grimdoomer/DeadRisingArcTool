@@ -457,10 +457,11 @@ namespace DeadRisingArcTool.FileFormats.Misc
             {
                 // Setup the min/max vectors.
                 Vector4 minBounds = new Vector4(-(this.layoutInfoList[i].RectX / 2.0f), 0.0f, 0.0f, 0.0f);
-                Vector4 maxBounds = new Vector4(this.layoutInfoList[i].RectX / 2.0f, this.layoutInfoList[i].RectY, 10.0f, 0.0f);
+                Vector4 maxBounds = new Vector4(this.layoutInfoList[i].RectX / 2, this.layoutInfoList[i].RectY, 10.0f, 0.0f);
 
                 // Initialize the placement box.
                 this.areaHitPlacements[i] = new BoundingBox(minBounds, maxBounds, new Color4(0xFFFF0000));
+                this.areaHitPlacements[i].Style = Geometry.DirectX.Gizmos.RenderStyle.Solid;
                 this.areaHitPlacements[i].InitializeGraphics(manager);
 
                 // Format the area name for the object properties window.
@@ -482,14 +483,14 @@ namespace DeadRisingArcTool.FileFormats.Misc
                 Matrix rotZ = Matrix.RotationZ(this.layoutInfoList[i].AreaJumpAngle.Z);
                 Quaternion rotation = Quaternion.RotationMatrix(rotX * rotY * rotZ);
                 Vector3 rotPos = new Vector3(this.layoutInfoList[i].RectX / 2, 0.0f, 0.0f);
-                Matrix world = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, rotPos, Quaternion.Zero, this.layoutInfoList[i].CursorWorldPos);
+                Matrix world = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, Vector3.Zero, rotation, this.layoutInfoList[i].CursorWorldPos);
 
                 // Setup WVP matrix.
                 manager.ShaderConstants.gXfViewProj = Matrix.Transpose(world * manager.Camera.ViewMatrix * manager.ProjectionMatrix);
                 manager.UpdateShaderConstants();
 
                 // Draw the bounding box for the jump trigger.
-                this.areaHitPlacements[i].Color = new Color4(this.hoveredSpawnIndex == i ? 0xFF00FF00 : 0xFFFF0000);
+                this.areaHitPlacements[i].Color = new Color4(this.hoveredSpawnIndex == i ? 0x8000FF00 : 0x80FF0000);
                 this.areaHitPlacements[i].DrawFrame(manager);
             }
 
