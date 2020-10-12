@@ -127,6 +127,7 @@
     <Compile Include="FileFormats\Misc\GameItems.cs" />
     <Compile Include="FileFormats\Misc\rAreaHitLayout.cs" />
     <Compile Include="FileFormats\Misc\rItemLayout.cs" />
+    <Compile Include="FileFormats\Misc\rMessage.cs" />
     <Compile Include="FileFormats\Misc\XmlFieldAttribute.cs" />
     <Compile Include="UI\Controls\AnimationEditor.cs">
       <SubType>UserControl</SubType>
@@ -151,6 +152,12 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="UI\Controls\IResourceEditorOwner.cs" />
+    <Compile Include="UI\Controls\MessageEditor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\MessageEditor.Designer.cs">
+      <DependentUpon>MessageEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Controls\ModelViewer.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -260,6 +267,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Controls\BitmapViewer.resx">
       <DependentUpon>BitmapViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Controls\MessageEditor.resx">
+      <DependentUpon>MessageEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Controls\ModelViewer.resx">
       <DependentUpon>ModelViewer.cs</DependentUpon>
