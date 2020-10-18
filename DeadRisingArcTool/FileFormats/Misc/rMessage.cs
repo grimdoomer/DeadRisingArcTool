@@ -1,5 +1,6 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using IO;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,6 +18,11 @@ namespace DeadRisingArcTool.FileFormats.Misc
         /* 0x04 */ public int DataOffset;
         /* 0x08 */ public int FileSize;
 
+        /* 0x10 */ public short SpriteMapWidth;     // Width of the sprite image
+        /* 0x12 */ public short SpriteMapHeight;    // Height of the sprite image
+        /* 0x14 */ public short SpriteStrideX;      // Width of a single character sprite
+        /* 0x16 */ public short SpriteStrideY;      // Height of a single character sprite
+
         /* 0x1C */ public short StringCount;
         /* 0x1E */ public byte TerminatorChar;
     }
@@ -25,9 +31,8 @@ namespace DeadRisingArcTool.FileFormats.Misc
     {
         public const int kSizeOf = 6;
 
-        /* 0x00 */ public byte Character;   // Ascii character or special case character id
-        /* 0x01 */ public byte Unk1;        //
-        /* 0x02 */ public short Unk2;       // Misc value for special case characters, or sprite id for ascii characters
+        /* 0x00 */ public char Character;   // Ascii character or special case character id
+        /* 0x02 */ public short SpriteId;   // Misc value for special case characters, or sprite id for ascii characters
         /* 0x04 */ public byte Width;       // Width of the character
         /* 0x05 */ public byte Flags;
     }
@@ -62,6 +67,11 @@ namespace DeadRisingArcTool.FileFormats.Misc
             message.header.Magic = reader.ReadInt32();
             message.header.DataOffset = reader.ReadInt32();
             message.header.FileSize = reader.ReadInt32();
+            reader.BaseStream.Position = 0x10;
+            message.header.SpriteMapWidth = reader.ReadInt16();
+            message.header.SpriteMapHeight = reader.ReadInt16();
+            message.header.SpriteStrideX = reader.ReadInt16();
+            message.header.SpriteStrideY = reader.ReadInt16();
             reader.BaseStream.Position = 0x1C;
             message.header.StringCount = reader.ReadInt16();
             message.header.TerminatorChar = reader.ReadByte();
@@ -81,9 +91,8 @@ namespace DeadRisingArcTool.FileFormats.Misc
                 {
                     // Parse the next character from the stream.
                     CharEntry entry;
-                    entry.Character = reader.ReadByte();
-                    entry.Unk1 = reader.ReadByte();
-                    entry.Unk2 = reader.ReadInt16();
+                    entry.Character = (char)reader.ReadInt16();
+                    entry.SpriteId = reader.ReadInt16();
                     entry.Width = reader.ReadByte();
                     entry.Flags = reader.ReadByte();
 
@@ -102,6 +111,34 @@ namespace DeadRisingArcTool.FileFormats.Misc
             // Close the reader and return the message data.
             reader.Close();
             return message;
+        }
+
+        public Rectangle GetSpriteRect(CharEntry character)
+        {
+            // Round down the width of the texture to the nearest whole sprite.
+            int textureWidth = this.header.SpriteMapWidth;
+            if (((textureWidth / this.header.SpriteStrideX) & 1) != 0)
+                textureWidth -= this.header.SpriteStrideX;
+
+            // Compute the number of sprites in the width.
+            int spriteCount = textureWidth / this.header.SpriteStrideX;
+
+            // Compute the x and y position of the sprite in the texture.
+            int xpos = this.header.SpriteStrideX * (character.SpriteId % spriteCount);
+            int ypos = this.header.SpriteStrideY * (character.SpriteId / spriteCount);
+
+            // Check for some special flag?
+            int newStride = this.header.SpriteStrideX;
+            if ((character.Flags & 2) == 0)
+                newStride *= 2;
+
+            // Compute the width and height of the sprite.
+            int fixedWidth = character.Width > 120 ? 120 : character.Width;
+            int width = (int)(((float)fixedWidth * 0.0078125f) * (float)newStride);
+            int height = this.header.SpriteStrideY - 1;
+
+            // Return the rectangle.
+            return new Rectangle(xpos, ypos, width, height);
         }
     }
 }

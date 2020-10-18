@@ -1339,6 +1339,79 @@ namespace DeadRisingArcTool
             }
         }
 
+        private void buildRMessageSpriteReportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Browse for a place to save the sprite report.
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "Text file (*.txt)|*.txt";
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                Dictionary<short, Tuple<char, short, byte>> characterMap = new Dictionary<short, Tuple<char, short, byte>>();
+
+                // Get a list of all rMessage files that are currently loaded.
+                DatumIndex[] fileDatums = ArchiveCollection.Instance.GetFilesByType(ResourceType.rMessage);
+                for (int i = 0; i < fileDatums.Length; i++)
+                {
+                    // Parse the rMessage file.
+                    rMessage message = ArchiveCollection.Instance.GetFileAsResource<rMessage>(fileDatums[i]);
+                    if (message == null)
+                        continue;
+
+                    // Make sure this is a usa message file.
+                    if (message.FileName.Contains("messys_u16_usa") == false)
+                        continue;
+
+                    // Loop through all of the strings in the message file and check each one.
+                    for (int x = 0; x < message.strings.Length; x++)
+                    {
+                        // Loop through all of the characters in the string.
+                        for (int z = 0; z < message.strings[x].Length; z++)
+                        {
+                            // Make sure this is not a special character.
+                            if ((message.strings[x][z].Flags & 4) != 0)
+                                continue;
+
+                            // Check if we have an entry for this character or not.
+                            if (characterMap.ContainsKey(message.strings[x][z].SpriteId) == false)
+                            {
+                                // Add the character to the dictionary.
+                                characterMap.Add(message.strings[x][z].SpriteId,
+                                    new Tuple<char, short, byte>(message.strings[x][z].Character, message.strings[x][z].SpriteId, message.strings[x][z].Width));
+                            }
+                            else
+                            {
+                                // Update the info for the character if needed.
+                                if (message.strings[x][z].Width < characterMap[message.strings[x][z].SpriteId].Item3)
+                                {
+                                    // Update the tuple info.
+                                    characterMap[message.strings[x][z].SpriteId] = 
+                                        new Tuple<char, short, byte>(message.strings[x][z].Character, message.strings[x][z].SpriteId, message.strings[x][z].Width);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Create a new file to write the results to.
+                StreamWriter writer = new StreamWriter(sfd.FileName);
+
+                // Sort the keys for the dictionary so we can print the characters in order.
+                short[] keys = characterMap.Keys.ToArray();
+                Array.Sort(keys);
+
+                // Loop through all the keys and write all the sprite info.
+                writer.WriteLine("Sprite #, ASCII Character, Width");
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    writer.WriteLine(string.Format("{0}, '{1}', {2}", keys[i], characterMap[keys[i]].Item1, characterMap[keys[i]].Item3));
+                }
+
+                // Close the reader and show a done dialog.
+                writer.Close();
+                MessageBox.Show("Done!");
+            }
+        }
+
         #endregion
 
         #region IResourceEditorOwner

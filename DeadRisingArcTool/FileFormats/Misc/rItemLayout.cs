@@ -1,6 +1,7 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Geometry;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos;
 using DeadRisingArcTool.Utilities;
 using ImGuiNET;
 using SharpDX;
@@ -12,7 +13,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using BoundingSphere = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingSphere;
 
 namespace DeadRisingArcTool.FileFormats.Misc
 {
@@ -159,7 +159,7 @@ namespace DeadRisingArcTool.FileFormats.Misc
         public LayoutInfo[] LayoutInfoList { get { return this.layoutInfoList.ToArray(); } }
 
         // Rendering resources.
-        private BoundingSphere[] itemPlacements;
+        private ItemPlacementGizmo[] itemPlacements;
         private GameResource[] itemModels;
 
         // UI resources.
@@ -297,7 +297,7 @@ namespace DeadRisingArcTool.FileFormats.Misc
         public override bool InitializeGraphics(RenderManager manager)
         {
             // Allocate arrays.
-            this.itemPlacements = new BoundingSphere[this.layoutInfoList.Count];
+            this.itemPlacements = new ItemPlacementGizmo[this.layoutInfoList.Count];
             this.itemModels = new GameResource[this.layoutInfoList.Count];
             this.itemSpawnNames = new List<string>();
 
@@ -308,10 +308,6 @@ namespace DeadRisingArcTool.FileFormats.Misc
             // Initialize the item placements array.
             for (int i = 0; i < this.itemPlacements.Length; i++)
             {
-                // Initialize the placement sphere.
-                this.itemPlacements[i] = new BoundingSphere(this.layoutInfoList[i].CursorWorldPos, new Vector4(), 30.0f, new Color4(0xFF0000FF));
-                this.itemPlacements[i].InitializeGraphics(manager);
-
                 // Check if there is a model for this item id we can render.
                 if (this.layoutInfoList[i].ItemNo < GameItems.StockGameItems.Length && GameItems.StockGameItems[this.layoutInfoList[i].ItemNo].FilePath != "")
                 {
@@ -342,6 +338,17 @@ namespace DeadRisingArcTool.FileFormats.Misc
 
                     }
                 }
+
+                // Compute the placement rotation.
+                Matrix rotX = Matrix.RotationX(this.layoutInfoList[i].ModelAngle.X);
+                Matrix rotY = Matrix.RotationY(this.layoutInfoList[i].ModelAngle.Y);
+                Matrix rotZ = Matrix.RotationZ(this.layoutInfoList[i].ModelAngle.Z);
+                Quaternion rotation = Quaternion.RotationMatrix(rotX * rotY * rotZ);
+
+                // Initialize the placement gizmo.
+                this.itemPlacements[i] = new ItemPlacementGizmo(this.layoutInfoList[i].CursorWorldPos + this.layoutInfoList[i].CursorWorldPosOffs, 
+                    this.layoutInfoList[i].ModelAngle, (rModel)this.itemModels[i]);
+                this.itemPlacements[i].InitializeGraphics(manager);
 
                 // Format the item name for the object properties window.
                 string itemName = "Item " + i.ToString();
@@ -376,11 +383,8 @@ namespace DeadRisingArcTool.FileFormats.Misc
                     model.DrawFrame(manager);
                 }
 
-                manager.ShaderConstants.gXfViewProj = Matrix.Transpose(Matrix.Identity * manager.Camera.ViewMatrix * manager.ProjectionMatrix);
-                manager.UpdateShaderConstants();
-
                 // Draw a sphere for the item placement.
-                this.itemPlacements[i].Color = new Color4(this.hoveredSpawnIndex == i ? 0xFF00FF00 : 0xFF0000FF);
+                this.itemPlacements[i].IsFocused = this.hoveredSpawnIndex == i;
                 this.itemPlacements[i].DrawFrame(manager);
             }
 

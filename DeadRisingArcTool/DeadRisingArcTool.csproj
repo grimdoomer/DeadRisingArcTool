@@ -114,6 +114,8 @@
   <ItemGroup>
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
     <Compile Include="FileFormats\Bitmaps\rSprAnm.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\ItemPlacementGizmo.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\TriggerVolume.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\ImGuiRenderer.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\RenderableGameResource.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\Controls\ImGuiControl.cs" />

@@ -82,7 +82,8 @@ namespace DeadRisingArcTool.UI.Controls
                 if ((chars[i].Flags & 4) != 0)
                 {
                     // Check the special case character and handle accordingly.
-                    switch (chars[i].Character)
+                    byte specialChar = (byte)chars[i].Character;
+                    switch (specialChar)
                     {
                         case 3:
                             {
@@ -93,21 +94,27 @@ namespace DeadRisingArcTool.UI.Controls
                         case 26:
                             {
                                 // image id (2 characters, 2nd is image id)
-                                str += "[Image: " + chars[i + 1].Unk2.ToString() + "]";
+                                str += "[Image: " + chars[i + 1].SpriteId.ToString() + "]";
                                 i++;
                                 break;
                             }
                         case 32:
                             {
                                 // Text color (2 characters, second is color code)
-                                string color = chars[i + 1].Unk2 - 1 < TextColors.Length ? TextColors[chars[i + 1].Unk2 - 1] : TextColors[6];
+                                string color = chars[i + 1].SpriteId - 1 < TextColors.Length ? TextColors[chars[i + 1].SpriteId - 1] : TextColors[6];
                                 str += "[Color: " + color + "]";
                                 i++;
                                 break;
                             }
+                        case 33:
+                            {
+                                // Reset color (1 character)
+                                str += "[EndColor]";
+                                break;
+                            }
                         default:
                             {
-                                str += "[SC " + chars[i].Character.ToString() + "]";
+                                str += "[SC " + specialChar.ToString() + "]";
                                 break;
                             }
                     }
@@ -115,7 +122,7 @@ namespace DeadRisingArcTool.UI.Controls
                 else
                 {
                     // Normal character, add as-is.
-                    str += (char)chars[i].Character;
+                    str += chars[i].Character;
                 }
             }
 

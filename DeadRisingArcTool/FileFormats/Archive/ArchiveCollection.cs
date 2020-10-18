@@ -395,6 +395,38 @@ namespace DeadRisingArcTool.FileFormats.Archive
             return this.archives[this.archiveLookupDictionary[datum.ArchiveId]].GetFileAsResource<T>(datum.FileId);
         }
 
+        /// <summary>
+        /// Gets a list of all files of the specified file type.
+        /// </summary>
+        /// <param name="type">Type of files to retreive</param>
+        /// <returns>A list of files of the specified type</returns>
+        public DatumIndex[] GetFilesByType(ResourceType type)
+        {
+            // Create a list to hold the datums for files that we found.
+            List<DatumIndex> filesOfType = new List<DatumIndex>();
+            HashSet<string> filesNames = new HashSet<string>();
+
+            // Loop through all of the loaded archives.
+            for (int i = 0; i < this.archives.Count; i++)
+            {
+                // Get a list of all files of the specified file type.
+                ArchiveFileEntry[] files = this.archives[i].FileEntries.Where(f => f.FileType == type).ToArray();
+                for (int x = 0; x < files.Length; x++)
+                {
+                    // Check if we already added this file name and if not add it to the list.
+                    if (filesNames.Contains(files[x].FileName.ToLower()) == false)
+                    {
+                        // Add the file to the list.
+                        filesOfType.Add(new DatumIndex(this.archives[i].ArchiveId, files[x].FileId));
+                        filesNames.Add(files[x].FileName.ToLower());
+                    }
+                }
+            }
+
+            // Return the list of files names.
+            return filesOfType.ToArray();
+        }
+
         #endregion
 
         #region File manipulation

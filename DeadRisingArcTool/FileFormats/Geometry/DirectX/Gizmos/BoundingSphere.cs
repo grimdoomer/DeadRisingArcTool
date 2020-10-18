@@ -14,6 +14,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
     {
         public Vector3 Position;
         public Color4 Color;
+
+        public D3DColoredVertex(Vector3 position, Color4 color)
+        {
+            this.Position = position;
+            this.Color = color;
+        }
     }
 
     public enum RenderStyle

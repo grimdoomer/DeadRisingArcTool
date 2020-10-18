@@ -91,8 +91,11 @@ namespace DeadRisingArcTool.Controls
 
         private void btnRender_Click(object sender, EventArgs e)
         {
+            // If the model is not in the scroll folder use the normal model view.
+            RenderViewType viewType = this.GameResource.FileName.StartsWith("scroll", StringComparison.InvariantCultureIgnoreCase) == true ? RenderViewType.Level : RenderViewType.SingleModel;
+
             // Display a new render window.
-            RenderView render = new RenderView(RenderViewType.Level, this.GameResource.Datum);
+            RenderView render = new RenderView(viewType, this.GameResource.Datum);
 
             // TODO: Figure out what the fuck is up with this...
             try
