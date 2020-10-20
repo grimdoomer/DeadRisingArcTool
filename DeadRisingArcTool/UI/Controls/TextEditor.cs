@@ -10,6 +10,8 @@ using System.Windows.Forms;
 using DeadRisingArcTool.FileFormats;
 using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.FileFormats.Archive;
+using System.Reflection;
+using SharpDX;
 
 namespace DeadRisingArcTool.Controls
 {
@@ -35,7 +37,11 @@ namespace DeadRisingArcTool.Controls
                     ResourceType.rMobLayout,
                     ResourceType.rSprLayout,
                     ResourceType.rSMAdd,
-                    ResourceType.rMapLink)]
+                    ResourceType.rMapLink,
+                    ResourceType.rRouteNode,
+                    ResourceType.rEnemyLayout,
+                    ResourceType.rUBCell,
+                    ResourceType.rSoundSeg)]
     public partial class TextEditor : GameResourceEditorControl
     {
         //public XmlFile TextFile { get { return (XmlFile)this.GameResource; } }
@@ -59,16 +65,20 @@ namespace DeadRisingArcTool.Controls
             this.textbox.ReadOnly = !this.ArcFile.IsPatchFile;
 
             // Get the xml text buffer from the file.
-            byte[] buffer = null;
             if (this.GameResource.GetType() == typeof(XmlFile))
-                buffer = ((XmlFile)this.GameResource).Buffer;
+                this.textbox.Text = Encoding.Default.GetString(((XmlFile)this.GameResource).Buffer);
             else if (this.GameResource.GetType() == typeof(rItemLayout))
-                buffer = ((rItemLayout)this.GameResource).Buffer;
+                this.textbox.Text = Encoding.Default.GetString(((rItemLayout)this.GameResource).Buffer);
             else if (this.GameResource.GetType() == typeof(rAreaHitLayout))
-                buffer = ((rAreaHitLayout)this.GameResource).Buffer;
+                this.textbox.Text = Encoding.Default.GetString(((rAreaHitLayout)this.GameResource).Buffer);
+            else if (this.GameResource.GetType() == typeof(BinaryXmlFile))
+            {
+                // Get the binary xml file and convert the parsed object to a string.
+                BinaryXmlFile xmlFile = (BinaryXmlFile)this.GameResource;
+                this.textbox.Text = XmlObjectToString(xmlFile.ParsedObject);
+            }
 
-            // The game resource is a XmlFile.
-            this.textbox.Text = Encoding.Default.GetString(buffer);
+            // Reset modification trackers.
             this.HasBeenModified = false;
             this.textbox.IsChanged = false;
         }
@@ -122,6 +132,88 @@ namespace DeadRisingArcTool.Controls
 
             // Let the base class handle it.
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private string XmlObjectToString(object obj, int tabCount = 0)
+        {
+            string objStr = "";
+
+            // Get a list of all fields that have the XmlField attribute attached.
+            FieldInfo[] fields = obj.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance).Where(f => f.GetCustomAttribute(typeof(XmlFieldAttribute)) != null).ToArray();
+
+            // Loop and print each field.
+            for (int i = 0; i < fields.Length; i++)
+            {
+                // Get the field type.
+                string fieldType = fields[i].FieldType.Name;
+                if (fieldType.Contains('.') == true)
+                    fieldType = fieldType.Substring(fieldType.LastIndexOf('.') + 1);
+
+                // Check the field type and handle accordingly.
+                if (fieldType == "Vector3")
+                {
+                    Vector3 vec = (Vector3)fields[i].GetValue(obj);
+                    objStr += new string('\t', tabCount) + string.Format("Vector3 {0}: x={1} y={2} z={3}", fields[i].Name, vec.X, vec.Y, vec.Z) + "\r\n";
+                }
+                else if (fields[i].FieldType.IsArray == true)
+                {
+                    // Get the array value from the field.
+                    Array array = (Array)fields[i].GetValue(obj);
+
+                    // Print the block start.
+                    objStr += new string('\t', tabCount) + fieldType + ": " + fields[i].Name + "\r\n" + new string('\t', tabCount) + "[\r\n";
+
+                    // Loop and print each element.
+                    for (int x = 0; x < array.Length; x++)
+                    {
+                        // Get the array value so we can check its type.
+                        object arrayValue = array.GetValue(x);
+
+                        // Check if the array base type is primitive or not.
+                        if (arrayValue.GetType().IsPrimitive == true)
+                        {
+                            // Print the object value.
+                            objStr += new string('\t', tabCount + 1) + string.Format("{0}: {1}\r\n", fieldType.Replace("[]", ""), arrayValue);
+                        }
+                        else
+                        {
+                            // Print the block start.
+                            objStr += new string('\t', tabCount + 1) + "[\r\n";
+
+                            // Print the object fields.
+                            objStr += XmlObjectToString(arrayValue, tabCount + 2);
+
+                            // Print the block end.
+                            objStr += new string('\t', tabCount + 1) + "]\r\n";
+                        }
+                    }
+
+                    // Print the block end.
+                    objStr += new string('\t', tabCount) + "]\r\n";
+                }
+                else if (fields[i].FieldType.IsPrimitive == true)
+                {
+                    objStr += new string('\t', tabCount) + string.Format("{0} {1}: {2}\r\n", fieldType, fields[i].Name, fields[i].GetValue(obj));
+                }
+                else if (fields[i].FieldType.IsValueType == true)
+                {
+                    // Print the block start.
+                    objStr += new string('\t', tabCount) + fieldType + ": " + fields[i].Name + "\r\n" + new string('\t', tabCount) + "[\r\n";
+
+                    // Print the object fields.
+                    objStr += XmlObjectToString(fields[i].GetValue(obj), tabCount + 1);
+
+                    // Print the block end.
+                    objStr += new string('\t', tabCount) + "]\r\n";
+                }
+                else
+                {
+
+                }
+            }
+
+            // Return the string.
+            return objStr;
         }
     }
 }

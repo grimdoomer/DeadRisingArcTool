@@ -130,7 +130,12 @@
     <Compile Include="FileFormats\Misc\rAreaHitLayout.cs" />
     <Compile Include="FileFormats\Misc\rItemLayout.cs" />
     <Compile Include="FileFormats\Misc\rMessage.cs" />
+    <Compile Include="FileFormats\Misc\rUBCell.cs" />
+    <Compile Include="FileFormats\Misc\SerializableXmlStructAttribute.cs" />
     <Compile Include="FileFormats\Misc\XmlFieldAttribute.cs" />
+    <Compile Include="FileFormats\Sound\rSoundSeg.cs" />
+    <Compile Include="FileFormats\Spawnable\rEnemyLayout.cs" />
+    <Compile Include="FileFormats\Spawnable\rRouteNode.cs" />
     <Compile Include="UI\Controls\AnimationEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
