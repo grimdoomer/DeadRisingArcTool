@@ -12,6 +12,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 {
     public struct D3DColoredVertex
     {
+        public const int kSizeOf = 28;
+
         public Vector3 Position;
         public Color4 Color;
 

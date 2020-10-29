@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DeadRisingArcTool.FileFormats.Misc
+namespace DeadRisingArcTool.FileFormats.Text
 {
     public struct rMessageHeader
     {
@@ -17,12 +17,12 @@ namespace DeadRisingArcTool.FileFormats.Misc
         /* 0x00 */ public int Magic;
         /* 0x04 */ public int DataOffset;
         /* 0x08 */ public int FileSize;
-
+        /* 0x0C */ public int Unk1;
         /* 0x10 */ public short SpriteMapWidth;     // Width of the sprite image
         /* 0x12 */ public short SpriteMapHeight;    // Height of the sprite image
         /* 0x14 */ public short SpriteStrideX;      // Width of a single character sprite
         /* 0x16 */ public short SpriteStrideY;      // Height of a single character sprite
-
+        /* 0x18 */ public int Unk2;
         /* 0x1C */ public short StringCount;
         /* 0x1E */ public byte TerminatorChar;
     }
@@ -35,6 +35,21 @@ namespace DeadRisingArcTool.FileFormats.Misc
         /* 0x02 */ public short SpriteId;   // Misc value for special case characters, or sprite id for ascii characters
         /* 0x04 */ public byte Width;       // Width of the character
         /* 0x05 */ public byte Flags;
+
+        public CharEntry(char character, short spriteId, byte width, byte flags)
+        {
+            // Initialize fields.
+            this.Character = character;
+            this.SpriteId = spriteId;
+            this.Width = width;
+            this.Flags = flags;
+        }
+
+        public bool IsSpecialCharacter()
+        {
+            // Check for the special character flag.
+            return (this.Flags & 4) != 0;
+        }
     }
 
     [GameResourceParser(ResourceType.rMessage)]
@@ -67,12 +82,12 @@ namespace DeadRisingArcTool.FileFormats.Misc
             message.header.Magic = reader.ReadInt32();
             message.header.DataOffset = reader.ReadInt32();
             message.header.FileSize = reader.ReadInt32();
-            reader.BaseStream.Position = 0x10;
+            message.header.Unk1 = reader.ReadInt32();
             message.header.SpriteMapWidth = reader.ReadInt16();
             message.header.SpriteMapHeight = reader.ReadInt16();
             message.header.SpriteStrideX = reader.ReadInt16();
             message.header.SpriteStrideY = reader.ReadInt16();
-            reader.BaseStream.Position = 0x1C;
+            message.header.Unk2 = reader.ReadInt32();
             message.header.StringCount = reader.ReadInt16();
             message.header.TerminatorChar = reader.ReadByte();
 
@@ -97,7 +112,7 @@ namespace DeadRisingArcTool.FileFormats.Misc
                     entry.Flags = reader.ReadByte();
 
                     // Check if this is the terminator character.
-                    if ((entry.Flags & 4) != 0 && entry.Character == message.header.TerminatorChar)
+                    if (entry.IsSpecialCharacter() == true && entry.Character == message.header.TerminatorChar)
                         break;
 
                     // Add the character to the list.

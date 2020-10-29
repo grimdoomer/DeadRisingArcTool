@@ -22,18 +22,18 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
         [XmlField("mExcludeEnable")]
         public bool mExcludeEnable;
         [XmlField("mpLayoutInfoList")]
-        public rEnemyLayoutInfo[] mpLayoutInfoList;
+        public rEnemyLayout_LayoutInfo[] mpLayoutInfoList;
     }
 
     [SerializableXmlStruct(0x1DA93AA8)]
-    public struct rEnemyLayoutInfo
+    public struct rEnemyLayout_LayoutInfo
     {
         [XmlField("mSpace")]
-        public EnemySpace[] mSpace;
+        public EnemySetSpace[] mSpace;
     }
 
     [SerializableXmlStruct(0x1CAE3803)]
-    public struct EnemySpace
+    public struct EnemySetSpace
     {
         [XmlField("mSpaceNo")]
         public int mSpaceNo;

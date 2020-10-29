@@ -12,6 +12,7 @@ using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.FileFormats.Archive;
 using System.Reflection;
 using SharpDX;
+using DeadRisingArcTool.FileFormats.Spawnable;
 
 namespace DeadRisingArcTool.Controls
 {

@@ -2,6 +2,7 @@
 using DeadRisingArcTool.FileFormats.Geometry;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos;
+using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.Utilities;
 using ImGuiNET;
 using SharpDX;
@@ -14,7 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
-namespace DeadRisingArcTool.FileFormats.Misc
+namespace DeadRisingArcTool.FileFormats.Spawnable
 {
     [GameResourceParser(ResourceType.rItemLayout)]
     public class rItemLayout : GameResource

@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using DeadRisingArcTool.Controls;
 using DeadRisingArcTool.FileFormats.Misc;
+using DeadRisingArcTool.FileFormats.Text;
+using DeadRisingArcTool.FileFormats.Text.Font;
 
 namespace DeadRisingArcTool.UI.Controls
 {
@@ -79,7 +81,7 @@ namespace DeadRisingArcTool.UI.Controls
             for (int i = 0; i < chars.Length; i++)
             {
                 // Check if the current character is a special character or not.
-                if ((chars[i].Flags & 4) != 0)
+                if (chars[i].IsSpecialCharacter() == true)
                 {
                     // Check the special case character and handle accordingly.
                     byte specialChar = (byte)chars[i].Character;
@@ -121,13 +123,77 @@ namespace DeadRisingArcTool.UI.Controls
                 }
                 else
                 {
-                    // Normal character, add as-is.
-                    str += chars[i].Character;
+                    // Check if the character is a square bracket and if so escape it.
+                    if (chars[i].Character == '[' || chars[i].Character == ']')
+                    {
+                        // Escape the characte by doubling it.
+                        str += new string(chars[i].Character, 2);
+                    }
+                    else
+                    {
+                        // Normal character, add as-is.
+                        str += chars[i].Character;
+                    }
                 }
             }
 
             // Return the decoded string.
             return str;
+        }
+
+        private CharEntry[] EncodeLine(GameFontSpriteSheet spriteSheet, string line)
+        {
+            // Create a list of character entries that represent the string.
+            List<CharEntry> characters = new List<CharEntry>();
+
+            // Loop through the string and process.
+            for (int i = 0; i < line.Length; i++)
+            {
+                // Check if the current character is a square bracket.
+                if (line[i] == '[' || line[i] == ']')
+                {
+                    // Check if it's escaped or not.
+                    if (line.Length < i + 1 && line[i + 1] == line[i])
+                    {
+                        // Character is escaped, encode it as-is.
+                        GameFontSpriteCharacter charEntry = spriteSheet.CharacterTable[line[i]];
+                        characters.Add(new CharEntry(line[i], (short)charEntry.SpriteNumber, (byte)charEntry.Width, 0));
+                        i++;
+                    }
+                    else
+                    {
+                        // The character is not escaped, parse the special character.
+                        string snippet = "";
+                        for (int x = i + 1; x < line.Length; x++, i++)
+                        {
+                            if (line[x] != ']')
+                                snippet += line[x];
+                            else
+                                break;
+                        }
+
+                        // Parse the special character.
+                    }
+                }
+            }
+
+            // Return the encoded character array.
+            return characters.ToArray();
+        }
+
+        private CharEntry ParseSpecialCharacter(GameFontSpriteSheet spriteSheet, string snippet)
+        {
+            CharEntry character = new CharEntry();
+
+            // Check if there are additional parameters to parse.
+            int index = snippet.IndexOf(':');
+            if (index != -1)
+            {
+
+            }
+
+            // Return the encoded character.
+            return character;
         }
     }
 }

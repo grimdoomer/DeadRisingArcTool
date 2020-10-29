@@ -115,8 +115,11 @@
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
     <Compile Include="FileFormats\Bitmaps\rSprAnm.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\ItemPlacementGizmo.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\Polygon.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\PolygonMesh.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\TriggerVolume.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\ImGuiRenderer.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Misc\VertexStream.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\RenderableGameResource.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\Controls\ImGuiControl.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\Controls\ImGuiResourceSelectTree.cs" />
@@ -126,10 +129,12 @@
     <Compile Include="FileFormats\Geometry\Vertex\InputSemanticAttribute.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexHelper.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexDeclaration.cs" />
-    <Compile Include="FileFormats\Misc\GameItems.cs" />
-    <Compile Include="FileFormats\Misc\rAreaHitLayout.cs" />
-    <Compile Include="FileFormats\Misc\rItemLayout.cs" />
-    <Compile Include="FileFormats\Misc\rMessage.cs" />
+    <Compile Include="FileFormats\Spawnable\GameItems.cs" />
+    <Compile Include="FileFormats\Spawnable\rAreaHitLayout.cs" />
+    <Compile Include="FileFormats\Spawnable\rItemLayout.cs" />
+    <Compile Include="FileFormats\Text\Font\GameFontSpriteSheet.cs" />
+    <Compile Include="FileFormats\Text\Font\Messys.cs" />
+    <Compile Include="FileFormats\Text\rMessage.cs" />
     <Compile Include="FileFormats\Misc\rUBCell.cs" />
     <Compile Include="FileFormats\Misc\SerializableXmlStructAttribute.cs" />
     <Compile Include="FileFormats\Misc\XmlFieldAttribute.cs" />
@@ -393,6 +398,7 @@
       <Name>IO</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\ImGui.NET.1.78.0\build\net40\ImGui.NET.targets" Condition="Exists('..\packages\ImGui.NET.1.78.0\build\net40\ImGui.NET.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

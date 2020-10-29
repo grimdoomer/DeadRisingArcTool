@@ -1,6 +1,7 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Geometry;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.Utilities;
 using ImGuiNET;
 using SharpDX;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using BoundingBox = DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.BoundingBox;
 
-namespace DeadRisingArcTool.FileFormats.Misc
+namespace DeadRisingArcTool.FileFormats.Spawnable
 {
     [GameResourceParser(ResourceType.rAreaHitLayout)]
     public class rAreaHitLayout : GameResource

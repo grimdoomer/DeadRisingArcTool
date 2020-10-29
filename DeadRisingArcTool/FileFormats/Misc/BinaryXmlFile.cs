@@ -62,8 +62,6 @@ namespace DeadRisingArcTool.FileFormats.Misc
         private BinaryXmlHeader header;
         private NodeEntry[] xmlNodes;
 
-        public XmlDocument Document { get; private set; }
-
         public object ParsedObject { get; set; }
 
         // List of all SerializableXmlStruct structures in the code base, only needs to be built once per session.
