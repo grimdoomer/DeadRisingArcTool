@@ -576,14 +576,31 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Only update input if the window is in focus.
             if (isFocused == true)
             {
-                // Update the mouse position.
+                // Update the mouse position and buttons.
                 io.MousePos = new System.Numerics.Vector2(this.InputManager.MousePosition.X, this.InputManager.MousePosition.Y);
+                io.MouseDown[0] = this.InputManager.ButtonState[(int)InputAction.LeftClick];
+                io.MouseDown[1] = this.InputManager.ButtonState[(int)InputAction.RightClick];
+                io.MouseDown[2] = this.InputManager.ButtonState[(int)InputAction.MiddleMouse];
+
+                // Update mouse wheel position.
+                if (this.InputManager.MousePositionDelta[2] != 0)
+                {
+                    io.MouseWheel += ((float)this.InputManager.MousePositionDelta[2] / 120.0f) / 20.0f;
+                }
+
+                // Update keyboard input special keys.
+                io.KeyCtrl = this.InputManager.KeyboardState[(int)Keys.ControlKey];
+                io.KeyShift = this.InputManager.KeyboardState[(int)Keys.ShiftKey];
+                io.KeyAlt = this.InputManager.KeyboardState[(int)Keys.Menu];
+                io.KeySuper = false;
             }
 
             // Draw ImGui layer.
             ImGui.NewFrame();
             {
                 ImVector2 nextWindowPos;
+
+                //ImGui.ShowDemoWindow();
 
                 // Create the camera properties window.
                 ImGui.Begin("Camera");

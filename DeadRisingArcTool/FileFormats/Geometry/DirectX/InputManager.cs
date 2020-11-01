@@ -9,7 +9,8 @@ using SharpDX;
 using SharpDX.Direct3D11;
 using SharpDX.DirectInput;
 using SharpDX.XInput;
-using Device = SharpDX.Direct3D11.Device;
+using SharpDX.RawInput;
+using Device = SharpDX.RawInput.Device;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
@@ -62,6 +63,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// Input state for the current input poll operation
         /// </summary>
         public bool[] ButtonState { get; protected set; } = new bool[(int)InputAction.InputAction_Max];
+
+        public bool[] KeyboardState { get; set; } = new bool[255];
+
         private System.Drawing.Point mousePosition;
         /// <summary>
         /// XY coordinates of the mouse position within the application window
@@ -91,7 +95,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
         // Direct input HID devices.
         private DirectInput directInput = null;
-        private Keyboard keyboardDevice = null;
         private Mouse mouseDevice = null;
         private Controller gamepadDevice = null;
 
@@ -145,11 +148,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Initialize the direct input object.
             this.directInput = new DirectInput();
 
-            // Initialize the keyboard device.
-            this.keyboardDevice = new Keyboard(this.directInput);
-            this.keyboardDevice.SetCooperativeLevel(this.formHandle, CooperativeLevel.Foreground | CooperativeLevel.NonExclusive);
-            this.keyboardDevice.Properties.BufferSize = 128;
-
             // Initialize the mouse device.
             this.mouseDevice = new Mouse(this.directInput);
             this.mouseDevice.SetCooperativeLevel(this.formHandle, CooperativeLevel.Foreground | CooperativeLevel.NonExclusive);
@@ -171,7 +169,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Try to acquire the input devices.
             try
             {
-                this.keyboardDevice.Acquire();
                 this.mouseDevice.Acquire();
             }
             catch
@@ -187,33 +184,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             for (int i = 0; i < (int)InputAction.InputAction_Max; i++)
                 this.ButtonState[i] = false;
 
-            // Poll the keyboard state and update input state.
-            this.keyboardDevice.Poll();
-            KeyboardState keyState = this.keyboardDevice.GetCurrentState();
-            foreach (Key key in keyState.PressedKeys)
-            {
-                // Check the key code and update input state accordingly.
-                switch (key)
-                {
-                    case Key.W: this.ButtonState[(int)InputAction.MoveForward] = true; break;
-                    case Key.S: this.ButtonState[(int)InputAction.MoveBackward] = true; break;
-                    case Key.A: this.ButtonState[(int)InputAction.StrafeLeft] = true; break;
-                    case Key.D: this.ButtonState[(int)InputAction.StrafeRight] = true; break;
-                    case Key.X: this.ButtonState[(int)InputAction.MoveUp] = true; break;
-                    case Key.Z: this.ButtonState[(int)InputAction.MoveDown] = true; break;
-                    case Key.Equals:
-                    case Key.Add: this.ButtonState[(int)InputAction.CamSpeedIncrease] = true; break;
-                    case Key.Minus:
-                    case Key.Subtract: this.ButtonState[(int)InputAction.CamSpeedDecrease] = true; break;
-                    case Key.PageUp: this.ButtonState[(int)InputAction.NextAnimation] = true; break;
-                    case Key.PageDown: this.ButtonState[(int)InputAction.PreviousAnimation] = true; break;
-
-                    case Key.D1:
-                    case Key.NumberPad1: this.ButtonState[(int)InputAction.MiscAction1] = true; break;
-                    case Key.D2:
-                    case Key.NumberPad2: this.ButtonState[(int)InputAction.MiscAction2] = true; break;
-                }
-            }
+            // Update keyboard input.
+            this.ButtonState[(int)InputAction.MoveForward] = this.KeyboardState[(int)System.Windows.Forms.Keys.W];
+            this.ButtonState[(int)InputAction.MoveBackward] = this.KeyboardState[(int)System.Windows.Forms.Keys.S];
+            this.ButtonState[(int)InputAction.StrafeLeft] = this.KeyboardState[(int)System.Windows.Forms.Keys.A];
+            this.ButtonState[(int)InputAction.StrafeRight] = this.KeyboardState[(int)System.Windows.Forms.Keys.D];
+            this.ButtonState[(int)InputAction.MoveUp] = this.KeyboardState[(int)System.Windows.Forms.Keys.X];
+            this.ButtonState[(int)InputAction.MoveDown] = this.KeyboardState[(int)System.Windows.Forms.Keys.Z];
+            this.ButtonState[(int)InputAction.CamSpeedIncrease] = this.KeyboardState[(int)System.Windows.Forms.Keys.Oemplus] || this.KeyboardState[(int)System.Windows.Forms.Keys.Add];
+            this.ButtonState[(int)InputAction.CamSpeedDecrease] = this.KeyboardState[(int)System.Windows.Forms.Keys.OemMinus] || this.KeyboardState[(int)System.Windows.Forms.Keys.Subtract];
+            this.ButtonState[(int)InputAction.NextAnimation] = this.KeyboardState[(int)System.Windows.Forms.Keys.PageUp];
+            this.ButtonState[(int)InputAction.PreviousAnimation] = this.KeyboardState[(int)System.Windows.Forms.Keys.PageDown];
+            this.ButtonState[(int)InputAction.MiscAction1] = this.KeyboardState[(int)System.Windows.Forms.Keys.D1] || this.KeyboardState[(int)System.Windows.Forms.Keys.NumPad1];
+            this.ButtonState[(int)InputAction.MiscAction2] = this.KeyboardState[(int)System.Windows.Forms.Keys.D2] || this.KeyboardState[(int)System.Windows.Forms.Keys.NumPad2];
 
             // Poll the mouse state.
             this.mouseDevice.Poll();
@@ -299,7 +282,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             }
 
             // Release device access.
-            //this.keyboardDevice.Unacquire();
             //this.mouseDevice.Unacquire();
 
             return true;
@@ -313,13 +295,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         public void CleanupGraphics(RenderManager manager)
         {
             // Release device access.
-            this.keyboardDevice.Unacquire();
             this.mouseDevice.Unacquire();
 
             // Cleanup device objects.
             this.gamepadDevice = null;
             this.mouseDevice.Dispose();
-            this.keyboardDevice.Dispose();
             this.directInput.Dispose();
         }
 

@@ -10,6 +10,7 @@ using ImGuiNET;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
+using System.Windows.Forms;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
@@ -64,14 +65,38 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             ImGui.StyleColorsClassic();
 
             // Setup ImGui rendering info.
-            ImGui.GetIO().BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+            ImGuiIOPtr io = ImGui.GetIO();
+            io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
 
-            //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+            //ImGui.GetIO().ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;    // Enable Keyboard Controls
             //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
+            io.KeyMap[(int)ImGuiKey.Tab] = (int)Keys.Tab;
+            io.KeyMap[(int)ImGuiKey.LeftArrow] = (int)Keys.Left;
+            io.KeyMap[(int)ImGuiKey.RightArrow] = (int)Keys.Right;
+            io.KeyMap[(int)ImGuiKey.UpArrow] = (int)Keys.Up;
+            io.KeyMap[(int)ImGuiKey.DownArrow] = (int)Keys.Down;
+            io.KeyMap[(int)ImGuiKey.PageUp] = (int)Keys.Prior;
+            io.KeyMap[(int)ImGuiKey.PageDown] = (int)Keys.Next;
+            io.KeyMap[(int)ImGuiKey.Home] = (int)Keys.Home;
+            io.KeyMap[(int)ImGuiKey.End] = (int)Keys.End;
+            io.KeyMap[(int)ImGuiKey.Insert] = (int)Keys.Insert;
+            io.KeyMap[(int)ImGuiKey.Delete] = (int)Keys.Delete;
+            io.KeyMap[(int)ImGuiKey.Backspace] = (int)Keys.Back;
+            io.KeyMap[(int)ImGuiKey.Space] = (int)Keys.Space;
+            io.KeyMap[(int)ImGuiKey.Enter] = (int)Keys.Return;
+            io.KeyMap[(int)ImGuiKey.Escape] = (int)Keys.Escape;
+            io.KeyMap[(int)ImGuiKey.KeyPadEnter] = (int)Keys.Return;
+            io.KeyMap[(int)ImGuiKey.A] = 'A';
+            io.KeyMap[(int)ImGuiKey.C] = 'C';
+            io.KeyMap[(int)ImGuiKey.V] = 'V';
+            io.KeyMap[(int)ImGuiKey.X] = 'X';
+            io.KeyMap[(int)ImGuiKey.Y] = 'Y';
+            io.KeyMap[(int)ImGuiKey.Z] = 'Z';
+
             // Initialize fonts.
-            ImFontPtr font = ImGui.GetIO().Fonts.AddFontDefault();
-            bool result = ImGui.GetIO().Fonts.Build();
+            ImFontPtr font = io.Fonts.AddFontDefault();
+            bool result = io.Fonts.Build();
 
             // Create a vertex buffer for drawing.
             this.vertices = new ImDrawVert[this.vertexBufferSize];
@@ -122,7 +147,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.blendState = new BlendState(manager.Device, blendDesc);
 
             // Get the font image info from imgui layer.
-            ImGui.GetIO().Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int fontWidth, out int fontHeight, out int bytesPerPixel);
+            io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int fontWidth, out int fontHeight, out int bytesPerPixel);
 
             // Create the font texture.
             Texture2DDescription textureDesc = new Texture2DDescription();
@@ -144,7 +169,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.resourceView = new ShaderResourceView(manager.Device, this.texture);
 
             // Set the texture id so we can retreive it later.
-            ImGui.GetIO().Fonts.TexID = this.resourceView.NativePointer;
+            io.Fonts.TexID = this.resourceView.NativePointer;
 
             // Create the shader sampler state.
             SamplerStateDescription samplerDesc = new SamplerStateDescription();
@@ -166,16 +191,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         {
             // Get the IO structure.
             ImGuiIOPtr io = ImGui.GetIO();
-
-            // Update input.
-            io.MouseDown[0] = manager.InputManager.ButtonState[(int)InputAction.LeftClick];
-            io.MouseDown[1] = manager.InputManager.ButtonState[(int)InputAction.RightClick];
-            io.MouseDown[2] = manager.InputManager.ButtonState[(int)InputAction.MiddleMouse];
-
-            if (manager.InputManager.MousePositionDelta[2] != 0)
-            {
-                io.MouseWheel += ((float)manager.InputManager.MousePositionDelta[2] / 120.0f) / 20.0f;
-            }
 
             // Get the ImGui draw data.
             ImDrawDataPtr drawData = ImGui.GetDrawData();

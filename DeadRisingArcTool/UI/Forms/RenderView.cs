@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using ImGuiNET;
 
 namespace DeadRisingArcTool.Forms
 {
@@ -91,6 +92,39 @@ namespace DeadRisingArcTool.Forms
             // TODO: Cleanup resources.
         }
 
+        protected override void WndProc(ref Message m)
+        {
+            // Check if this is a key up or key down message.
+            if (m.Msg == 0x0100) // WM_KEYDOWN
+            {
+                // Check if this is a standard key.
+                if ((int)m.WParam >= 0 && (int)m.WParam < this.renderer.InputManager.KeyboardState.Length)
+                {
+                    // Update input for the input manager and ImGui.
+                    this.renderer.InputManager.KeyboardState[(int)m.WParam] = true;
+                    ImGui.GetIO().KeysDown[(int)m.WParam] = true;
+                }
+            }
+            else if (m.Msg == 0x0101) // WM_KEYUP
+            {
+                // Check if this is a standard key.
+                if ((int)m.WParam >= 0 && (int)m.WParam < this.renderer.InputManager.KeyboardState.Length)
+                {
+                    // Update input for the input manager and ImGui.
+                    this.renderer.InputManager.KeyboardState[(int)m.WParam] = false;
+                    ImGui.GetIO().KeysDown[(int)m.WParam] = false;
+                }
+            }
+            else if (m.Msg == 0x0102) // WM_CHAR
+            {
+                if ((int)m.WParam > 0 && (int)m.WParam < 0x10000)
+                    ImGui.GetIO().AddInputCharacterUTF16((ushort)m.WParam);
+            }
+
+            // Call the base implementation.
+            base.WndProc(ref m);
+        }
+
         private void RenderView_FormClosing(object sender, System.Windows.Forms.FormClosingEventArgs e)
         {
             // Flag that we are closing so the render loop can kill itself.
@@ -106,14 +140,5 @@ namespace DeadRisingArcTool.Forms
             // Flag that the form has resized so the directx thread can adjust it's frame buffer size.
             this.hasResized = true;
         }
-
-        //public void SetDepthStencil(int index)
-        //{
-        //    switch (index)
-        //    {
-        //        case 0: this.device.ImmediateContext.OutputMerger.SetDepthStencilState(this.depthStencilState, 0); break;
-        //        case 1: this.device.ImmediateContext.OutputMerger.SetDepthStencilState(this.bleedingDepthStencilState, 0); break;
-        //    }
-        //}
     }
 }
