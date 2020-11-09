@@ -1,4 +1,5 @@
-﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
 using DeadRisingArcTool.Utilities;
 using SharpDX;
 using SharpDX.Direct3D11;
@@ -23,19 +24,21 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public rModel ItemModel { get; private set; }
 
         private Color4 boxCornerColor = new Color4(0xFF00FF00);
-        public Color4 BoxCornerColor { get { return this.boxCornerColor; } set { this.boxCornerColor = value; UpdateColors(); } }
+        public Color4 BoxCornerColor { get { return this.boxCornerColor; } set { if (this.boxCornerColor != value) { this.boxCornerColor = value; UpdateColors(); } } }
 
         private Color4 boxCornerHighlightColor = new Color4(0xFF31B0F5);
-        public Color4 BoxCornerHighlightColor { get { return this.boxCornerHighlightColor; } set { this.boxCornerHighlightColor = value; UpdateColors(); } }
+        public Color4 BoxCornerHighlightColor { get { return this.boxCornerHighlightColor; } set { if (this.boxCornerHighlightColor != value) { this.boxCornerHighlightColor = value; UpdateColors(); } } }
 
         private Color4 rotationCircleColor = new Color4(0xFF00FF00);
-        public Color4 RotationCircleColor { get { return this.rotationCircleColor; } set { this.rotationCircleColor = value; UpdateColors(); } }
+        public Color4 RotationCircleColor { get { return this.rotationCircleColor; } set { if (this.rotationCircleColor != value) { this.rotationCircleColor = value; UpdateColors(); } } }
 
         private Color4 rotationCircleHighlightColor = new Color4(0xFF00FF00);
-        public Color4 RotationCircleHighlightColor { get { return this.rotationCircleHighlightColor; } set { this.rotationCircleHighlightColor = value; UpdateColors(); } }
+        public Color4 RotationCircleHighlightColor { get { return this.rotationCircleHighlightColor; } set { if (this.rotationCircleHighlightColor != value) { this.rotationCircleHighlightColor = value; UpdateColors(); } } }
 
         private bool isFocused = false;
-        public bool IsFocused { get { return this.isFocused; } set { this.isFocused = value; UpdateColors(); } }
+        public bool IsFocused { get { return this.isFocused; } set { if (this.isFocused != value) { this.isFocused = value; UpdateColors(); } } }
+
+        public bool ShowRotationCircles { get; set; } = false;
 
         // Bounding box for the game model.
         private SharpDX.BoundingBox boundingBox;
@@ -345,8 +348,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 
         public bool DrawFrame(RenderManager manager)
         {
-            BuildVertexBuffer();
-
             // Update the vertex and index buffers.
             manager.Device.ImmediateContext.UpdateSubresource(this.vertices, this.vertexBuffer);
             manager.Device.ImmediateContext.UpdateSubresource(this.indices, this.indexBuffer);
@@ -367,12 +368,16 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
             manager.Device.ImmediateContext.DrawIndexed(this.boxCornerIndexCount, this.boxCornerBaseIndex, this.boxCornerBaseVertex);
 
-            // Draw the rotation circles.
-            for (int i = 0; i < 3; i++)
+            // Check if we should draw the rotation circles.
+            if (this.ShowRotationCircles == true)
             {
-                // Draw the circle.
-                manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
-                manager.Device.ImmediateContext.DrawIndexed(this.rotationCircleIndexCount[i], this.rotationCircleBaseIndex[i], this.rotationCircleBaseVertex[i]);
+                // Draw the rotation circles.
+                for (int i = 0; i < 3; i++)
+                {
+                    // Draw the circle.
+                    manager.Device.ImmediateContext.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
+                    manager.Device.ImmediateContext.DrawIndexed(this.rotationCircleIndexCount[i], this.rotationCircleBaseIndex[i], this.rotationCircleBaseVertex[i]);
+                }
             }
 
             return true;
@@ -386,6 +391,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
     }
 }

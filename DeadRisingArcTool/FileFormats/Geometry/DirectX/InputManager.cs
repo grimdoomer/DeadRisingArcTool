@@ -11,6 +11,8 @@ using SharpDX.DirectInput;
 using SharpDX.XInput;
 using SharpDX.RawInput;
 using Device = SharpDX.RawInput.Device;
+using System.Drawing;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
@@ -64,6 +66,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// </summary>
         public bool[] ButtonState { get; protected set; } = new bool[(int)InputAction.InputAction_Max];
 
+        /// <summary>
+        /// State of all standard keyboard keys.
+        /// </summary>
         public bool[] KeyboardState { get; set; } = new bool[255];
 
         private System.Drawing.Point mousePosition;
@@ -71,6 +76,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// XY coordinates of the mouse position within the application window
         /// </summary>
         public System.Drawing.Point MousePosition { get { return this.mousePosition; } }
+        /// <summary>
+        /// Mouse position when the left mouse button was pressed.
+        /// </summary>
+        public System.Drawing.Point MouseDownPosition { get; protected set; }
+        /// <summary>
+        /// Mouse position when the left mouse button was released.
+        /// </summary>
+        public System.Drawing.Point MouseUpPosition { get; protected set; }
         /// <summary>
         /// Change in XY coordinates and mouse wheel position since the last update
         /// </summary>
@@ -214,6 +227,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.ButtonState[(int)InputAction.RightClick] = mouseState.Buttons[1];
             this.ButtonState[(int)InputAction.MiddleMouse] = mouseState.Buttons[2];
 
+            // Check if we need to update mouse position during click.
+            if (ButtonPressed(InputAction.LeftClick) == true)
+                this.MouseDownPosition = this.mousePosition;
+            else if (ButtonReleased(InputAction.LeftClick) == true)
+                this.MouseUpPosition = this.mousePosition;
+
             // If the gamepad is connected update its state.
             if (this.gamepadDevice.IsConnected == true)
             {
@@ -301,6 +320,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.gamepadDevice = null;
             this.mouseDevice.Dispose();
             this.directInput.Dispose();
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
 
         #endregion

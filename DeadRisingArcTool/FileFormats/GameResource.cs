@@ -1,5 +1,6 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
@@ -385,6 +386,11 @@ namespace DeadRisingArcTool.FileFormats
         public virtual void CleanupGraphics(RenderManager manager)
         {
 
+        }
+
+        public virtual bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
 
         #endregion

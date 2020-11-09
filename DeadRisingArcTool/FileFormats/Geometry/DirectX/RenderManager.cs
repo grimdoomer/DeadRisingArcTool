@@ -1,5 +1,6 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Bitmaps;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.UI.Controls;
 using DeadRisingArcTool.Forms;
@@ -104,6 +105,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         public Texture2D DepthStencilTexture { get; protected set; }
         public DepthStencilView DepthStencilView { get; protected set; }
         public DepthStencilState DepthStencilState { get; protected set; }
+        public DepthStencilState HighlightDepthStencilState { get; protected set; }
 
         private Texture2D checkerboardTexture = null;
         private ShaderResourceView checkerboardTextureResource = null;
@@ -163,6 +165,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// </summary>
         public float DrawDistanceMax { get { return this.drawDistanceMax; } set { this.drawDistanceMax = value; ResizeView(this.ViewSize); } }
 
+        // Boudning box of the view frustum used for culling.
+        protected Vector4 viewFrustumMin;
+        protected Vector4 viewFrustumMax;
+        public FastBoundingBox ViewFrustumBoundingBox { get; protected set; }
+
         protected ImGuiRenderer uiRenderer = null;
 
         // List of resources to render each frame.
@@ -210,6 +217,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.ProjectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(this.FieldOfView), 
                 (float)this.ViewSize.Width / (float)this.ViewSize.Height, this.DrawDistanceMin, this.DrawDistanceMax);
 
+            // Initialize the view frustum bounding box.
+            this.viewFrustumMin = new Vector4(-(this.ViewSize.Width / 2f), 0.0f, this.DrawDistanceMin, 0.0f);
+            this.viewFrustumMax = new Vector4(this.ViewSize.Width / 2f, this.ViewSize.Height, this.DrawDistanceMax, 0.0f);
+            this.ViewFrustumBoundingBox = new FastBoundingBox(this.viewFrustumMin.ToVector3(), this.viewFrustumMax.ToVector3());
+
             // Create our output texture for rendering.
             this.BackBuffer = Texture2D.FromSwapChain<Texture2D>(this.SwapChain, 0);
             this.RenderView = new RenderTargetView(this.Device, this.BackBuffer);
@@ -227,23 +239,23 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             stateDesc.StencilWriteMask = 0xFF;
             this.DepthStencilState = new DepthStencilState(this.Device, stateDesc);
 
-            //// Setup the depth stencil state for object bleeding.
-            //stateDesc = new DepthStencilStateDescription();
-            //stateDesc.IsDepthEnabled = true;
-            //stateDesc.DepthWriteMask = DepthWriteMask.All;
-            //stateDesc.DepthComparison = Comparison.LessEqual;
-            //stateDesc.IsStencilEnabled = false;
-            //stateDesc.StencilReadMask = 0xFF;
-            //stateDesc.StencilWriteMask = 0xFF;
-            //stateDesc.FrontFace.FailOperation = StencilOperation.Keep;
-            //stateDesc.FrontFace.DepthFailOperation = StencilOperation.Increment;
-            //stateDesc.FrontFace.PassOperation = StencilOperation.Keep;
-            //stateDesc.FrontFace.Comparison = Comparison.Less;
-            //stateDesc.BackFace.FailOperation = StencilOperation.Keep;
-            //stateDesc.BackFace.DepthFailOperation = StencilOperation.Decrement;
-            //stateDesc.BackFace.PassOperation = StencilOperation.Keep;
-            //stateDesc.BackFace.Comparison = Comparison.Less;
-            //this.bleedingDepthStencilState = new DepthStencilState(this.Device, stateDesc);
+            // Setup the depth stencil state for object bleeding.
+            stateDesc = new DepthStencilStateDescription();
+            stateDesc.IsDepthEnabled = true;
+            stateDesc.DepthWriteMask = DepthWriteMask.All;
+            stateDesc.DepthComparison = Comparison.LessEqual;
+            stateDesc.IsStencilEnabled = false;
+            stateDesc.StencilReadMask = 0xFF;
+            stateDesc.StencilWriteMask = 0xFF;
+            stateDesc.FrontFace.FailOperation = StencilOperation.Keep;
+            stateDesc.FrontFace.DepthFailOperation = StencilOperation.Increment;
+            stateDesc.FrontFace.PassOperation = StencilOperation.Keep;
+            stateDesc.FrontFace.Comparison = Comparison.Less;
+            stateDesc.BackFace.FailOperation = StencilOperation.Keep;
+            stateDesc.BackFace.DepthFailOperation = StencilOperation.Decrement;
+            stateDesc.BackFace.PassOperation = StencilOperation.Keep;
+            stateDesc.BackFace.Comparison = Comparison.Less;
+            this.HighlightDepthStencilState = new DepthStencilState(this.Device, stateDesc);
 
             // Setup the rasterizer state.
             RasterizerStateDescription rasterStateDesc = new RasterizerStateDescription();
@@ -419,6 +431,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.Camera.LookAt = (firstModel.header.BoundingBoxMax - firstModel.header.BoundingBoxMin).ToVector3();
             this.Camera.SpeedModifier = Math.Abs(firstModel.primitives[0].BoundingBoxMin.X / 100000.0f);
 
+            // Now that we have placed the camera reset the view frustum bounding box.
+            this.ViewFrustumBoundingBox.Reset(Vector4.Transform(this.viewFrustumMin, this.Camera.ViewMatrix).ToVector3(), Vector4.Transform(this.viewFrustumMax, this.Camera.ViewMatrix).ToVector3());
+
             // If we are in level viewer mode build the file name tree for renderable files.
             if (this.ViewType == RenderViewType.Level)
             {
@@ -494,6 +509,31 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                     {
                         // Update the camera.
                         this.Camera.DrawFrame(this);
+
+                        // Update the bounding box for the view frustum.
+                        this.ViewFrustumBoundingBox.Reset(Vector4.Transform(this.viewFrustumMin, this.Camera.ViewMatrix).ToVector3(), Vector4.Transform(this.viewFrustumMax, this.Camera.ViewMatrix).ToVector3());
+
+                        // Check if the left mouse button was pressed/released.
+                        if (this.InputManager.ButtonReleased(InputAction.LeftClick) == true)
+                        {
+                            // Check if the mouse moved during the button press or not.
+                            if (this.InputManager.MouseDownPosition == this.InputManager.MouseUpPosition)
+                            {
+                                // Calculate the picking ray.
+                                Ray pickingRay = CalculatePickingRay(this.InputManager.MouseUpPosition, new Vector2(this.ViewSize.Width, this.ViewSize.Height));
+
+                                // Loop through all of the resources to be rendered and perform a picking test.
+                                for (int i = 0; i < this.resourcesToRender.Count; i++)
+                                {
+                                    // If this object implements IPickableObject perform the picking test.
+                                    IPickableObject pickableObj = this.resourcesToRender[i].GameResource as IPickableObject;
+                                    if ((pickableObj?.DoPickingTest(this, pickingRay) ?? false) == true)
+                                    {
+                                        // TODO: Set the selected object.
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -519,6 +559,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 this.resourcesToRender[i].DrawFrame(this);
             }
 
+            // TODO: Move this to the ImGuiRenderer class
             // Update the WVP matrix so we are back at the origin for rendering the UI.
             this.ShaderConstants.gXfViewProj = Matrix.Transpose(this.WorldMatrix * this.Camera.ViewMatrix * this.ProjectionMatrix);
             UpdateShaderConstants();
@@ -558,6 +599,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Update the projection matrix.
             this.ProjectionMatrix = Matrix.PerspectiveFovRH(MathUtil.DegreesToRadians(this.FieldOfView),
                 (float)this.ViewSize.Width / (float)this.ViewSize.Height, this.DrawDistanceMin, this.DrawDistanceMax);
+
+            // Reset the view frustum bounding box.
+            this.viewFrustumMin = new Vector4(-(this.ViewSize.Width / 2f), 0.0f, this.DrawDistanceMin, 0.0f);
+            this.viewFrustumMax = new Vector4(this.ViewSize.Width / 2f, this.ViewSize.Height, this.DrawDistanceMax, 0.0f);
+            this.ViewFrustumBoundingBox.Reset(Vector4.Transform(this.viewFrustumMin, this.Camera.ViewMatrix).ToVector3(), Vector4.Transform(this.viewFrustumMax, this.Camera.ViewMatrix).ToVector3());
         }
 
         #endregion
@@ -776,6 +822,32 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             // Set the shader constants.
             this.Device.ImmediateContext.VertexShader.SetConstantBuffer(0, this.ShaderConstantsBuffer);
             this.Device.ImmediateContext.PixelShader.SetConstantBuffer(0, this.ShaderConstantsBuffer);
+        }
+
+        #endregion
+
+        #region Object Picking
+
+        protected Ray CalculatePickingRay(System.Drawing.Point position, Vector2 bounds)
+        {
+            Vector3 pickRayDir;
+            Vector3 pickRayPos = new Vector3(0.0f);
+
+            // Convert the 2d position into a ray in projection space.
+            float x = (((2.0f * (float)position.X) / bounds.X) - 1) / this.ProjectionMatrix.M11;
+            float y = -(((2.0f * (float)position.Y) / bounds.Y) - 1) / this.ProjectionMatrix.M22;
+            float z = -1.0f;
+            pickRayDir = new Vector3(x, y, z);
+
+            // Get the inverse of the view space matrix.
+            Matrix invViewMatrix = this.Camera.ViewMatrix;
+            invViewMatrix.Invert();
+
+            // Transform the pick ray in projection space to be in world space.
+            Ray pickingRay = new Ray(Vector3.TransformCoordinate(pickRayPos, invViewMatrix), Vector3.TransformNormal(pickRayDir, invViewMatrix));
+            pickingRay.Direction.Normalize();
+
+            return pickingRay;
         }
 
         #endregion

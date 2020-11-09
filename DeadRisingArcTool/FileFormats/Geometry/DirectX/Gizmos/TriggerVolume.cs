@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,6 +28,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
     }
 }

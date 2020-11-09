@@ -185,6 +185,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
             throw new NotImplementedException();
         }
 
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            // Always return true since we we handle clipping in the DrawFrame function.
+            return true;
+        }
+
         #endregion
     }
 }

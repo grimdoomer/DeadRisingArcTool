@@ -1,6 +1,7 @@
 ﻿using DeadRisingArcTool.FileFormats.Archive;
 using DeadRisingArcTool.FileFormats.Geometry;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.Utilities;
 using ImGuiNET;
@@ -541,6 +542,12 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
 
         public override void CleanupGraphics(RenderManager manager)
         {
+        }
+
+        public override bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            // Always return true since we we handle clipping in the DrawFrame function.
+            return true;
         }
 
         #endregion

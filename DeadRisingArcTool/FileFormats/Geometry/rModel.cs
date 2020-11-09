@@ -17,6 +17,7 @@ using ImGuiNET;
 using ImVector2 = System.Numerics.Vector2;
 using System.Runtime.InteropServices;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.UI;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 
 namespace DeadRisingArcTool.FileFormats.Geometry
 {
@@ -182,6 +183,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     [GameResourceParser(ResourceType.rModel)]
     public class rModel : GameResource
     {
+        private bool isScrollModel = false;
         public rModelHeader header;
 
         // Joint data is broken into 3 parts per joint.
@@ -267,7 +269,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         protected rModel(string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)
             : base(fileName, datum, fileType, isBigEndian)
         {
-
+            // Check if the file name starts with the scroll folder.
+            this.isScrollModel = this.FileName.StartsWith("scroll", StringComparison.InvariantCultureIgnoreCase);
         }
 
         #region GameResource Functions
@@ -1341,8 +1344,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 if (this.primitives[i].Enabled == 0 || this.visiblePrimitives[i] == false)
                     continue;
 
+                //// If this is a scroll model perform a clipping test to see if we should render it or not.
+                //if (this.isScrollModel == true)
+                //{
+                //    // Perform a clipping test to see if we should skip rendering or not.
+                //    if (manager.ViewFrustumBoundingBox.ClipTest(this.primitives[i].BoundingBoxMin.ToVector3(), this.primitives[i].BoundingBoxMax.ToVector3()) == false)
+                //    {
+                //        // The primtive is not within the view frustum, cull it.
+                //        continue;
+                //    }
+                //}
+
                 // Set the depth stencil to normal z-test.
-                //manager.SetDepthStencil(0);
+                manager.Device.ImmediateContext.OutputMerger.SetDepthStencilState(manager.DepthStencilState);
 
                 // Set the vertex and index buffers.
                 manager.Device.ImmediateContext.InputAssembler.SetVertexBuffers(0,
@@ -1372,7 +1386,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 if (this.hoveredPrimitiveIndex == i)
                 {
                     // Set the depth stencil for object bleeding.
-                    //manager.SetDepthStencil(1);
+                    manager.Device.ImmediateContext.OutputMerger.SetDepthStencilState(manager.HighlightDepthStencilState);
 
                     // Set the highlighting shader variables.
                     manager.ShaderConstants.gXfHighlightColor = new Vector4(1.0f, 0.0f, 0.0f, 0.5f);
@@ -1419,6 +1433,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         public override void CleanupGraphics(RenderManager manager)
         {
             // TODO:
+        }
+
+        public override bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            // Perform the clipping test using the model bounding box.
+            return viewBox.ClipTest(this.header.BoundingBoxMin.ToVector3(), this.header.BoundingBoxMax.ToVector3());
         }
 
         #endregion

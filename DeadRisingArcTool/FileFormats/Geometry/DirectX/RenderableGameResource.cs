@@ -1,4 +1,5 @@
-﻿using DeadRisingArcTool.Utilities;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using DeadRisingArcTool.Utilities;
 using ImGuiNET;
 using SharpDX;
 using System;
@@ -94,6 +95,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         {
             // Cleanup resource graphics objects.
             this.GameResource.CleanupGraphics(manager);
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            // TODO: Implement this
+            return true;
         }
 
         #endregion

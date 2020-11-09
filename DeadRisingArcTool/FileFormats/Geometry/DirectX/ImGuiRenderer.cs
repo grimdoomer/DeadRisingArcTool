@@ -11,6 +11,7 @@ using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
 using System.Windows.Forms;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
@@ -345,6 +346,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
     }
 }

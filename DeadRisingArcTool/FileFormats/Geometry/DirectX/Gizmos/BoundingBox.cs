@@ -1,4 +1,5 @@
-﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
 using DeadRisingArcTool.Utilities;
 using SharpDX;
 using SharpDX.Direct3D11;
@@ -189,6 +190,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
     }
 }

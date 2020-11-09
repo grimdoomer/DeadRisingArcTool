@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders;
 using DeadRisingArcTool.Utilities;
 using SharpDX;
@@ -145,6 +146,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public void CleanupGraphics(RenderManager manager)
         {
             throw new NotImplementedException();
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
     }
 }

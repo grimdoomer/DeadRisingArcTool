@@ -1,4 +1,5 @@
-﻿using SharpDX.Direct3D11;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -131,6 +132,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
 
             if (this.PixelShader != null)
                 this.PixelShader.Dispose();
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
 
         #endregion

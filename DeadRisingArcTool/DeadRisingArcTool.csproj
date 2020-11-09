@@ -122,6 +122,8 @@
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\PolygonMesh.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\TriggerVolume.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\ImGuiRenderer.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Misc\FastBoundingBox.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Misc\IPickableObject.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Misc\VertexStream.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\RenderableGameResource.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\UI\Controls\ImGuiControl.cs" />

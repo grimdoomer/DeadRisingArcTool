@@ -2,6 +2,7 @@
 using DeadRisingArcTool.FileFormats.Geometry;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX;
 using DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos;
+using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
 using DeadRisingArcTool.FileFormats.Misc;
 using DeadRisingArcTool.Utilities;
 using ImGuiNET;
@@ -18,7 +19,7 @@ using System.Xml;
 namespace DeadRisingArcTool.FileFormats.Spawnable
 {
     [GameResourceParser(ResourceType.rItemLayout)]
-    public class rItemLayout : GameResource
+    public class rItemLayout : GameResource, IPickableObject
     {
         #region LayoutInfo
 
@@ -167,6 +168,9 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
         private List<string> itemSpawnNames = null;
         private int selectedSpawnIndex = -1;
         private int hoveredSpawnIndex = -1;
+
+        // Selected object data.
+        private int pickedSpawnIndex = -1;
 
         // Cached list of fields for the layout info struct.
         private FieldInfo[] layoutInfoFields = typeof(LayoutInfo).GetFields(BindingFlags.Public | BindingFlags.Instance);
@@ -380,12 +384,20 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                     Matrix rotZ = Matrix.RotationZ(this.layoutInfoList[i].ModelAngle.Z);
                     model.modelRotation = Quaternion.RotationMatrix(rotX * rotY * rotZ).ToVector4();
 
+                    // TODO: Create a transformation matrix for the instance data.
+                    Matrix itemTransform = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, Vector3.Zero, model.modelRotation.ToQuaternion(), model.modelPosition.ToVector3());
+
+                    //// Perform a clipping test to see if we should cull this item or now.
+                    //if (manager.ViewFrustumBoundingBox.ClipTest(Vector4.Transform(model.header.BoundingBoxMin, itemTransform).ToVector3(), Vector4.Transform(model.header.BoundingBoxMax, itemTransform).ToVector3()) == false)
+                    //    continue;
+
                     // Draw the model.
                     model.DrawFrame(manager);
                 }
 
                 // Draw a sphere for the item placement.
-                this.itemPlacements[i].IsFocused = this.hoveredSpawnIndex == i;
+                this.itemPlacements[i].IsFocused = this.hoveredSpawnIndex == i || this.pickedSpawnIndex == i;
+                this.itemPlacements[i].ShowRotationCircles = this.pickedSpawnIndex == i;
                 this.itemPlacements[i].DrawFrame(manager);
             }
 
@@ -493,6 +505,75 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
 
         public override void CleanupGraphics(RenderManager manager)
         {
+        }
+
+        public override bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            // Always return true since we we handle clipping in the DrawFrame function.
+            return true;
+        }
+
+        #endregion
+
+        #region IPickableObject
+
+        public bool DoPickingTest(RenderManager manager, Ray pickingRay)
+        {
+            int closestObjectIndex = -1;
+            float objectDistance = float.MaxValue;
+
+            // Loop through all of the items in the list.
+            for (int i = 0; i < this.layoutInfoList.Count; i++)
+            {
+                // Make sure there is a game resource for this spawn.
+                if (this.itemModels[i] == null)
+                    continue;
+
+                // Calculate the world matrix for the object.
+                Vector3 itemPosition = this.layoutInfoList[i].CursorWorldPos + this.layoutInfoList[i].CursorWorldPosOffs;
+                Matrix rotX = Matrix.RotationX(this.layoutInfoList[i].ModelAngle.X);
+                Matrix rotY = Matrix.RotationY(this.layoutInfoList[i].ModelAngle.Y);
+                Matrix rotZ = Matrix.RotationZ(this.layoutInfoList[i].ModelAngle.Z);
+                Matrix itemTransform = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, Vector3.Zero, Quaternion.RotationMatrix(rotX * rotY * rotZ), itemPosition);
+
+                // Get the model instance.
+                rModel model = (rModel)this.itemModels[i];
+
+                // Perform a clipping test to see if we should perform ray tracing.
+                //if (manager.ViewFrustumBoundingBox.ClipTest(Vector4.Transform(model.header.BoundingBoxMin, itemTransform).ToVector3(), Vector4.Transform(model.header.BoundingBoxMax, itemTransform).ToVector3()) == false)
+                //    continue;
+
+                // Invert the item transformation matrix and convert the picking ray to world space units for the game model.
+                itemTransform.Invert();
+                Ray objectPickingRay = new Ray(Vector3.TransformCoordinate(pickingRay.Position, itemTransform), Vector3.TransformNormal(pickingRay.Direction, itemTransform));
+                objectPickingRay.Direction.Normalize();
+
+                // Check if the picking ray intersects the bounding box of the model.
+                if (objectPickingRay.Intersects(new SharpDX.BoundingBox(model.header.BoundingBoxMin.ToVector3(), model.header.BoundingBoxMax.ToVector3())) == true)
+                {
+                    // Check if this model is closer than any model we found previously.
+                    if (model.header.BoundingBoxMin.Z < objectDistance)
+                    {
+                        // Save the new closest model.
+                        closestObjectIndex = i;
+                        objectDistance = model.header.BoundingBoxMin.Z;
+                    }
+                }
+            }
+
+            // Check if we picked an object or not.
+            if (closestObjectIndex != -1)
+            {
+                // Set the picked object index.
+                this.pickedSpawnIndex = closestObjectIndex;
+                return true;
+            }
+            else
+            {
+                // No object picked.
+                this.pickedSpawnIndex = -1;
+                return false;
+            }
         }
 
         #endregion

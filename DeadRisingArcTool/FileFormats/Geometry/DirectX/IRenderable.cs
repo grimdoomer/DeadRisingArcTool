@@ -1,4 +1,6 @@
-﻿using SharpDX.Direct3D11;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using SharpDX;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,5 +36,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         /// </summary>
         /// <param name="manager">Rendering context</param>
         void DrawObjectPropertiesUI(RenderManager manager);
+
+        bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox);
     }
 }

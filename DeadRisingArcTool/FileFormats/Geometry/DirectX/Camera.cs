@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using SharpDX;
 using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
@@ -18,10 +19,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         // Constant directional vectors:
         private static readonly Vector3 DefaultUp = new Vector3(0.0f, 1.0f, 0.0f);
         private static readonly Vector3 DefaultDown = new Vector3(0.0f, -1.0f, 0.0f);
-        private static readonly Vector3 DefaultForward = new Vector3(0.0f, 0.0f, 1.0f);
-        private static readonly Vector3 DefaultBackward = new Vector3(0.0f, 0.0f, -1.0f);
-        private static readonly Vector3 DefaultRight = new Vector3(-1.0f, 0.0f, 0.0f);
-        private static readonly Vector3 DefaultLeft = new Vector3(1.0f, 0.0f, 0.0f);
+        private static readonly Vector3 DefaultForward = new Vector3(0.0f, 0.0f, -1.0f);
+        private static readonly Vector3 DefaultBackward = new Vector3(0.0f, 0.0f, 1.0f);
+        private static readonly Vector3 DefaultRight = new Vector3(1.0f, 0.0f, 0.0f);
+        private static readonly Vector3 DefaultLeft = new Vector3(-1.0f, 0.0f, 0.0f);
 
         // Directional vectors based on the camera's current position and rotation.
         private Vector3 camForward = DefaultForward;
@@ -49,7 +50,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         public Camera()
         {
             // Setup Camera vectors with default values.
-            this.position = new Vector3(0.0f, 0.0f, -5.0f);
+            this.position = new Vector3(0.0f, 0.0f, 5.0f);
             this.rotation = new Vector2(0.0f, 0.0f);
             this.lookAt = new Vector3(0.0f, 0.0f, 0.0f);
             this.upVector = new Vector3(0.0f, 1.0f, 0.0f);
@@ -125,8 +126,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             if (manager.InputManager.ButtonPressed(InputAction.LeftClick) == true || manager.InputManager.ButtonHeld(InputAction.LeftClick) == true)
             {
                 // Update camera rotation.
-                this.rotation.X += -manager.InputManager.MousePositionDelta[0] * 0.005f;     // Flip x direction for RH coordinate system
-                this.rotation.Y += manager.InputManager.MousePositionDelta[1] * 0.005f;
+                this.rotation.X -= manager.InputManager.MousePositionDelta[0] * 0.005f;
+                this.rotation.Y -= manager.InputManager.MousePositionDelta[1] * 0.005f;
             }
 
             // Check for controller camera rotation.
@@ -150,6 +151,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
         public void CleanupGraphics(RenderManager manager)
         {
+        }
+
+        public bool DoClippingTest(RenderManager manager, FastBoundingBox viewBox)
+        {
+            return false;
         }
 
         #endregion
