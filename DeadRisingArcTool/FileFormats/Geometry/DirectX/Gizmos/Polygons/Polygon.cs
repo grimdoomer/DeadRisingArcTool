@@ -42,9 +42,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
         /// <summary>
         /// True if the polygon should be drawn, false if it should be hidden.
         /// </summary>
-        public bool Visible { get; set; }
+        public bool Visible { get; set; } = true;
 
-        private PolygonDrawStyle style;
+        private PolygonDrawStyle style = PolygonDrawStyle.Outline;
         /// <summary>
         /// Draw style of the polygon.
         /// </summary>
@@ -80,6 +80,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
         /// Number of indices the polygon is currently using.
         /// </summary>
         public int IndexCount { get; protected set; }
+
+        /// <summary>
+        /// Initializes a polygon object using the position and rotation
+        /// </summary>
+        /// <param name="maxVertexCount">Maximum number of vertices the polygon needs to render all styles</param>
+        /// <param name="maxIndexCount">Maximum number of indices the polygon needs to render all styles</param>
+        /// <param name="position">Initial position of the polygon</param>
+        /// <param name="rotation">Initial rotation of the polygon</param>
+        public Polygon(int maxVertexCount, int maxIndexCount, Vector3 position, Quaternion rotation)
+        {
+            // Initialize fields.
+            this.maxVertexCount = maxVertexCount;
+            this.maxIndexCount = maxIndexCount;
+            this.position = position;
+            this.rotation = rotation;
+
+            // Update the transformation matrix.
+            UpdateTransformationMatrix();
+        }
 
         private void UpdateTransformationMatrix()
         {

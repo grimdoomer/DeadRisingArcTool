@@ -108,8 +108,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
             }
 
             // Create the vertex and index buffers.
-            this.vertexBuffer = Buffer.Create(manager.Device, BindFlags.VertexBuffer, this.vertexStream.Vertices, accessFlags: CpuAccessFlags.Write);
-            this.indexBuffer = Buffer.Create(manager.Device, BindFlags.IndexBuffer, this.vertexStream.Indices, accessFlags: CpuAccessFlags.Write);
+            this.vertexBuffer = Buffer.Create(manager.Device, BindFlags.VertexBuffer, this.vertexStream.Vertices);
+            this.indexBuffer = Buffer.Create(manager.Device, BindFlags.IndexBuffer, this.vertexStream.Indices);
 
             // Get the wireframe shader.
             this.wireframeShader = manager.ShaderCollection.GetShader(ShaderType.Wireframe);
@@ -157,8 +157,13 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
             // Loop and draw each polygon.
             for (int i = 0; i < this.Polygons.Length; i++)
             {
+                // If the polygon is not visible skip drawing it.
+                if (this.Polygons[i].Visible == false)
+                    continue;
+
                 // Compute the transformation matrix and update shader constants.
-                manager.ShaderConstants.gXfViewProj = Matrix.Transpose((this.transformationMatrix * this.Polygons[i].TransformationMatrix) * manager.Camera.ViewMatrix * manager.ProjectionMatrix);
+                //Matrix transform = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, -this.Polygons[i].Position, this.rotation * this.Polygons[i].Rotation, this.position + this.Polygons[i].Position);
+                manager.ShaderConstants.gXfViewProj = Matrix.Transpose(this.Polygons[i].TransformationMatrix * this.transformationMatrix * manager.Camera.ViewMatrix * manager.ProjectionMatrix);
                 manager.UpdateShaderConstants();
 
                 // TODO: This should be more efficient than updating the shaders constants buffer for every polygon. Perhaps create another buffer

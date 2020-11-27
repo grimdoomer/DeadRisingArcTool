@@ -44,6 +44,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc
             return false;
         }
 
+        public bool ClipTestWithTransform(Matrix transform, Vector3 min, Vector3 max)
+        {
+            // Transform the min/max vectors.
+            Vector4 tMin = Vector4.Transform(new Vector4(this.boxMinimum, 0.0f), transform);
+            Vector4 tMax = Vector4.Transform(new Vector4(this.boxMaximum, 0.0f), transform);
+
+            // Check if any part of the mesh bounding box is intereseting with our bounding box.
+            if (IntersectionTest(min.X, max.X, tMin.X, tMax.X) == true ||
+                IntersectionTest(min.Y, max.Y, tMin.Y, tMax.Y) == true ||
+                IntersectionTest(min.Z, max.Z, tMin.Z, tMax.Z) == true)
+            {
+                // There is an intersection.
+                return true;
+            }
+
+            // No interesection.
+            return false;
+        }
+
         private bool IntersectionTest(float min1, float max1, float min2, float max2)
         {
             return (min1 >= min2 && min1 <= max2) || (max1 >= min2 && max1 <= max2) || (min2 >= min1 && min2 <= max1) || (max2 >= min1 && max2 <= max1);

@@ -18,7 +18,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc
         public VertexStreamSplice(T[] array, int baseIndex, int length)
         {
             // Make sure the base index and length are valid.
-            if (baseIndex < 0 || baseIndex + length >= array.Length)
+            if (baseIndex < 0 || baseIndex + length > array.Length)
                 throw new ArgumentException("index + length are past the bounds of the array");
 
             // Initialize fields.

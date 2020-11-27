@@ -14,6 +14,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Xml;
 
 namespace DeadRisingArcTool.FileFormats.Spawnable
@@ -171,6 +172,7 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
 
         // Selected object data.
         private int pickedSpawnIndex = -1;
+        private List<int> selectedSpawnIndices = new List<int>();
 
         // Cached list of fields for the layout info struct.
         private FieldInfo[] layoutInfoFields = typeof(LayoutInfo).GetFields(BindingFlags.Public | BindingFlags.Instance);
@@ -396,8 +398,8 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                 }
 
                 // Draw a sphere for the item placement.
-                this.itemPlacements[i].IsFocused = this.hoveredSpawnIndex == i || this.pickedSpawnIndex == i;
-                this.itemPlacements[i].ShowRotationCircles = this.pickedSpawnIndex == i;
+                //this.itemPlacements[i].IsFocused = this.hoveredSpawnIndex == i || this.pickedSpawnIndex == i;
+                //this.itemPlacements[i].ShowRotationCircles = this.pickedSpawnIndex == i;
                 this.itemPlacements[i].DrawFrame(manager);
             }
 
@@ -519,8 +521,13 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
 
         public bool DoPickingTest(RenderManager manager, Ray pickingRay)
         {
+            bool result = false;
             int closestObjectIndex = -1;
             float objectDistance = float.MaxValue;
+
+            // If the control button is not pressed then clear the selected items list.
+            if (manager.InputManager.KeyboardState[(int)Keys.ControlKey] == false)
+                this.selectedSpawnIndices.Clear();
 
             // Loop through all of the items in the list.
             for (int i = 0; i < this.layoutInfoList.Count; i++)
@@ -551,6 +558,10 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                 // Check if the picking ray intersects the bounding box of the model.
                 if (objectPickingRay.Intersects(new SharpDX.BoundingBox(model.header.BoundingBoxMin.ToVector3(), model.header.BoundingBoxMax.ToVector3())) == true)
                 {
+                    // If the control button is pressed add the object to the selected objects list.
+                    if (manager.InputManager.KeyboardState[(int)Keys.ControlKey] == true)
+                        this.selectedSpawnIndices.Add(i);
+
                     // Check if this model is closer than any model we found previously.
                     if (model.header.BoundingBoxMin.Z < objectDistance)
                     {
@@ -558,22 +569,28 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                         closestObjectIndex = i;
                         objectDistance = model.header.BoundingBoxMin.Z;
                     }
+
+                    // Set the spawn as focused.
+                    this.itemPlacements[i].IsFocused = true;
+                    this.itemPlacements[i].ShowRotationCircles = true;
+
+                    // Flag that we found at least one object.
+                    result = true;
+                }
+                else
+                {
+                    // If the control key is not pressed then clear the focus on the spawn.
+                    if (manager.InputManager.KeyboardState[(int)Keys.ControlKey] == false)
+                    {
+                        // Set the spawn as not selected.
+                        this.itemPlacements[i].IsFocused = false;
+                        this.itemPlacements[i].ShowRotationCircles = false;
+                    }
                 }
             }
 
-            // Check if we picked an object or not.
-            if (closestObjectIndex != -1)
-            {
-                // Set the picked object index.
-                this.pickedSpawnIndex = closestObjectIndex;
-                return true;
-            }
-            else
-            {
-                // No object picked.
-                this.pickedSpawnIndex = -1;
-                return false;
-            }
+            // Return the picking result.
+            return result;
         }
 
         #endregion

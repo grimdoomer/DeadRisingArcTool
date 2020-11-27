@@ -182,6 +182,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         // File tree for files that we can render in the view.
         private ImGuiResourceSelectTree renderableFilesTree = null;
 
+        protected List<IPickableObject> selectedObjects = new List<IPickableObject>();
+        public IPickableObject[] SelectedObjects { get { return this.selectedObjects.ToArray(); } }
+
         public RenderManager(IntPtr formHandle, Size viewSize, RenderViewType viewType, params DatumIndex[] datumsToRender)
         {
             // Initialize fields.
@@ -519,6 +522,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                             // Check if the mouse moved during the button press or not.
                             if (this.InputManager.MouseDownPosition == this.InputManager.MouseUpPosition)
                             {
+                                // If the control button is not being pressed then clear the selected item list.
+                                if (this.InputManager.KeyboardState[(int)Keys.ControlKey] == false)
+                                    this.selectedObjects.Clear();
+
                                 // Calculate the picking ray.
                                 Ray pickingRay = CalculatePickingRay(this.InputManager.MouseUpPosition, new Vector2(this.ViewSize.Width, this.ViewSize.Height));
 
@@ -529,9 +536,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                                     IPickableObject pickableObj = this.resourcesToRender[i].GameResource as IPickableObject;
                                     if ((pickableObj?.DoPickingTest(this, pickingRay) ?? false) == true)
                                     {
-                                        // TODO: Set the selected object.
+                                        // TODO: Add in a output float parameter for distance to DoPickingTest.
+
+                                        // Add the object to the selected object list.
+                                        this.selectedObjects.Add(pickableObj);
                                     }
                                 }
+                            }
+                        }
+                        else if (this.InputManager.ButtonPressed(InputAction.LeftClick) == true)
+                        {
+                            // If there are any selected items perform a hit test on them to handle interaction.
+                            for (int i = 0; i < this.selectedObjects.Count; i++)
+                            {
+
                             }
                         }
                     }

@@ -118,6 +118,9 @@
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
     <Compile Include="FileFormats\Bitmaps\rSprAnm.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\ItemPlacementGizmo.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\Arrow.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\Box.cs" />
+    <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\Circle.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\Polygon.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\PolygonMesh.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\TriggerVolume.cs" />
