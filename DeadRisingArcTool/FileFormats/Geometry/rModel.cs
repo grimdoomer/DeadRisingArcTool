@@ -1319,6 +1319,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             // Set alpha blending state.
             manager.Device.ImmediateContext.OutputMerger.SetBlendState(this.transparencyBlendState, new SharpDX.Mathematics.Interop.RawColor4(1.0f, 1.0f, 1.0f, 1.0f));
 
+            // Set the raster state to default.
+            manager.Device.ImmediateContext.Rasterizer.State = manager.RasterizerState;
+
             // Set the world transform based on the model position.
             Matrix world = Matrix.Transformation(new Vector3(0.0f), new Quaternion(0.0f), this.modelScale.ToVector3(), 
                 new Vector3(0.0f), this.modelRotation.ToQuaternion(), this.modelPosition.ToVector3());

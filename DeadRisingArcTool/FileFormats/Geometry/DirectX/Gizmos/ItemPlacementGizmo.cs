@@ -14,7 +14,8 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 {
     public class ItemPlacementGizmo : IRenderable
     {
-        public Vector3 Position { get; set; }
+        private Vector3 position;
+        public Vector3 Position { get { return this.position; } set { this.position = value; this.gizmoMesh.Position = value; } }
         public Vector3 Rotation { get; set; }
 
         private Matrix rotationX;
@@ -65,7 +66,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
         public ItemPlacementGizmo(Vector3 position, Vector3 rotation, rModel itemModel)
         {
             // Initialize fields.
-            this.Position = position;
+            this.position = position;
             this.Rotation = rotation;
             this.ItemModel = itemModel;
 
@@ -102,9 +103,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
             Vector3 zaxis = new Vector3(0.0f, 0.0f, this.ringRadius);
 
             // Initialize the rotation circles.
-            this.rotationCircles[0] = new Circle(this.ringRadius, zaxis, xaxis, Vector3.Zero, Quaternion.Identity); this.rotationCircles[0].Visible = false; this.rotationCircles[0].Color = new Color4(0xFFFF0000);
-            this.rotationCircles[1] = new Circle(this.ringRadius, xaxis, yaxis, Vector3.Zero, Quaternion.Identity); this.rotationCircles[1].Visible = false; this.rotationCircles[1].Color = new Color4(0xFF00FF00);
-            this.rotationCircles[2] = new Circle(this.ringRadius, yaxis, zaxis, Vector3.Zero, Quaternion.Identity); this.rotationCircles[2].Visible = false; this.rotationCircles[2].Color = new Color4(0xFF0000FF);
+            this.rotationCircles[0] = new Circle(this.ringRadius, zaxis, xaxis, Vector3.Zero, Quaternion.Identity);
+            this.rotationCircles[0].Visible = false;
+            this.rotationCircles[0].Color = new Color4(0xFFFF0000);
+
+            this.rotationCircles[1] = new Circle(this.ringRadius, xaxis, yaxis, Vector3.Zero, Quaternion.Identity);
+            this.rotationCircles[1].Visible = false;
+            this.rotationCircles[1].Color = new Color4(0xFF00FF00);
+
+            this.rotationCircles[2] = new Circle(this.ringRadius, yaxis, zaxis, Vector3.Zero, Quaternion.Identity);
+            this.rotationCircles[2].Visible = false;
+            this.rotationCircles[2].Color = new Color4(0xFF0000FF);
 
             // Setup the rotation arrow fields.
             this.arrowHeight = this.ringRadius / 2.0f;
@@ -145,6 +154,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
 
         public bool DrawFrame(RenderManager manager)
         {
+            // If the gizmo is in focus do a hit test to check for hovering over interactable polygons.
+            if (this.isFocused == true)
+            {
+                // Invert the gizmo transformation so we can transform the picking ray.
+                Matrix gizmoTransform = this.gizmoMesh.TransformationMatrix;
+                gizmoTransform.Invert();
+
+                // Transform the picking ray to be in local space for the gizmo.
+                Ray pickingRay = new Ray(Vector3.TransformCoordinate(manager.MouseToWorldRay.Position, gizmoTransform), Vector3.TransformNormal(manager.MouseToWorldRay.Direction, gizmoTransform));
+                pickingRay.Direction.Normalize();
+
+                // Perform hit tests on interactable polygons.
+                for (int i = 0; i < this.rotationArrows.Length; i++)
+                {
+                    // Check for hit detection on the rotation arrow and set the draw style based on the result.
+                    this.rotationArrows[i].Style = this.rotationArrows[i].DoPickingTest(manager, pickingRay, out float distance, out object context) == true ? PolygonDrawStyle.Solid : PolygonDrawStyle.Outline;
+                }
+            }
+
             // Draw the gizmo.
             this.gizmoMesh.DrawFrame(manager);
 

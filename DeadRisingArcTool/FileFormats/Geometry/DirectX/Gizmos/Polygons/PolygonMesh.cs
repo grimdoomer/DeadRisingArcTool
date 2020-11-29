@@ -50,8 +50,10 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
         /// </summary>
         public int IndexCount { get { return (this.vertexStream != null ? this.vertexStream.Indices.Length : 0); } }
 
-        // Transformation matrix for the stream, only updated when Position or Rotation change.
-        private Matrix transformationMatrix;
+        /// <summary>
+        /// Transformation matrix for the stream, only updated when Position or Rotation change.
+        /// </summary>
+        public Matrix TransformationMatrix { get; protected set; }
 
         // Vertex and index buffers that hold all polygon data.
         private VertexStream<D3DColoredVertex, ushort> vertexStream;
@@ -72,7 +74,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
         private void UpdateTransformationMatrix()
         {
             // Calculate the transformation matrix.
-            this.transformationMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, Vector3.Zero, this.rotation, this.position);
+            this.TransformationMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, Vector3.Zero, this.rotation, this.position);
         }
 
         #region IRenderable
@@ -161,9 +163,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
                 if (this.Polygons[i].Visible == false)
                     continue;
 
+                // Do any per-polygon device state changes that need to be done.
+                this.Polygons[i].DrawFrame(manager);
+
                 // Compute the transformation matrix and update shader constants.
                 //Matrix transform = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, -this.Polygons[i].Position, this.rotation * this.Polygons[i].Rotation, this.position + this.Polygons[i].Position);
-                manager.ShaderConstants.gXfViewProj = Matrix.Transpose(this.Polygons[i].TransformationMatrix * this.transformationMatrix * manager.Camera.ViewMatrix * manager.ProjectionMatrix);
+                manager.ShaderConstants.gXfViewProj = Matrix.Transpose(this.Polygons[i].TransformationMatrix * this.TransformationMatrix * manager.Camera.ViewMatrix * manager.ProjectionMatrix);
                 manager.UpdateShaderConstants();
 
                 // TODO: This should be more efficient than updating the shaders constants buffer for every polygon. Perhaps create another buffer

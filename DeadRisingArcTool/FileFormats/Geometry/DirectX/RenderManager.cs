@@ -101,6 +101,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         public Texture2D BackBuffer { get; protected set; }
         public RenderTargetView RenderView { get; protected set; }
         public RasterizerState RasterizerState { get; protected set; }
+        public RasterizerState NoCullingRasterizerState { get; protected set; }
 
         public Texture2D DepthStencilTexture { get; protected set; }
         public DepthStencilView DepthStencilView { get; protected set; }
@@ -170,6 +171,11 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         protected Vector4 viewFrustumMax;
         public FastBoundingBox ViewFrustumBoundingBox { get; protected set; }
 
+        /// <summary>
+        /// Ray to trace from the cursor position on screen to world coordinates.
+        /// </summary>
+        public Ray MouseToWorldRay { get; protected set; }
+
         protected ImGuiRenderer uiRenderer = null;
 
         // List of resources to render each frame.
@@ -182,7 +188,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         // File tree for files that we can render in the view.
         private ImGuiResourceSelectTree renderableFilesTree = null;
 
-        protected List<IPickableObject> selectedObjects = new List<IPickableObject>();
+        protected HashSet<IPickableObject> selectedObjects = new HashSet<IPickableObject>();
         public IPickableObject[] SelectedObjects { get { return this.selectedObjects.ToArray(); } }
 
         public RenderManager(IntPtr formHandle, Size viewSize, RenderViewType viewType, params DatumIndex[] datumsToRender)
@@ -260,12 +266,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             stateDesc.BackFace.Comparison = Comparison.Less;
             this.HighlightDepthStencilState = new DepthStencilState(this.Device, stateDesc);
 
-            // Setup the rasterizer state.
+            // Setup the default rasterizer state.
             RasterizerStateDescription rasterStateDesc = new RasterizerStateDescription();
             rasterStateDesc.FillMode = FillMode.Solid;
             rasterStateDesc.CullMode = CullMode.Front;
             rasterStateDesc.IsDepthClipEnabled = true;
             this.RasterizerState = new RasterizerState(this.Device, rasterStateDesc);
+
+            // Setup the no-culling rasterizer state.
+            rasterStateDesc = new RasterizerStateDescription();
+            rasterStateDesc.FillMode = FillMode.Solid;
+            rasterStateDesc.CullMode = CullMode.None;
+            rasterStateDesc.IsDepthClipEnabled = false;
+            this.NoCullingRasterizerState = new RasterizerState(this.Device, rasterStateDesc);
 
             // Initialize the input manager.
             this.InputManager = new InputManager(this.OwnerHandle);
@@ -510,46 +523,72 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                     // If ImGui has focus, don't adjust the camera.
                     if (ImGui.GetIO().WantCaptureMouse == false)
                     {
+                        // Update the mouse to worl ray.
+                        this.MouseToWorldRay = CalculatePickingRay(this.InputManager.MousePosition, new Vector2(this.ViewSize.Width, this.ViewSize.Height));
+
                         // Update the camera.
                         this.Camera.DrawFrame(this);
 
                         // Update the bounding box for the view frustum.
                         this.ViewFrustumBoundingBox.Reset(Vector4.Transform(this.viewFrustumMin, this.Camera.ViewMatrix).ToVector3(), Vector4.Transform(this.viewFrustumMax, this.Camera.ViewMatrix).ToVector3());
 
-                        // Check if the left mouse button was pressed/released.
-                        if (this.InputManager.ButtonReleased(InputAction.LeftClick) == true)
+                        // Loop through all the selected items and update input for them.
+                        bool inputHandled = false;
+                        foreach (IPickableObject selectedObject in this.selectedObjects)
                         {
-                            // Check if the mouse moved during the button press or not.
-                            if (this.InputManager.MouseDownPosition == this.InputManager.MouseUpPosition)
+                            // Let the object try to handle the input changes.
+                            if (selectedObject.HandleInput(this) == true)
+                                inputHandled = true;
+                        }
+
+                        // If none of the selected objects consumed the input changes then handle them here.
+                        if (inputHandled == false)
+                        {
+                            // Check if the left mouse button was pressed/released.
+                            if (this.InputManager.ButtonReleased(InputAction.LeftClick) == true)
                             {
-                                // If the control button is not being pressed then clear the selected item list.
-                                if (this.InputManager.KeyboardState[(int)Keys.ControlKey] == false)
-                                    this.selectedObjects.Clear();
-
-                                // Calculate the picking ray.
-                                Ray pickingRay = CalculatePickingRay(this.InputManager.MouseUpPosition, new Vector2(this.ViewSize.Width, this.ViewSize.Height));
-
-                                // Loop through all of the resources to be rendered and perform a picking test.
-                                for (int i = 0; i < this.resourcesToRender.Count; i++)
+                                // Check if the mouse moved during the button press or not.
+                                if (this.InputManager.MouseDownPosition == this.InputManager.MouseUpPosition)
                                 {
-                                    // If this object implements IPickableObject perform the picking test.
-                                    IPickableObject pickableObj = this.resourcesToRender[i].GameResource as IPickableObject;
-                                    if ((pickableObj?.DoPickingTest(this, pickingRay) ?? false) == true)
-                                    {
-                                        // TODO: Add in a output float parameter for distance to DoPickingTest.
+                                    int closestObjectIndex = -1;
+                                    float closestObjectDistance = float.MaxValue;
+                                    object closestObjectContext = null;
 
-                                        // Add the object to the selected object list.
-                                        this.selectedObjects.Add(pickableObj);
+                                    // If the control button is not being pressed then clear the selected item list.
+                                    if (this.InputManager.KeyboardState[(int)Keys.ControlKey] == false)
+                                    {
+                                        // Deselect all selected objects.
+                                        DeselectAllObjects();
+                                    }
+
+                                    // Calculate the picking ray.
+                                    Ray pickingRay = CalculatePickingRay(this.InputManager.MouseUpPosition, new Vector2(this.ViewSize.Width, this.ViewSize.Height));
+
+                                    // Loop through all of the resources to be rendered and perform a picking test.
+                                    for (int i = 0; i < this.resourcesToRender.Count; i++)
+                                    {
+                                        // If this object implements IPickableObject perform the picking test.
+                                        IPickableObject pickableObj = this.resourcesToRender[i].GameResource as IPickableObject;
+                                        if (pickableObj != null && pickableObj.DoPickingTest(this, pickingRay, out float distance, out object context) == true)
+                                        {
+                                            // Check if this object is closer than the closest object that passed the hit test.
+                                            if (distance < closestObjectDistance)
+                                            {
+                                                // Set this object as the picked object.
+                                                closestObjectIndex = i;
+                                                closestObjectDistance = distance;
+                                                closestObjectContext = context;
+                                            }
+                                        }
+                                    }
+
+                                    // If an object passed the hit test then set it as the selected object.
+                                    if (closestObjectIndex != -1)
+                                    {
+                                        // Set the object as selected.
+                                        SelectObject(closestObjectIndex, closestObjectContext);
                                     }
                                 }
-                            }
-                        }
-                        else if (this.InputManager.ButtonPressed(InputAction.LeftClick) == true)
-                        {
-                            // If there are any selected items perform a hit test on them to handle interaction.
-                            for (int i = 0; i < this.selectedObjects.Count; i++)
-                            {
-
                             }
                         }
                     }
@@ -866,6 +905,49 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             pickingRay.Direction.Normalize();
 
             return pickingRay;
+        }
+
+        protected bool SelectObject(int objectIndex, object context)
+        {
+            // Get the object as an IPickableObject.
+            IPickableObject selectedObject = this.resourcesToRender[objectIndex].GameResource as IPickableObject;
+            if (selectedObject == null)
+                return false;
+
+            // Add the selected object and to the select objects set.
+            this.selectedObjects.Add(selectedObject);
+            selectedObject.SelectObject(this, context);
+
+            // Item successfully selected.
+            return true;
+        }
+
+        protected void DeselectObject(int objectIndex, object context)
+        {
+            // Get the object as an IPickableObject.
+            IPickableObject selectedObject = this.resourcesToRender[objectIndex] as IPickableObject;
+            if (selectedObject == null)
+                return;
+
+            // Deselect the object using the provided context and remove it from the selected objects set if needed.
+            if (selectedObject.DeselectObject(this, context) == true)
+            {
+                // Remove the object from the selected objects set.
+                this.selectedObjects.Remove(selectedObject);
+            }
+        }
+
+        protected void DeselectAllObjects()
+        {
+            // Loop through the selected objects set and deselect all objects.
+            foreach (IPickableObject selectedObject in this.selectedObjects)
+            {
+                // Deselect the object with no context to force deselection of all child objects.
+                selectedObject.DeselectObject(this, null);
+            }
+
+            // Clear the selected objects set.
+            this.selectedObjects.Clear();
         }
 
         #endregion

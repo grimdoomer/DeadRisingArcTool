@@ -112,5 +112,14 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
         /// <param name="vertexBuffer">Vertex buffer to write vertices to</param>
         /// <param name="indexBuffer">Index buffer to write vertex indices to</param>
         public abstract void BuildMesh(VertexStreamSplice<D3DColoredVertex> vertexBuffer, VertexStreamSplice<ushort> indexBuffer);
+
+        public virtual void DrawFrame(RenderManager manager)
+        {
+            // Set the default raster state.
+            if (this.Style == PolygonDrawStyle.Outline)
+                manager.Device.ImmediateContext.Rasterizer.State = manager.RasterizerState;
+            else
+                manager.Device.ImmediateContext.Rasterizer.State = manager.NoCullingRasterizerState;
+        }
     }
 }

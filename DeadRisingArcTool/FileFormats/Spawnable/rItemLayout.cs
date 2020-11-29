@@ -171,8 +171,7 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
         private int hoveredSpawnIndex = -1;
 
         // Selected object data.
-        private int pickedSpawnIndex = -1;
-        private List<int> selectedSpawnIndices = new List<int>();
+        private HashSet<int> selectedSpawnIndices = new HashSet<int>();
 
         // Cached list of fields for the layout info struct.
         private FieldInfo[] layoutInfoFields = typeof(LayoutInfo).GetFields(BindingFlags.Public | BindingFlags.Instance);
@@ -519,15 +518,11 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
 
         #region IPickableObject
 
-        public bool DoPickingTest(RenderManager manager, Ray pickingRay)
+        public bool DoPickingTest(RenderManager manager, Ray pickingRay, out float distance, out object context)
         {
             bool result = false;
             int closestObjectIndex = -1;
             float objectDistance = float.MaxValue;
-
-            // If the control button is not pressed then clear the selected items list.
-            if (manager.InputManager.KeyboardState[(int)Keys.ControlKey] == false)
-                this.selectedSpawnIndices.Clear();
 
             // Loop through all of the items in the list.
             for (int i = 0; i < this.layoutInfoList.Count; i++)
@@ -558,10 +553,6 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                 // Check if the picking ray intersects the bounding box of the model.
                 if (objectPickingRay.Intersects(new SharpDX.BoundingBox(model.header.BoundingBoxMin.ToVector3(), model.header.BoundingBoxMax.ToVector3())) == true)
                 {
-                    // If the control button is pressed add the object to the selected objects list.
-                    if (manager.InputManager.KeyboardState[(int)Keys.ControlKey] == true)
-                        this.selectedSpawnIndices.Add(i);
-
                     // Check if this model is closer than any model we found previously.
                     if (model.header.BoundingBoxMin.Z < objectDistance)
                     {
@@ -570,27 +561,132 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                         objectDistance = model.header.BoundingBoxMin.Z;
                     }
 
-                    // Set the spawn as focused.
-                    this.itemPlacements[i].IsFocused = true;
-                    this.itemPlacements[i].ShowRotationCircles = true;
-
                     // Flag that we found at least one object.
                     result = true;
-                }
-                else
-                {
-                    // If the control key is not pressed then clear the focus on the spawn.
-                    if (manager.InputManager.KeyboardState[(int)Keys.ControlKey] == false)
-                    {
-                        // Set the spawn as not selected.
-                        this.itemPlacements[i].IsFocused = false;
-                        this.itemPlacements[i].ShowRotationCircles = false;
-                    }
                 }
             }
 
             // Return the picking result.
+            distance = objectDistance;
+            context = closestObjectIndex;
             return result;
+        }
+
+        public void SelectObject(RenderManager manager, object context)
+        {
+            // Make sure the object index is valid.
+            int objectIndex = (int)context;
+            if (objectIndex < 0 || objectIndex >= this.itemPlacements.Length)
+                throw new IndexOutOfRangeException("Item spawn index is invalid!");
+
+            // Select the object.
+            if (this.selectedSpawnIndices.Add(objectIndex) == true)
+            {
+                // Update selection properties for the object.
+                this.itemPlacements[objectIndex].IsFocused = true;
+                this.itemPlacements[objectIndex].ShowRotationCircles = true;
+            }
+            else
+            {
+                // The object is already selected, if there is more than 1 selected object and the control key is being held then deselect the object.
+                if (this.selectedSpawnIndices.Count > 1 && manager.InputManager.KeyboardState[(int)Keys.ControlKey] == true)
+                {
+                    // Deselect the object.
+                    DeselectObject(manager, context);
+                }
+            }
+        }
+
+        public bool DeselectObject(RenderManager manager, object context)
+        {
+            // If the context parameter is not null treat it as the object index to deselect, else deselect all selected objects.
+            if (context != null)
+            {
+                // Deselect the object specified by the context parameter.
+                int objectIndex = (int)context;
+                this.selectedSpawnIndices.Remove(objectIndex);
+
+                this.itemPlacements[objectIndex].IsFocused = false;
+                this.itemPlacements[objectIndex].ShowRotationCircles = false;
+            }
+            else
+            {
+                // Deselect all objects.
+                foreach (int objectIndex in this.selectedSpawnIndices)
+                {
+                    // Deselect and remove object from select objects list.
+                    this.itemPlacements[objectIndex].IsFocused = false;
+                    this.itemPlacements[objectIndex].ShowRotationCircles = false;
+                }
+
+                // Clear the selected spawns set.
+                this.selectedSpawnIndices.Clear();
+            }
+
+            // Return true if all child objects have been deselected.
+            return this.selectedSpawnIndices.Count == 0;
+        }
+
+        public bool HandleInput(RenderManager manager)
+        {
+            bool inputHandled = false;
+
+            // Loop through all the selected items and handle input.
+            foreach (int spawnIndex in this.selectedSpawnIndices)
+            {
+                // Handle input accordingly.
+                if (manager.InputManager.ButtonState[(int)InputAction.LeftClick] == true)
+                {
+                    // TODO:
+                    inputHandled = true;
+                }
+                else
+                {
+                    // Check for movement speed modifier.
+                    float speedModifier = 1.0f;
+                    if (manager.InputManager.KeyboardState[(int)Keys.ShiftKey] == true)
+                        speedModifier = 10.0f;
+
+                    // Check for keyboard input.
+                    if (manager.InputManager.KeyboardState[(int)Keys.Up] == true)
+                    {
+                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamForward * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+                        inputHandled = true;
+                    }
+                    if (manager.InputManager.KeyboardState[(int)Keys.Down] == true)
+                    {
+                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamBackward * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+                        inputHandled = true;
+                    }
+                    if (manager.InputManager.KeyboardState[(int)Keys.Left] == true)
+                    {
+                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamLeft * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+                        inputHandled = true;
+                    }
+                    if (manager.InputManager.KeyboardState[(int)Keys.Right] == true)
+                    {
+                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamRight * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+                        inputHandled = true;
+                    }
+                    if (manager.InputManager.KeyboardState[(int)Keys.PageUp] == true)
+                    {
+                        this.itemPlacements[spawnIndex].Position += Vector3.UnitY * speedModifier;
+                        inputHandled = true;
+                    }
+                    if (manager.InputManager.KeyboardState[(int)Keys.PageDown] == true)
+                    {
+                        this.itemPlacements[spawnIndex].Position -= Vector3.UnitY * speedModifier;
+                        inputHandled = true;
+                    }
+                }
+
+                // Update the layout info for this spawn.
+                this.layoutInfoList[spawnIndex].CursorWorldPos = this.itemPlacements[spawnIndex].Position;
+                this.layoutInfoList[spawnIndex].CursorWorldPosOffs = Vector3.Zero;
+            }
+
+            // Return the result.
+            return inputHandled;
         }
 
         #endregion
