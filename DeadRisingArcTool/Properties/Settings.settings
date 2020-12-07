@@ -14,5 +14,8 @@
     <Setting Name="OverwriteAllDuplicates" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="UpdateFlavor" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Beta</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

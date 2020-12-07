@@ -12,9 +12,12 @@ namespace DeadRisingArcTool.Forms
 {
     public partial class LoadingDialog : Form
     {
-        public LoadingDialog()
+        public LoadingDialog(string title)
         {
             InitializeComponent();
+
+            // Set the dialog title.
+            this.Text = title;
         }
 
         public void SetupProgress(int max)
@@ -28,6 +31,20 @@ namespace DeadRisingArcTool.Forms
             // Update progress.
             this.lblFileName.Text = fileName;
             this.progressBar1.Value++;
+        }
+
+        public void UpdateProgress(int max, int current)
+        {
+            // Update progress.
+            this.progressBar1.Maximum = max;
+            this.progressBar1.Value = current;
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            // Set the dialog result and close.
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
         }
     }
 }

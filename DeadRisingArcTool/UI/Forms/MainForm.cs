@@ -17,7 +17,9 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -92,6 +94,7 @@ namespace DeadRisingArcTool
         }
 
         // Background worker for async operations.
+        BackgroundWorker updateWorker = null;
         BackgroundWorker asyncWorker = null;
 
         // Loading dialog used while loading the arc folder.
@@ -160,6 +163,98 @@ namespace DeadRisingArcTool
                 this.splitContainer1.Panel2.Controls.Add(editorControl);
                 this.resourceEditors.Add(editorControl);
             }
+
+            // Setup the update worker.
+            this.updateWorker = new BackgroundWorker();
+            this.updateWorker.DoWork += UpdateWorker_DoWork;
+            this.updateWorker.RunWorkerCompleted += UpdateWorker_RunWorkerCompleted;
+
+            // Kick off the update worker to check for updates.
+            this.updateWorker.RunWorkerAsync();
+        }
+
+        private void UpdateWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            // Check to see if there is an update available.
+            if (AutoUpdate.CheckForUpdates(out Version newVersion, out string changeLog, out string downloadUrl) == true)
+            {
+                // There is an update available, set the worker result.
+                (Version, string, string) updateInfo = (newVersion, changeLog, downloadUrl);
+                e.Result = updateInfo;
+            }
+        }
+
+        private void UpdateWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // If the result is valid get the update info and pop a update dialog.
+            if (e.Result != null)
+            {
+                // Get the update info tuple.
+                (Version newVersion, string changeLog, string downloadUrl) updateInfo = ((Version, string, string))e.Result;
+
+                // Prompt the user to install the update.
+                UpdateDialog updateDialog = new UpdateDialog(updateInfo.newVersion, updateInfo.changeLog);
+                if (updateDialog.ShowDialog() == DialogResult.OK)
+                {
+                    // First check if the loading dialog is already displayed, and if so cancel out any pending background worker operation.
+                    if (this.loadingDialog != null && this.asyncWorker.IsBusy == true)
+                    {
+                        try
+                        {
+                            // Cancel out any background worker operation and hide the loading dialog. We can't free it or wait for it to be free'd
+                            // because we'll create a deadlock condition doing so. Since the application will close out in a minute just hide it for now.
+                            this.asyncWorker.CancelAsync();
+                            this.loadingDialog.Visible = false;
+                        }
+                        catch (Exception exception) { }
+                    }
+
+                    // Format local file path for the update download.
+                    string updateFilePath = Application.StartupPath + "\\Update.zip";
+
+                    // Initialize the loading dialog and display it.
+                    LoadingDialog downloadDialog = new LoadingDialog("Downloading...");
+
+                    // Create the web client to download the update file.
+                    WebClient downloadClient = new WebClient();
+
+                    downloadClient.DownloadProgressChanged += new DownloadProgressChangedEventHandler(delegate (object _sender, DownloadProgressChangedEventArgs _e)
+                    {
+                        // Update download progress.
+                        downloadDialog.UpdateProgress(100, _e.ProgressPercentage);
+                    });
+
+                    downloadClient.DownloadFileCompleted += new AsyncCompletedEventHandler(delegate (object _sender, AsyncCompletedEventArgs _e)
+                    {
+                        // Check if the download was successfull.
+                        if (_e.Cancelled == true || _e.Error != null)
+                        {
+                            // Failed to download the update.
+                            MessageBox.Show("Failed to download update. Please try again later or manually download the update at: " + updateInfo.downloadUrl);
+                            downloadDialog.Close();
+                            return;
+                        }
+
+                        // Extract the updater application from the update zip.
+                        if (AutoUpdate.ExtractUpdaterApp(updateFilePath).Result == false)
+                        {
+                            // Failed to extract the updater application.
+                            MessageBox.Show("Failed to extract updater application from update file.\nPlease manually download the update at: " + updateInfo.downloadUrl);
+                            return;
+                        }
+
+                        // Run the updater application and quit.
+                        Process.Start(Application.StartupPath + "\\Updater.exe");
+                        Application.Exit();
+                    });
+
+                    // Start the file download.
+                    downloadClient.DownloadFileAsync(new Uri(updateInfo.downloadUrl), updateFilePath);
+
+                    // Show the loading dialog.
+                    downloadDialog.ShowDialog();
+                }
+            }
         }
 
         #region MenuStrip Buttons
@@ -188,7 +283,7 @@ namespace DeadRisingArcTool
                 this.asyncWorker.RunWorkerAsync(selectDialog.SelectedArchives);
 
                 // Disable the main form and display the loading dialog.
-                this.loadingDialog = new LoadingDialog();
+                this.loadingDialog = new LoadingDialog("Loading...");
                 if (this.loadingDialog.ShowDialog() == DialogResult.Cancel)
                 {
                     // Cancel the background worker.

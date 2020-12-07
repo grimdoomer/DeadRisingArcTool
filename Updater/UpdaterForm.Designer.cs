@@ -1,6 +1,6 @@
-﻿namespace DeadRisingArcTool.Forms
+﻿namespace Updater
 {
-    partial class LoadingDialog
+    partial class UpdaterForm
     {
         /// <summary>
         /// Required designer variable.
@@ -28,64 +28,60 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.label1 = new System.Windows.Forms.Label();
             this.lblFileName = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.SuspendLayout();
-            // 
-            // progressBar1
-            // 
-            this.progressBar1.Location = new System.Drawing.Point(12, 26);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(409, 32);
-            this.progressBar1.TabIndex = 0;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 10);
+            this.label1.Location = new System.Drawing.Point(12, 9);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(48, 13);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Loading:";
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Copying:";
             // 
             // lblFileName
             // 
             this.lblFileName.AutoSize = true;
-            this.lblFileName.Location = new System.Drawing.Point(66, 10);
+            this.lblFileName.Location = new System.Drawing.Point(66, 9);
             this.lblFileName.Name = "lblFileName";
             this.lblFileName.Size = new System.Drawing.Size(0, 13);
-            this.lblFileName.TabIndex = 2;
+            this.lblFileName.TabIndex = 1;
             // 
             // btnCancel
             // 
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(12, 64);
+            this.btnCancel.Location = new System.Drawing.Point(15, 63);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(409, 23);
-            this.btnCancel.TabIndex = 3;
+            this.btnCancel.Size = new System.Drawing.Size(489, 23);
+            this.btnCancel.TabIndex = 5;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
-            // LoadingDialog
+            // progressBar1
+            // 
+            this.progressBar1.Location = new System.Drawing.Point(15, 25);
+            this.progressBar1.Name = "progressBar1";
+            this.progressBar1.Size = new System.Drawing.Size(489, 32);
+            this.progressBar1.TabIndex = 4;
+            // 
+            // UpdaterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(432, 97);
+            this.ClientSize = new System.Drawing.Size(516, 96);
             this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.lblFileName);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.progressBar1);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "LoadingDialog";
-            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.Name = "UpdaterForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Loading...";
+            this.Text = "Updating";
+            this.Load += new System.EventHandler(this.UpdaterForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -93,9 +89,9 @@
 
         #endregion
 
-        private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lblFileName;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.ProgressBar progressBar1;
     }
 }
