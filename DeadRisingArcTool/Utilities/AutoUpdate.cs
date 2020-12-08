@@ -26,30 +26,34 @@ namespace DeadRisingArcTool.Utilities
             changeLog = "";
             downloadUrl = "";
 
-            // Create a new HTTP request to pull the version file based on the update flavor preference.
-            HttpWebRequest webRequest = HttpWebRequest.CreateHttp(string.Format("https://icode4.coffee/files/DeadRisingArcTool/Version_{0}.txt", Properties.Settings.Default.UpdateFlavor));
-            webRequest.Timeout = 5000;
-
-            // Submit the GET request and get the version file.
-            using (WebResponse webResponse = webRequest.GetResponse())
+            try
             {
-                // Open the response stream in a text reader so we can parse the version and changelog.
-                using (StreamReader reader = new StreamReader(webResponse.GetResponseStream()))
-                {
-                    // First line is the version.
-                    string version = reader.ReadLine();
-                    newVersion = new Version(version);
+                // Create a new HTTP request to pull the version file based on the update flavor preference.
+                HttpWebRequest webRequest = HttpWebRequest.CreateHttp(string.Format("https://icode4.coffee/files/DeadRisingArcTool/Version_{0}.txt", Properties.Settings.Default.UpdateFlavor));
+                webRequest.Timeout = 5000;
 
-                    // Compare the versions to see if we should download the update.
-                    if (newVersion > Assembly.GetExecutingAssembly().GetName().Version)
+                // Submit the GET request and get the version file.
+                using (WebResponse webResponse = webRequest.GetResponse())
+                {
+                    // Open the response stream in a text reader so we can parse the version and changelog.
+                    using (StreamReader reader = new StreamReader(webResponse.GetResponseStream()))
                     {
-                        // Read the change log and return that there is an update.
-                        changeLog = reader.ReadToEnd();
-                        downloadUrl = string.Format("https://icode4.coffee/files/DeadRisingArcTool/DeadRisingArcTool_{0}_{1}.zip", version, Properties.Settings.Default.UpdateFlavor);
-                        return true;
+                        // First line is the version.
+                        string version = reader.ReadLine();
+                        newVersion = new Version(version);
+
+                        // Compare the versions to see if we should download the update.
+                        if (newVersion > Assembly.GetExecutingAssembly().GetName().Version)
+                        {
+                            // Read the change log and return that there is an update.
+                            changeLog = reader.ReadToEnd();
+                            downloadUrl = string.Format("https://icode4.coffee/files/DeadRisingArcTool/DeadRisingArcTool_{0}_{1}.zip", version, Properties.Settings.Default.UpdateFlavor);
+                            return true;
+                        }
                     }
                 }
             }
+            catch (Exception e) { }
 
             // We either failed to check for the update or there is no newer version.
             return false;

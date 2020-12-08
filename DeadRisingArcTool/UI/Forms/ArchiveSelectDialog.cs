@@ -263,6 +263,7 @@ namespace DeadRisingArcTool.Forms
                 // Set the dialog result and close.
                 this.DialogResult = DialogResult.Cancel;
                 this.Close();
+                return;
             }
 
             // Save the selected folder path for next time.

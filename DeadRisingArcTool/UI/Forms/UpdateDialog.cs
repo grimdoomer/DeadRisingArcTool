@@ -17,7 +17,7 @@ namespace DeadRisingArcTool.UI.Forms
             InitializeComponent();
 
             // Setup the changelog textbox.
-            this.textBox1.Text = string.Format("Version {0}\r\n\r\n{1}", version.ToString(), changeLog);
+            this.textBox1.Text = string.Format("Version {0}\r\n\r\n{1}", version.ToString(), changeLog.Replace("\n", "\r\n"));
         }
 
         protected override void OnLoad(EventArgs e)

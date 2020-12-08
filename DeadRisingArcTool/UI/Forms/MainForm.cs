@@ -116,6 +116,9 @@ namespace DeadRisingArcTool
             this.dEBUGToolStripMenuItem.Visible = false;
 #endif
 
+            // Set the title text based on the update flavor.
+            this.Text += string.Format(" ({0})", Properties.Settings.Default.UpdateFlavor.ToString());
+
             // Set the tag properties of the tree view context menu options.
             this.addToolStripMenuItem.Tag = TreeViewMenuState.PatchFoldersOnly;
             this.extractToolStripMenuItem.Tag = TreeViewMenuState.PatchOrGameFilesMask;
@@ -173,6 +176,8 @@ namespace DeadRisingArcTool
             this.updateWorker.RunWorkerAsync();
         }
 
+        #region UpdateWorker
+
         private void UpdateWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             // Check to see if there is an update available.
@@ -224,7 +229,7 @@ namespace DeadRisingArcTool
                         downloadDialog.UpdateProgress(100, _e.ProgressPercentage);
                     });
 
-                    downloadClient.DownloadFileCompleted += new AsyncCompletedEventHandler(delegate (object _sender, AsyncCompletedEventArgs _e)
+                    downloadClient.DownloadFileCompleted += new AsyncCompletedEventHandler(async delegate (object _sender, AsyncCompletedEventArgs _e)
                     {
                         // Check if the download was successfull.
                         if (_e.Cancelled == true || _e.Error != null)
@@ -236,7 +241,7 @@ namespace DeadRisingArcTool
                         }
 
                         // Extract the updater application from the update zip.
-                        if (AutoUpdate.ExtractUpdaterApp(updateFilePath).Result == false)
+                        if (await AutoUpdate.ExtractUpdaterApp(updateFilePath) == false)
                         {
                             // Failed to extract the updater application.
                             MessageBox.Show("Failed to extract updater application from update file.\nPlease manually download the update at: " + updateInfo.downloadUrl);
@@ -256,6 +261,8 @@ namespace DeadRisingArcTool
                 }
             }
         }
+
+        #endregion
 
         #region MenuStrip Buttons
 
