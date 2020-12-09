@@ -120,5 +120,20 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
         }
 
         #endregion
+
+        public bool GetPointOfIntersection(RenderManager manager, Ray pickingRay, out Vector3 intersectionPoint)
+        {
+            // Invert the arrow transformation so we can transform the picking ray to local space.
+            Matrix arrowTransform = this.TransformationMatrix;
+            arrowTransform.Invert();
+
+            // Transform the picking ray to be in local space.
+            Ray newPickingRay = new Ray(Vector3.TransformCoordinate(pickingRay.Position, arrowTransform), Vector3.TransformNormal(pickingRay.Direction, arrowTransform));
+            newPickingRay.Direction.Normalize();
+
+            // Create a plane from the arrow vertices and check for an intersection.
+            Plane arrowPlane = new Plane(this.vertices[0].Position, this.vertices[1].Position, this.vertices[2].Position);
+            return pickingRay.Intersects(ref arrowPlane, out intersectionPoint);
+        }
     }
 }

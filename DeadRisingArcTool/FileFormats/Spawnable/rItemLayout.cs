@@ -173,6 +173,10 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
         // Selected object data.
         private HashSet<int> selectedSpawnIndices = new HashSet<int>();
 
+        // Active transformation state.
+        private TransformationType activeTransformationType = TransformationType.None;
+        private RotationAxis activeRotationAxis = RotationAxis.None;
+
         // Cached list of fields for the layout info struct.
         private FieldInfo[] layoutInfoFields = typeof(LayoutInfo).GetFields(BindingFlags.Public | BindingFlags.Instance);
 
@@ -630,60 +634,124 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
         public bool HandleInput(RenderManager manager)
         {
             bool inputHandled = false;
+            int updatedSpawnIndex = -1;
+            Vector3 translationChange = Vector3.Zero;
+            Vector3 rotationChange = Vector3.Zero;
 
             // Loop through all the selected items and handle input.
             foreach (int spawnIndex in this.selectedSpawnIndices)
             {
-                // Handle input accordingly.
-                if (manager.InputManager.ButtonState[(int)InputAction.LeftClick] == true)
+                // Check if the current item can handle the input update.
+                if (this.itemPlacements[spawnIndex].HandleInput(manager, out translationChange, out rotationChange) == true)
                 {
-                    // TODO:
+                    // Flag that we were able to handle input and break the loop.
+                    updatedSpawnIndex = spawnIndex;
                     inputHandled = true;
+                    break;
                 }
-                else
-                {
-                    // Check for movement speed modifier.
-                    float speedModifier = 1.0f;
-                    if (manager.InputManager.KeyboardState[(int)Keys.ShiftKey] == true)
-                        speedModifier = 10.0f;
-
-                    // Check for keyboard input.
-                    if (manager.InputManager.KeyboardState[(int)Keys.Up] == true)
-                    {
-                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamForward * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
-                        inputHandled = true;
-                    }
-                    if (manager.InputManager.KeyboardState[(int)Keys.Down] == true)
-                    {
-                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamBackward * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
-                        inputHandled = true;
-                    }
-                    if (manager.InputManager.KeyboardState[(int)Keys.Left] == true)
-                    {
-                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamLeft * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
-                        inputHandled = true;
-                    }
-                    if (manager.InputManager.KeyboardState[(int)Keys.Right] == true)
-                    {
-                        this.itemPlacements[spawnIndex].Position += manager.Camera.CamRight * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
-                        inputHandled = true;
-                    }
-                    if (manager.InputManager.KeyboardState[(int)Keys.PageUp] == true)
-                    {
-                        this.itemPlacements[spawnIndex].Position += Vector3.UnitY * speedModifier;
-                        inputHandled = true;
-                    }
-                    if (manager.InputManager.KeyboardState[(int)Keys.PageDown] == true)
-                    {
-                        this.itemPlacements[spawnIndex].Position -= Vector3.UnitY * speedModifier;
-                        inputHandled = true;
-                    }
-                }
-
-                // Update the layout info for this spawn.
-                this.layoutInfoList[spawnIndex].CursorWorldPos = this.itemPlacements[spawnIndex].Position;
-                this.layoutInfoList[spawnIndex].CursorWorldPosOffs = Vector3.Zero;
             }
+
+            // If the input was handled update the position and rotation of all selected spawns.
+            if (inputHandled == true)
+            {
+                // Loop and update the position and rotations.
+                foreach (int spawnIndex in this.selectedSpawnIndices)
+                {
+                    // Do not update the spawn that handled the input change.
+                    if (spawnIndex != updatedSpawnIndex)
+                    {
+                        // Update the transformation gizmo.
+                        this.itemPlacements[spawnIndex].Position += translationChange;
+                        this.itemPlacements[spawnIndex].Rotation += rotationChange;
+                    }
+
+                    // Update the layout info for this spawn.
+                    this.layoutInfoList[spawnIndex].CursorWorldPos = this.itemPlacements[spawnIndex].Position;
+                    this.layoutInfoList[spawnIndex].CursorWorldPosOffs = Vector3.Zero;
+                    this.layoutInfoList[spawnIndex].ModelAngle += rotationChange;
+                }
+            }
+
+            //// Loop through all the selected items and handle input.
+            //foreach (int spawnIndex in this.selectedSpawnIndices)
+            //{
+            //    // Handle input accordingly.
+            //    if (manager.InputManager.ButtonState[(int)InputAction.LeftClick] == true)
+            //    {
+            //        // Check if the left mouse button was just pressed or is being held.
+            //        if (manager.InputManager.ButtonPressed(InputAction.LeftClick) == true)
+            //        {
+            //            // Check if the item spawn has a focused rotation axis.
+            //            if (this.itemPlacements[spawnIndex].FocusedRotationAxis != RotationAxis.None)
+            //            {
+            //                // Set the active rotation axis.
+            //                this.activeTransformationType = TransformationType.Rotation;
+            //                this.activeRotationAxis = this.itemPlacements[spawnIndex].FocusedRotationAxis;
+            //            }
+            //            else
+            //            {
+            //                // TODO: Do hit detection on the bounding box to check for mouse movement.
+            //            }
+            //        }
+            //        else
+            //        {
+            //            // Check transformation state and update accordingly.
+            //            if (this.activeTransformationType == TransformationType.Rotation)
+            //            {
+
+            //            }
+            //        }
+
+            //        // TODO:
+            //        inputHandled = true;
+            //    }
+            //    else
+            //    {
+            //        // Clear the active rotation axis.
+            //        this.activeRotationAxis = RotationAxis.None;
+
+            //        // Check for movement speed modifier.
+            //        float speedModifier = 1.0f;
+            //        if (manager.InputManager.KeyboardState[(int)Keys.ShiftKey] == true)
+            //            speedModifier = 10.0f;
+
+            //        // Check for keyboard input.
+            //        if (manager.InputManager.KeyboardState[(int)Keys.Up] == true)
+            //        {
+            //            this.itemPlacements[spawnIndex].Position += manager.Camera.CamForward * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+            //            inputHandled = true;
+            //        }
+            //        if (manager.InputManager.KeyboardState[(int)Keys.Down] == true)
+            //        {
+            //            this.itemPlacements[spawnIndex].Position += manager.Camera.CamBackward * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+            //            inputHandled = true;
+            //        }
+            //        if (manager.InputManager.KeyboardState[(int)Keys.Left] == true)
+            //        {
+            //            this.itemPlacements[spawnIndex].Position += manager.Camera.CamLeft * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+            //            inputHandled = true;
+            //        }
+            //        if (manager.InputManager.KeyboardState[(int)Keys.Right] == true)
+            //        {
+            //            this.itemPlacements[spawnIndex].Position += manager.Camera.CamRight * (Vector3.UnitX + Vector3.UnitZ) * speedModifier;
+            //            inputHandled = true;
+            //        }
+            //        if (manager.InputManager.KeyboardState[(int)Keys.PageUp] == true)
+            //        {
+            //            this.itemPlacements[spawnIndex].Position += Vector3.UnitY * speedModifier;
+            //            inputHandled = true;
+            //        }
+            //        if (manager.InputManager.KeyboardState[(int)Keys.PageDown] == true)
+            //        {
+            //            this.itemPlacements[spawnIndex].Position -= Vector3.UnitY * speedModifier;
+            //            inputHandled = true;
+            //        }
+            //    }
+
+            //    // Update the layout info for this spawn.
+            //    this.layoutInfoList[spawnIndex].CursorWorldPos = this.itemPlacements[spawnIndex].Position;
+            //    this.layoutInfoList[spawnIndex].CursorWorldPosOffs = Vector3.Zero;
+            //}
 
             // Return the result.
             return inputHandled;

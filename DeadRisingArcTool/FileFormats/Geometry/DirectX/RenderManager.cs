@@ -526,12 +526,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                         // Update the mouse to worl ray.
                         this.MouseToWorldRay = CalculatePickingRay(this.InputManager.MousePosition, new Vector2(this.ViewSize.Width, this.ViewSize.Height));
 
-                        // Update the camera.
-                        this.Camera.DrawFrame(this);
-
-                        // Update the bounding box for the view frustum.
-                        this.ViewFrustumBoundingBox.Reset(Vector4.Transform(this.viewFrustumMin, this.Camera.ViewMatrix).ToVector3(), Vector4.Transform(this.viewFrustumMax, this.Camera.ViewMatrix).ToVector3());
-
                         // Loop through all the selected items and update input for them.
                         bool inputHandled = false;
                         foreach (IPickableObject selectedObject in this.selectedObjects)
@@ -544,6 +538,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                         // If none of the selected objects consumed the input changes then handle them here.
                         if (inputHandled == false)
                         {
+                            // Update the camera.
+                            this.Camera.DrawFrame(this);
+
+                            // Update the bounding box for the view frustum.
+                            this.ViewFrustumBoundingBox.Reset(Vector4.Transform(this.viewFrustumMin, this.Camera.ViewMatrix).ToVector3(), Vector4.Transform(this.viewFrustumMax, this.Camera.ViewMatrix).ToVector3());
+
                             // Check if the left mouse button was pressed/released.
                             if (this.InputManager.ButtonReleased(InputAction.LeftClick) == true)
                             {
