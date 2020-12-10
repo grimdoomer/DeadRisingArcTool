@@ -448,7 +448,12 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                 ImGui.InputFloat("p->mRadius", ref this.layoutInfoList[this.selectedSpawnIndex].Radius);
                 ImGui.InputFloat3("p->mAngle", ref this.layoutInfoList[this.selectedSpawnIndex].Angle);
                 ImGui.InputFloat3("p->mRangeAngle", ref this.layoutInfoList[this.selectedSpawnIndex].RangeAngle);
+
+                //if (ImGui.InputFloat3("p->mModelAngle", ref this.layoutInfoList[this.selectedSpawnIndex].ModelAngle) == true)
+                //    this.itemPlacements[this.selectedSpawnIndex].Rotation = this.layoutInfoList[this.selectedSpawnIndex].ModelAngle;
+
                 ImGui.InputFloat3("p->mModelAngle", ref this.layoutInfoList[this.selectedSpawnIndex].ModelAngle);
+
                 ImGui.InputFloat3("p->mCursorWorldPos", ref this.layoutInfoList[this.selectedSpawnIndex].CursorWorldPos);
                 ImGui.InputFloat3("p->mCursorWorldPosOffs", ref this.layoutInfoList[this.selectedSpawnIndex].CursorWorldPosOffs);
                 ImGui.InputScalarUInt16("p->mMessNo", ref this.layoutInfoList[this.selectedSpawnIndex].MessageNo);
@@ -668,7 +673,7 @@ namespace DeadRisingArcTool.FileFormats.Spawnable
                     // Update the layout info for this spawn.
                     this.layoutInfoList[spawnIndex].CursorWorldPos = this.itemPlacements[spawnIndex].Position;
                     this.layoutInfoList[spawnIndex].CursorWorldPosOffs = Vector3.Zero;
-                    this.layoutInfoList[spawnIndex].ModelAngle += rotationChange;
+                    this.layoutInfoList[spawnIndex].ModelAngle = this.itemPlacements[spawnIndex].Rotation;
                 }
             }
 

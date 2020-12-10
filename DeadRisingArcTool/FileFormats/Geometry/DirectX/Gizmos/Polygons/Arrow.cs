@@ -1,4 +1,5 @@
 ﻿using DeadRisingArcTool.FileFormats.Geometry.DirectX.Misc;
+using DeadRisingArcTool.Utilities;
 using SharpDX;
 using System;
 using System.Collections.Generic;
@@ -123,6 +124,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
 
         public bool GetPointOfIntersection(RenderManager manager, Ray pickingRay, out Vector3 intersectionPoint)
         {
+            /*
             // Invert the arrow transformation so we can transform the picking ray to local space.
             Matrix arrowTransform = this.TransformationMatrix;
             arrowTransform.Invert();
@@ -132,7 +134,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos.Polygons
             newPickingRay.Direction.Normalize();
 
             // Create a plane from the arrow vertices and check for an intersection.
-            Plane arrowPlane = new Plane(this.vertices[0].Position, this.vertices[1].Position, this.vertices[2].Position);
+            Plane arrowPlane = new Plane(this.vertices[0].Position, this.vertices[1].Position, this.vertices[3].Position);
+            return newPickingRay.Intersects(ref arrowPlane, out intersectionPoint);
+            */
+
+            // Transform the vertices using the arrow's transformation matrix.
+            Vector3 v1 = Vector3.Transform(this.vertices[0].Position, this.TransformationMatrix).ToVector3();
+            Vector3 v2 = Vector3.Transform(this.vertices[1].Position, this.TransformationMatrix).ToVector3();
+            Vector3 v3 = Vector3.Transform(this.vertices[2].Position, this.TransformationMatrix).ToVector3();
+
+            // Create a plane from the arrow vertices and check for an intersection.
+            Plane arrowPlane = new Plane(v1, v2, v3);
             return pickingRay.Intersects(ref arrowPlane, out intersectionPoint);
         }
     }
