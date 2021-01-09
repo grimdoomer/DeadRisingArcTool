@@ -258,7 +258,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                 return false;
 
             // Check if the left mouse button was just pressed.
-            if (manager.InputManager.ButtonPressed(InputAction.LeftClick) == true)
+            if (manager.InputManager.ButtonPressed(InputAction.RightClick) == true)
             {
                 // Invert the gizmo transformation so we can transform the picking ray.
                 Matrix gizmoTransform = this.gizmoMesh.TransformationMatrix;
@@ -286,7 +286,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                     }
                 }
             }
-            else if (manager.InputManager.ButtonHeld(InputAction.LeftClick) == true)
+            else if (manager.InputManager.ButtonHeld(InputAction.RightClick) == true)
             {
                 // If no focused rotation axis is set bail out.
                 if (this.FocusedRotationAxis == RotationAxis.None)
@@ -296,11 +296,71 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                 if (manager.InputManager.MousePositionDelta[0] == 0 && manager.InputManager.MousePositionDelta[1] == 0)
                     return false;
 
+                /*
+                // Calculate vectors based on the current viewport size.
+                float minSize = manager.ViewSize.Width < manager.ViewSize.Height ? manager.ViewSize.Width * 0.5f : manager.ViewSize.Height * 0.5f;
+                Vector3 screenCenter = new Vector3(manager.ViewSize.Width * 0.5f, manager.ViewSize.Height * 0.5f, 0.0f);
+
+                // 
+                Vector3 vecA = new Vector3(manager.InputManager.MousePosition.X - manager.InputManager.MousePositionDelta[0], manager.ViewSize.Height - (manager.InputManager.MousePosition.Y + manager.InputManager.MousePositionDelta[1]), 0f);
+                Vector3 vecB = new Vector3(manager.InputManager.MousePosition.X, manager.ViewSize.Height - manager.InputManager.MousePosition.Y, 0f);
+
+                Vector3 VectorFromPos(Vector3 pos)
+                {
+                    // Scale the movement for the screen size.
+                    pos = (pos - screenCenter) / minSize;
+
+                    // Calculate the Z component based on the length.
+                    float length = pos.Length();
+                    pos.Z = length > 0f ? (float)Math.Pow(2, length * -0.5f) : 1f;
+
+                    // Normalize the vector.
+                    pos.Normalize();
+
+                    return pos;
+                }
+
+                vecA = VectorFromPos(vecA);
+                vecB = VectorFromPos(vecB);
+
+                // Get the axis of rotation from the two vectors.
+                Vector3 vAxis = Vector3.Cross(vecA, vecB);
+                vAxis.Normalize();
+
+                //System.Diagnostics.Debug.WriteLine("Axis: {0}", vAxis);
+
+                float dotProduct = Vector3.Dot(vecA, vecB);
+                float angle = (float)Math.Acos(MathUtil.Clamp(dotProduct, -1.0f, 1.0f));
+
+                // Calculate the rotaiton.
+                Quaternion axisRotation = Quaternion.RotationAxis(vAxis * Vector3.One, angle);  // Also account for FPS if needed
+                axisRotation.Normalize();
+
+                System.Diagnostics.Debug.WriteLine("Axis: {0} Angle: {1}", vAxis, angle);
+
+                //this.quatRotation = axisRotation * this.quatRotation;
+                //this.gizmoMesh.Rotation = this.quatRotation;
+
+                rotationChange = vAxis * angle;
+
+                //float temp = rotationChange.X;
+                //rotationChange.X = rotationChange.Y;
+                //rotationChange.Y = temp;
+
+                //temp = rotationChange.Z;
+                //rotationChange.Z = rotationChange.Y;
+                //rotationChange.Y = temp;
+
+                this.Rotation += rotationChange;
+
+                //System.Diagnostics.Debug.WriteLine("Rotation: {0}", this.Rotation);
+                */
+
+                #region Old method
+                
                 // Invert the gizmo transformation so we can transform the picking ray.
                 Matrix gizmoTransform = Matrix.Transformation(Vector3.Zero, Quaternion.Zero, Vector3.One, Vector3.Zero, Quaternion.Identity, this.gizmoMesh.Position);// this.gizmoMesh.TransformationMatrix;
                 gizmoTransform.Invert();
-
-                //System.Diagnostics.Debug.WriteLine("Rot: {1}", this.gizmoMesh.Rotation);
 
                 // Transform the picking ray to be in local space for the gizmo.
                 Ray pickingRay = new Ray(Vector3.TransformCoordinate(manager.MouseToWorldRay.Position, gizmoTransform), Vector3.TransformNormal(manager.MouseToWorldRay.Direction, gizmoTransform));
@@ -311,15 +371,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                 if (this.rotationArrows[(int)this.FocusedRotationAxis - 1].GetPointOfIntersection(manager, pickingRay, out pointofIntersection) == false)
                     return true;
 
-                //System.Diagnostics.Debug.WriteLine("PoI: {0}", pointofIntersection);
-
-                // Transform the point of intersection by the arrow's transform to put it back into the gizmo's local space.
-                //Matrix hackTransform = Matrix.Transformation(Vector3.Zero, Quaternion.Identity, Vector3.One, Vector3.Zero, this.quatRotation, this.rotationArrows[(int)this.FocusedRotationAxis - 1].Position);
-                //pointofIntersection = Vector3.Transform(pointofIntersection, hackTransform).ToVector3();
-                //pointofIntersection = Vector3.Transform(pointofIntersection, this.gizmoMesh.TransformationMatrix).ToVector3();
-
-                //System.Diagnostics.Debug.WriteLine("PoI: {0} Rotation: {1}", pointofIntersection, this.quatRotation);
-
                 // Calculate the unit vector for a rotation of 0 degrees.
                 Vector3 zeroRotation;
                 if (this.FocusedRotationAxis == RotationAxis.Yaw)
@@ -329,15 +380,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                 else
                     zeroRotation = Vector3.UnitY;
 
-                //Matrix hackTransform = Matrix.Transformation(Vector3.Zero, Quaternion.Identity, Vector3.One, Vector3.Zero, Quaternion.Identity, this.Position);
-                //zeroRotation = Vector3.Transform(zeroRotation, hackTransform).ToVector3();
-
-                
-                //pointofIntersection.Normalize();
-                //System.Diagnostics.Debug.WriteLine("PoI: {0}", pointofIntersection);
-
                 // Calculate the angle between the initial rotation point and the current rotation point.
-                //float initialAngle = this.initialRotationPoint.AngleBetweenLine(zeroRotation);
                 float newAngle = pointofIntersection.AngleBetweenLine(zeroRotation);
 
                 // Make sure both angles are valid, if either one is invalid bail out.
@@ -354,32 +397,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                 {
                     if (pointofIntersection.Y <= 0.0f)
                         newAngle = (2 * (float)Math.PI) - newAngle;
-
-                    //newAngle = (2 * (float)Math.PI) - newAngle;
                 }
                 else if (this.FocusedRotationAxis == RotationAxis.Roll)
                 {
                     if (pointofIntersection.Z >= 0.0f)
                         newAngle = (2 * (float)Math.PI) - newAngle;
                 }
-
-                // Calculate the change in rotation.
-                //float axisRotation = newAngle;
-                //if (this.FocusedRotationAxis == RotationAxis.Yaw)
-                //    axisRotation = newAngle - this.Rotation.Y;
-                //else if (this.FocusedRotationAxis == RotationAxis.Pitch)
-                //    axisRotation = newAngle - this.Rotation.Z;
-                //else
-                //    axisRotation = newAngle - this.Rotation.X;
-
-                // If the rotational value is invalid bail out.
-                //if (float.IsNaN(axisRotation) == true)
-                //    return true;
-
-                //if (Math.Abs(axisRotation) > 1.0f)
-                //{
-
-                //}
 
                 // Create an identity vector we can use to calculate the change in angle.
                 Vector3 rotationIdentity;
@@ -390,23 +413,25 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Gizmos
                 else
                     rotationIdentity = Vector3.UnitX;
 
-                System.Diagnostics.Debug.WriteLine("PoI: {0} Angle: {1}", pointofIntersection, newAngle);
-
-                //Quaternion oldQuat = this.quatRotation;
-                //Vector3 oldRot = this.Rotation;
-
                 // Calculate the change in rotation.
                 rotationChange = (new Vector3(newAngle) * rotationIdentity) - (this.Rotation * rotationIdentity);
+
+                //Matrix currentRotMatrix = Matrix.Transformation(Vector3.Zero, Quaternion.Identity, Vector3.One, Vector3.Zero, this.quatRotation, Vector3.Zero);
+                //Vector3 modelUp = Vector3.Transform(Vector3.UnitY, this.quatRotation);
+                //Quaternion newQuat = Quaternion.RotationAxis(modelUp, newAngle) - this.quatRotation;
+
+                //this.quatRotation *= newQuat;
+                //this.gizmoMesh.Rotation = this.quatRotation;
 
                 // Update the position and rotation of the gizmo.
                 //this.Position += translationChange;
                 this.Rotation += rotationChange;
-
-                //System.Diagnostics.Debug.WriteLine("Quat1: {0} Quat2: {1} Angle: {2}", oldQuat, this.quatRotation, newAngle);
+                
+                #endregion
 
                 return true;
             }
-            else if (manager.InputManager.ButtonReleased(InputAction.LeftClick) == true)
+            else if (manager.InputManager.ButtonReleased(InputAction.RightClick) == true)
             {
                 // Clear the active rotation axis.
                 this.FocusedRotationAxis = RotationAxis.None;

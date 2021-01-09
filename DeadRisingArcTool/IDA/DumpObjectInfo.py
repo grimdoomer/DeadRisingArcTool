@@ -3,15 +3,105 @@
 """
 
 from idaapi import *
-from idautils import *
+import idautils
 from idc import *
 from collections import namedtuple
 
 MtDTI = namedtuple('MtDTI', 'name, size, parentObjAddr')
+VTableLayout = namedtuple('VTableLayout', 'className, parentClass, vtableLayout')
 
 # Dictionary of MtDTI objects key'd by the address of the DTI pointer.
 g_ObjectDTIs = { }
 
+# Dictionary of vtable layouts for MtDTI objects.
+g_VtableLayouts = {
+	"MtObject" : VTableLayout("MtObject", "", {
+		0x0 : "dtor",
+		0x8 : "",
+		0x10 : "",
+		0x18 : "RegisterDebugOptions",
+		0x20 : "GetDTI"
+	}),
+	"MtAllocator" : VTableLayout("MtAllocator", "MtObject", {
+		0x28 : "Alloc",
+		0x30 : "Free",
+		0x38 : ""
+	}),
+	"MtDataReader" : VTableLayout("MtDataReader", "", {
+		0x00 : "dtor",
+		0x08 : "ReadUInt16",
+		0x10 : "ReadUInt32",
+		0x18 : "ReadUInt64",
+		0x20 : "",	# Duplicates of the previous 3
+		0x28 : "",
+		0x30 : "",
+		0x38 : "ReadFloat",
+		0x40 : "ReadDouble"
+	}),
+	"MtFile" : VTableLayout("MtFile", "MtObject", {
+		0x28 : "OpenFile",
+		0x30 : "CloseFile",
+		0x38 : "ReadFile",
+		0x40 : "ReadFileAsync",
+		0x48 : "WaitForCompletion",
+		0x50 : "WriteFile",
+		0x58 : "Seek",
+		0x60 : "GetCurrentPosition",
+		0x68 : "GetFileSize",
+		0x70 : "SetFileSize",
+		0x78 : "CanRead",
+		0x80 : "CanWrite",
+		0x88 : ""
+	}),
+	"MtStream" : VTableLayout("MtStream", "MtObject", {
+		0x28 : "CanRead",
+		0x30 : "CanWrite",
+		0x38 : "",
+		0x40 : "",
+		0x48 : "GetCurrentPosition",
+		0x50 : "Close",
+		0x58 : "",
+		0x60 : "ReadData",
+		0x68 : "ReadDataAsync",
+		0x70 : "WaitForCompletion",
+		0x78 : "WriteData",
+		0x80 : "",
+		0x88 : "GetLength",
+		0x90 : "Seek"
+	}),
+
+	"cResource" : VTableLayout("cResource", "MtObject", {
+		0x28 : "GetFileInfo",
+		0x30 : "GetFileExtension",
+		0x38 : "",
+		0x40 : "LoadResource",
+		0x48 : "SaveResource",
+		0x50 : "",
+		0x58 : "CleanupResources"
+	}),
+	"cSystem" : VTableLayout("cSystem", "MtObject", {
+		0x28 : "SystemCleanup",
+		0x30 : "SystemUpdate",
+		0x38 : "BuildSystemMenu"
+	}),
+	"cUnit" : VTableLayout("cUnit", "MtObject", {
+		0x28 : "",
+		0x30 : "",
+		0x38 : "",
+		0x40 : "",
+		0x48 : "",
+		0x50 : "GetObjectName"
+	}),
+	"sUnit" : VTableLayout("sUnit", "cSystem", {
+		0x40 : "",
+		0x48 : "",
+		0x50 : "GetMoveLineName",
+		0x58 : ""
+	}),
+}
+
+# Dictionary to record while object vtables have already been labeled.
+g_LabeledVtables = { }
 
 def readString(ea):
 
@@ -64,7 +154,7 @@ def processObject(rcxQword, rdxName, objectSize, callingFunc):
 
 		# Print an error and return.
 		print("Found %d xrefs for g_%sDTI!" % (xrefsFound, typeName))
-		return
+		return None, None
 
 	# Name the DTI function.
 	idaapi.set_name(getDTIFunc, "%s::GetDTI" % typeName)
@@ -82,17 +172,15 @@ def processObject(rcxQword, rdxName, objectSize, callingFunc):
 
 		# Print an error and return.
 		print("Xref not found for %s::GetDTI()!" % typeName)
-		return
+		return None, None
 
-	# Label some of the vtable functions.
+	# Label the vtable and dtor.
 	idaapi.set_name(vtableXref - 0x20, "%s::vtable" % typeName)
 	objectDtor = ida_bytes.get_qword(vtableXref - 0x20)
 	idaapi.set_name(objectDtor, "%s::dtor" % typeName)
-	objectDbgPrint = ida_bytes.get_qword(vtableXref - 8)
-	idaapi.set_name(objectDbgPrint, "%s::RegisterDebugOptions" % typeName)
 
-	# Return the type name.
-	return typeName
+	# Return the type name and vtable address.
+	return (typeName, vtableXref - 0x20)
 
 
 def processDTIObject(objectAddress, typeName):
@@ -105,6 +193,54 @@ def processDTIObject(objectAddress, typeName):
 	createObject = ida_bytes.get_qword(objectAddress + 8)
 	idaapi.set_name(createObject, "%s::MyDTI::CreateInstance" % typeName)
 	
+
+def processVTableLayout(typeName):
+
+	# Make sure we haven't already labeled this object before.
+	if typeName in g_LabeledVtables == False or g_LabeledVtables[typeName][2] == True:
+		return
+
+	# Recursively label parent classes this object inherits.
+	dtiAddress = g_LabeledVtables[typeName][1]
+	while g_ObjectDTIs[dtiAddress].parentObjAddr != 0:
+
+		# Recursively label parent object vtable.
+		parent = g_ObjectDTIs[dtiAddress].parentObjAddr
+		parentName = g_ObjectDTIs[parent].name
+		processVTableLayout(parentName)
+
+		# Get the next parent dti address for labeling.
+		dtiAddress = g_ObjectDTIs[dtiAddress].parentObjAddr
+
+	# Walk the vtable mapping dictionary and label functions.
+	dtiAddress = g_LabeledVtables[typeName][1]
+	while dtiAddress != 0:
+
+		# Check if there is a vtable mapping for this object type.
+		name = g_ObjectDTIs[dtiAddress].name
+		if name in g_VtableLayouts:
+
+			# Loop through all the vtable functions in the mapping and label each one.
+			for vtableOffset in g_VtableLayouts[name].vtableLayout:
+
+				# If there is no function name for this entry skip it.
+				if g_VtableLayouts[name].vtableLayout[vtableOffset] == "":
+					continue
+
+				# Check if the function at this vtable address has been labeled or not.
+				funcAddress = ida_bytes.get_qword(g_LabeledVtables[typeName][0] + vtableOffset)
+				funcName = idaapi.get_func_name(funcAddress)
+				if funcName.startswith("sub_") == True:
+
+					# Label the function.
+					idaapi.set_name(funcAddress, typeName + "::" + g_VtableLayouts[name].vtableLayout[vtableOffset], idaapi.SN_PUBLIC | idaapi.SN_FORCE)
+
+		# Get the next parent dti address for labeling.
+		dtiAddress = g_ObjectDTIs[dtiAddress].parentObjAddr
+
+	# Flag that this object type has been labeled.
+	g_LabeledVtables[typeName][2] = True
+
 
 def main():
 
@@ -185,7 +321,7 @@ def main():
 			continue
 			
 		# Process the object.
-		typeName = processObject(rcxQword, rdxName, objectSize, callingFunc.startEA)
+		typeName, vtableAddress = processObject(rcxQword, rdxName, objectSize, callingFunc.startEA)
 
 		# Scan instructions after the call for the dti vtable.
 		rip = xref.frm
@@ -221,12 +357,25 @@ def main():
 
 		# Add the DTI object to the list.
 		g_ObjectDTIs[dtiAddress] = MtDTI(typeName, objectSize, r8ParentObj)
+
+		# Add the object to the list of object vtables to label.
+		if typeName is not None and vtableAddress is not None:
+
+			# Add the object info to the list of vtables to label.
+			g_LabeledVtables[typeName] = [vtableAddress, dtiAddress, False]
 		
 	# Print the total number of xrefs and failed xref attempts.
 	print("Xrefs found: %d" % xrefsFound)
 	print("Xrefs null: %d" % xrefsNull)
 	print("Xrefs failed: %d" % xrefsFailed)
 	print("")
+
+	# Loop through all of the vtables to process and label each one.
+	print("Labeling vtables...")
+	for key in g_LabeledVtables:
+
+		# Process the object vtable.
+		processVTableLayout(key)
 
 	# Loop through all of the DTI objects found and print the object hierarchy.
 	objectTypeStrings = []
@@ -257,6 +406,7 @@ def main():
 	objectTypeStrings.sort()
 
 	# Print the list of strings.
+	print("Object Hierarchy:")
 	for s in objectTypeStrings:
 		print(s)
 	
@@ -622,4 +772,4 @@ def printItemInfo():
 
 
 #main()
-printItemInfo()
+main()

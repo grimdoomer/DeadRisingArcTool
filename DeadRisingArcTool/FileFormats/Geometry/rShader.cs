@@ -439,16 +439,23 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         /* 0x02 */ public short VertexShaderIndex;
     }
 
+    // sizeof = 2
+    public struct rShaderSemanticIndices
+    {
+        /* 0x00 */ public byte SemanticNameIndex;       // Index into VertexDeclarationSemanticNames array
+        /* 0x01 */ public byte SemanticIndex;           // Integer index of the semantic, ex: TEXCOORD0, TEXCOORD1, etc.
+    }
+
     // sizeof = 0x40
     public struct rShaderVertexShaderDesc
     {
         /* 0x00 */ public int ByteCodeSize;
         /* 0x04 */ // padding
-        /* 0x08 */ // never read
+        /* 0x08 */ // never read, set to memory address of shader byte code at runtime?
         /* 0x0C */ // padding
         /* 0x10 */ public int ByteCodeOffset;
         /* 0x14 */ // padding
-
+        /* 0x18 */ public rShaderSemanticIndices[] SemanticIndices;     // 16 elements
         /* 0x38 */ public long Flags;       // Upper 14 bits are number of parameters
 
         public rShaderParameterReference[] Parameters;
@@ -478,6 +485,24 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     [GameResourceParser(ResourceType.rShader)]
     public class rShader : GameResource
     {
+        public static readonly string[] VertexDeclarationSemanticNames = new string[]
+        {
+            "POSITION",
+            "BLENDWEIGHT",
+            "BLENDINDICES",
+            "NORMAL",
+            "PSIZE",
+            "TEXCOORD",
+            "TANGENT",
+            "BINORMAL",
+            "TESSFACTOR",
+            "POSITIONT",
+            "COLOR",
+            "FOG",
+            "DEPTH",
+            "SAMPLE"
+        };
+
         public rShaderHeader header;
         public rShaderTechniqueDesc[] techniques;
         public rShaderParameterDesc[] parameters;
