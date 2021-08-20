@@ -29,6 +29,8 @@ const dword gXfEnableHighlighting;
 //=============================================================================
 shared Texture2D		XfAlbedoMap;
 shared Texture2D	    XfMatrixMap;
+shared Texture2D		XfLightMap;
+shared Texture2D		XfMaskMap;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

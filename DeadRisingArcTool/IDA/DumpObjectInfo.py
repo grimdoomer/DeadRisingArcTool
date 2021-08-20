@@ -248,7 +248,7 @@ def main():
 	xrefsNull = 0
 	xrefsFailed = 0
 
-	# Get the function that is called in all the object registration functions.
+	# Get the function info for the MtDTI constructor.
 	func = idaapi.get_func(0x1406184C0)
 	
 	# Get a collection of xrefs to this function.

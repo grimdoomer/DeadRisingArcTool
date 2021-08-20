@@ -7,5 +7,9 @@
 //=============================================================================
 const float4x4 gXfViewProj : register(c0);
 
+float3 decodeRGBY(float4 rgby)
+{
+	return rgby.xyz * rgby.w;
+}
 
 #endif

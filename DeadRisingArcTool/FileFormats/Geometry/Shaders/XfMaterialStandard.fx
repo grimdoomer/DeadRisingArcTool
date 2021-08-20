@@ -39,8 +39,9 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
 	float4		position:				SV_POSITION;
-	float3		texCoordBase:			TEXCOORD0;
-	float4		wPosition:				TEXCOORD1;
+	float2		texCoordBase:			TEXCOORD0;
+	float2		texCoord1:				TEXCOORD1;
+	float2		texCoord2:				TEXCOORD2;
 };
 
 //-----------------------------------------------------------------------------
@@ -48,8 +49,9 @@ struct VS_OUTPUT
 //-----------------------------------------------------------------------------
 struct PS_INPUT
 {	
-	float3		texCoordBase:			TEXCOORD0;
-	float4		vPosition:				TEXCOORD1;
+	float2		texCoordBase:			TEXCOORD0;
+	float2		texCoord1:				TEXCOORD1;
+	float2		texCoord2:				TEXCOORD2;
 };
 
 //-----------------------------------------------------------------------------
@@ -80,10 +82,11 @@ VS_OUTPUT XfStandardVS(VS_INPUT I)
 
 	O.position = mul(float4(wp, 1), gXfViewProj);
 
-	//O.wPosition = O.position;
-	O.texCoordBase.xy = I.texCoord0.xy;
+	O.texCoordBase = I.texCoord0;
+	O.texCoord1 = I.texCoord1;
+	O.texCoord2 = I.texCoord2;
 
-	O.texCoordBase.z = 1;
+	//O.texCoordBase.z = 1;
 
 	return O;
 }
@@ -103,14 +106,33 @@ float4 XfStandardPS(VS_OUTPUT I) : SV_Target
 	else*/
     if (gXfEnableHighlighting == 0)
 	{
+#ifdef LEVEL_SHADER
+
+		// Sample the mask map so we know which texcoords to use for the lightmap.
+		float4 detail = XfMaskMap.Sample(XfSamplerMaskMap, I.texCoord1);
+
+		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
+
+		float4 lightmap;
+		if (detail.x == 0 && detail.y == 0 && detail.z == 0)
+			lightmap = XfLightMap.Sample(XfSamplerLightMap, I.texCoord1);
+		else
+			lightmap = XfLightMap.Sample(XfSamplerLightMap, I.texCoord2);
+
+		if (lightmap.x == 0 && lightmap.y == 0 && lightmap.z == 0)
+			return albedo;
+
+		albedo.xyz = (2 * albedo.xyz) * decodeRGBY(lightmap);
+#else
 		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
 		clip(albedo.a * I.texCoordBase.z - 1.0 / 255.0);
+#endif
 
 		return albedo;
 	}
     else
     {
-        return gXfHighlightColor;
+		return gXfHighlightColor;
     }
 }
 

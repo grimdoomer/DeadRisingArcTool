@@ -164,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FileFormats\Archive\DatumIndex.cs" />
+    <Compile Include="FileFormats\Bitmaps\r2Texture.cs" />
     <Compile Include="FileFormats\Bitmaps\rSprAnm.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\ItemPlacementGizmo.cs" />
     <Compile Include="FileFormats\Geometry\DirectX\Gizmos\Polygons\Arrow.cs" />

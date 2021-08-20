@@ -1103,8 +1103,30 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                 if (i == 0)
                     continue;
 
-                // Decompress and parse the game resource for this texture.
-                this.gameTextures[i] = (rTexture)manager.GetResourceFromFileName(GameResource.GetFullResourceName(this.textureFileNames[i - 1], ResourceType.rTexture));
+                // Try to load the texture as an r2Texture first.
+                r2Texture linkedTexture = (r2Texture)manager.GetResourceFromFileName(GameResource.GetFullResourceName(this.textureFileNames[i - 1], ResourceType.r2Texture));
+                if (linkedTexture != null)
+                {
+                    // Get the file name of this model for the final texture path.
+                    string modelName = Path.GetFileNameWithoutExtension(this.FileName);
+
+                    // Format the new texture file name assuming m/d/s/n lightmap type.
+                    string newTextureFileName = string.Format("{0}\\{1}\\{2}_d", Path.GetDirectoryName(this.textureFileNames[i - 1]), modelName, Path.GetFileNameWithoutExtension(this.textureFileNames[i - 1]));
+                    this.gameTextures[i] = (rTexture)manager.GetResourceFromFileName(GameResource.GetFullResourceName(newTextureFileName, ResourceType.rTexture));
+                    if (this.gameTextures[i] == null)
+                    {
+                        // Format the new texture file name assuming onn/off lightmap type.
+                        newTextureFileName = string.Format("{0}\\{1}\\{2}_on", Path.GetDirectoryName(this.textureFileNames[i - 1]), modelName, Path.GetFileNameWithoutExtension(this.textureFileNames[i - 1]));
+                        this.gameTextures[i] = (rTexture)manager.GetResourceFromFileName(GameResource.GetFullResourceName(newTextureFileName, ResourceType.rTexture));
+                    }
+                }
+                else
+                {
+                    // Try to load the texture normally.
+                    this.gameTextures[i] = (rTexture)manager.GetResourceFromFileName(GameResource.GetFullResourceName(this.textureFileNames[i - 1], ResourceType.rTexture));
+                }
+
+                // Setup the directx texture object.
                 if (this.gameTextures[i] != null)
                 {
                     // Setup the texture description.
@@ -1367,17 +1389,29 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     new VertexBufferBinding(this.secondaryVertexBuffer, this.primitives[i].VertexStride2, this.primitives[i].VertexStream2Offset));
                 manager.Device.ImmediateContext.InputAssembler.SetIndexBuffer(this.indexBuffer, SharpDX.DXGI.Format.R16_UInt, 0);
 
+                // Get the material for the primitive.
+                Material material = this.materials[this.primitives[i].MaterialIndex];
+
+                // Clear any stale lightmap bitmap.
+                manager.Device.ImmediateContext.PixelShader.SetShaderResource(1, null);
+                manager.Device.ImmediateContext.PixelShader.SetShaderResource(2, null);
+
                 // Check the flags on the material for this primitive to determine what shader to render with.
                 int shaderFlags = (this.materials[this.primitives[i].MaterialIndex].Flags >> 27) & 7;
                 switch (shaderFlags)
                 {
                     case 0: this.shaders[1].DrawFrame(manager); break;
                     case 1: this.shaders[0].DrawFrame(manager); break;
-                    case 2: this.shaders[2].DrawFrame(manager); break;
-                }
+                    case 2:
+                        {
+                            // Set lightmap texture.
+                            manager.Device.ImmediateContext.PixelShader.SetShaderResource(1, this.shaderResources[material.LightmapTexture]);
+                            manager.Device.ImmediateContext.PixelShader.SetShaderResource(2, this.shaderResources[material.MaskMapTexture]);
 
-                // Get the material for the primitive.
-                Material material = this.materials[this.primitives[i].MaterialIndex];
+                            this.shaders[2].DrawFrame(manager);
+                            break;
+                        }
+                }
 
                 // Set the textures being used by the material.
                 manager.Device.ImmediateContext.PixelShader.SetShaderResource(0, this.shaderResources[material.BaseMapTexture]);
