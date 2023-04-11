@@ -28,6 +28,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
 
         // Xbox 360 formats
         Format_A4R4G4B4,        // 0x1828014f
+        Format_A16B16G16R16F,   // 0x1A22AB60
     }
 
     public enum TextureType : int
@@ -245,7 +246,13 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 case TextureFormat.Format_B8G8R8A8_UNORM:
                     {
                         // B8G8R8A8_UNORM: 32bpp normal map
-                        pixelFormat = PixelFormat.Format32bppRgb;
+                        pixelFormat = PixelFormat.Format32bppArgb;
+                        break;
+                    }
+                case TextureFormat.Format_A16B16G16R16F:
+                    {
+                        pixelData = DXTDecoder.DecodeA16B16G16R16F(width, height, pixelData, this.IsBigEndian);
+                        pixelFormat = PixelFormat.Format32bppArgb;
                         break;
                     }
                 default:
@@ -659,6 +666,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 case 21: return TextureFormat.Format_B8G8R8A8_UNORM;
 
                 case 0x1828014f: return TextureFormat.Format_A4R4G4B4;
+                case 0x1A22AB60: return TextureFormat.Format_A16B16G16R16F;
                 default: return TextureFormat.Format_Unsupported;
             }
         }
@@ -693,6 +701,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 case 0x1A200154:
                 case 0x18280186:
                 case 0x1828014f:
+                case 0x1A22AB60:
                     return true;
             }
 
@@ -732,6 +741,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                 case TextureFormat.Format_R8G8_SNORM: return 2;
                 case TextureFormat.Format_B8G8R8A8_UNORM: return 4;
                 case TextureFormat.Format_A4R4G4B4: return 2;
+                case TextureFormat.Format_A16B16G16R16F: return 64;
                 default: return 0;
             }
         }
@@ -773,6 +783,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
                         {
                             case TextureFormat.Format_R8G8_SNORM: bytesPerRow = 16; break;
                             case TextureFormat.Format_B8G8R8A8_UNORM: bytesPerRow = 32; break;
+                            case TextureFormat.Format_A16B16G16R16F: bytesPerRow = 64; break;
                             default:
                                 {
                                     // Unsupported bitmap format.

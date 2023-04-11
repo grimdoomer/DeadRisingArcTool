@@ -225,6 +225,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
         private Color4[] boneMatrixData;
         private Texture2D boneMapMatrix;
         private ShaderResourceView boneMapMatrixShaderView;
+        private SamplerState boneMapMatrixSamplerState;
 
         // Animation file being played on the model.
         private rMotionList activeAnimation = null;
@@ -1231,6 +1232,18 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Create the shader resource view that will bind this texture.
                 this.boneMapMatrixShaderView = new ShaderResourceView(manager.Device, this.boneMapMatrix);
+
+                // Setup the sampler states for the vertex shader.
+                SamplerStateDescription texture1Sampler = new SamplerStateDescription();
+                texture1Sampler.AddressU = TextureAddressMode.Wrap;
+                texture1Sampler.AddressV = TextureAddressMode.Wrap;
+                texture1Sampler.AddressW = TextureAddressMode.Wrap;
+                texture1Sampler.BorderColor = new SharpDX.Mathematics.Interop.RawColor4(0.0f, 0.0f, 0.0f, 0.0f);
+                texture1Sampler.MaximumLod = 0;
+                texture1Sampler.Filter = Filter.MinMagMipPoint;
+                texture1Sampler.MipLodBias = 0;
+                texture1Sampler.MaximumAnisotropy = 1;
+                this.boneMapMatrixSamplerState = new SamplerState(manager.Device, texture1Sampler);
             }
 
             // Loop and build the list of primitives by group id.
@@ -1357,7 +1370,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             float matrixUnitSize = 1.0f / (float)NextPowerOfTwo(this.joints.Length);
             float matrixRowSize = matrixUnitSize / 4.0f;
             manager.ShaderConstants.gXfMatrixMapFactor = new Vector4(0.0f, 0.0f, matrixUnitSize, matrixRowSize);
+
             manager.Device.ImmediateContext.VertexShader.SetShaderResource(0, this.boneMapMatrixShaderView);
+            manager.Device.ImmediateContext.VertexShader.SetSampler(0, this.boneMapMatrixSamplerState);
 
             // Update shader constants now to avoid doing it every frame for non-highlighted objects.
             manager.UpdateShaderConstants();

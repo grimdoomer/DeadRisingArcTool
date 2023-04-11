@@ -324,6 +324,45 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
 
         }
 
+        public static byte[] DecodeA16B16G16R16F(float Width, float Height, byte[] SourceData, bool bigEndian)
+        {
+            // Allocate a new byte array to fit the decoded data.
+            byte[] decodedData = new byte[SourceData.Length / 2];
+
+            // Loop through all the pixels and decode.
+            for (int ptr = 0; ptr < SourceData.Length; ptr += 8)
+            {
+                byte a = Float16ToByte(SourceData, ptr, bigEndian);
+                byte b = Float16ToByte(SourceData, ptr + 2, bigEndian);
+                byte g = Float16ToByte(SourceData, ptr + 4, bigEndian);
+                byte r = Float16ToByte(SourceData, ptr + 6, bigEndian);
+
+                decodedData[(ptr / 2)] = a;
+                decodedData[(ptr / 2) + 1] = r;
+                decodedData[(ptr / 2) + 2] = g;
+                decodedData[(ptr / 2) + 3] = b;
+            }
+
+            // Return the new buffer.
+            return decodedData;
+        }
+
+        public static byte Float16ToByte(byte[] buffer, int index, bool bigEndian)
+        {
+            // Get the 16bit color value.
+            short pixel = 0;
+            if (bigEndian == true)
+                pixel = (short)(((short)buffer[index] << 8) | (short)buffer[index + 1]);
+            else
+                pixel = (short)(((short)buffer[index + 1] << 8) | (short)buffer[index]);
+
+            // Map the pixel value from [−131008.0, 131008.0] to [0, 1].
+            float fvalue = (float)pixel / (float)ushort.MaxValue;
+
+            // Now map from [0, 1] to [0, 255].
+            return (byte)(fvalue * 255);
+        }
+
         public static byte CalculateU8V8Color(byte Color)
         {
             if (Color == 0)
