@@ -72,9 +72,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
         public Vector4 gXfHighlightColor;       // Color used for highlighting objects
         public uint gXfHighlightingEnabled;     // Enables object highlighting
-        public uint pad1;
-        public uint pad2;
-        public uint pad3;
+        public int gXfEnableAlphaTest;          // Enables alpha testing
+        public float gXfAlphaThreshold;         // Alpha clip threshold
+        public float gXfBlendFactor;
     }
 
     public class RenderManager

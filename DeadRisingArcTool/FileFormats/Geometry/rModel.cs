@@ -1374,9 +1374,6 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             manager.Device.ImmediateContext.VertexShader.SetShaderResource(0, this.boneMapMatrixShaderView);
             manager.Device.ImmediateContext.VertexShader.SetSampler(0, this.boneMapMatrixSamplerState);
 
-            // Update shader constants now to avoid doing it every frame for non-highlighted objects.
-            manager.UpdateShaderConstants();
-
             // Loop through all of the primitives for the model and draw each one.
             for (int i = 0; i < this.primitives.Length; i++)
             {
@@ -1406,6 +1403,22 @@ namespace DeadRisingArcTool.FileFormats.Geometry
 
                 // Get the material for the primitive.
                 Material material = this.materials[this.primitives[i].MaterialIndex];
+
+                // Set alpha blending state.
+                if ((material.Flags & 0x40) != 0)
+                {
+                    manager.ShaderConstants.gXfEnableAlphaTest = 0;
+                }
+                else
+                {
+                    manager.ShaderConstants.gXfEnableAlphaTest = 1;
+                    manager.ShaderConstants.gXfAlphaThreshold = 0.5019608f;
+                }
+
+                manager.ShaderConstants.gXfBlendFactor = material.Transparency;
+
+                // Update shader constants.
+                manager.UpdateShaderConstants();
 
                 // Clear any stale lightmap bitmap.
                 manager.Device.ImmediateContext.PixelShader.SetShaderResource(1, null);

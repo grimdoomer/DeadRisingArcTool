@@ -25,6 +25,10 @@ const float3 gXfQuantPosOffset;
 const float4 gXfHighlightColor;
 const dword gXfEnableHighlighting;
 
+const int gXfEnableAlphaTest;
+const float gXfAlphaThreshold;
+const float gXfBlendFactor;
+
 //=============================================================================
 //=============================================================================
 shared Texture2D		XfAlbedoMap;

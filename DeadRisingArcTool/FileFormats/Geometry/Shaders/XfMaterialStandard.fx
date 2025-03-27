@@ -39,7 +39,7 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
 	float4		position:				SV_POSITION;
-	float2		texCoordBase:			TEXCOORD0;
+	float3		texCoordBase:			TEXCOORD0;
 	float2		texCoord1:				TEXCOORD1;
 	float2		texCoord2:				TEXCOORD2;
 };
@@ -49,7 +49,7 @@ struct VS_OUTPUT
 //-----------------------------------------------------------------------------
 struct PS_INPUT
 {	
-	float2		texCoordBase:			TEXCOORD0;
+	float3		texCoordBase:			TEXCOORD0;
 	float2		texCoord1:				TEXCOORD1;
 	float2		texCoord2:				TEXCOORD2;
 };
@@ -82,11 +82,12 @@ VS_OUTPUT XfStandardVS(VS_INPUT I)
 
 	O.position = mul(float4(wp, 1), gXfViewProj);
 
-	O.texCoordBase = I.texCoord0;
+	O.texCoordBase.xy = I.texCoord0;
 	O.texCoord1 = I.texCoord1;
 	O.texCoord2 = I.texCoord2;
 
-	//O.texCoordBase.z = 1;
+	// TODO: handle special case for glass...
+	O.texCoordBase.z = gXfBlendFactor;
 
 	return O;
 }
@@ -96,6 +97,8 @@ VS_OUTPUT XfStandardVS(VS_INPUT I)
 //-----------------------------------------------------------------------------
 float4 XfStandardPS(VS_OUTPUT I) : SV_Target
 {
+	float alpha = I.texCoordBase.z;
+
 	/*if (alpha) 
 	{
 		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
@@ -125,8 +128,13 @@ float4 XfStandardPS(VS_OUTPUT I) : SV_Target
 		albedo.xyz = (2 * albedo.xyz) * decodeRGBY(lightmap);
 #else
 		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
-		clip(albedo.a * I.texCoordBase.z - 1.0 / 255.0);
+		//clip(albedo.a * I.texCoordBase.z - 1.0 / 255.0);
 #endif
+
+		if (gXfEnableAlphaTest == 1)
+		{
+			clip(albedo.a * alpha - gXfAlphaThreshold);
+		}
 
 		return albedo;
 	}
