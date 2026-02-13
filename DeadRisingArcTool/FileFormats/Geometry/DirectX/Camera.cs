@@ -13,7 +13,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 {
     public class Camera : IRenderable
     {
-        public float Speed { get; set; } = 1.0f;
+        public float Speed { get; set; } = 10.0f;
         public float SpeedModifier { get; set; } = 0.2f;
 
         // Constant directional vectors:

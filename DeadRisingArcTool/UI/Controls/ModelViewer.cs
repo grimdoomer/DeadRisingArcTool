@@ -21,6 +21,13 @@ namespace DeadRisingArcTool.Controls
     [GameResourceEditor(ResourceType.rModel)]
     public partial class ModelViewer : GameResourceEditorControl
     {
+        readonly string[] ShaderTypes = new string[]
+        {
+            "Rigid Skinned 4W",
+            "Rigid Skinned 8W",
+            "Level Geometry"
+        };
+
         public ModelViewer()
         {
             InitializeComponent();
@@ -68,6 +75,13 @@ namespace DeadRisingArcTool.Controls
             for (int i = 0; i < model.materials.Length; i++)
             {
                 string mat = "   Material #" + i.ToString() + "\n";
+
+                int shaderType = (model.materials[i].Flags >> 27) & 7;
+                mat += $"\tVertex decl type: {(ShaderTypes.Length > shaderType ? ShaderTypes[shaderType] : shaderType.ToString())}\n";
+                mat += $"\tAlpha test enabled: {((model.materials[i].Flags & 0x40) == 0 ? "True" : "False")}\n";
+                //mat += $"\tEnvironment map type: {(model.materials[i].Flags >> 16) & 3}\n";
+                mat += $"\n";
+
                 mat += StructureToString(model.materials[i]);
                 materials += mat + "\n";
             }

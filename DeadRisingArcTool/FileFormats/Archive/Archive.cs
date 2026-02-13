@@ -4,6 +4,7 @@ using DeadRisingArcTool.Utilities;
 using IO;
 using IO.Endian;
 using Ionic.Zlib;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -618,6 +619,112 @@ namespace DeadRisingArcTool.FileFormats.Archive
                 fileOffsets.Add((int)dataStream.Position);
                 dataStream.Write(compressedData, 0, compressedData.Length);
             }
+
+            // Update the header for the new file count.
+            this.writer.BaseStream.Position = 0;
+            this.writer.Write(ArchiveHeader.kHeaderMagic1);
+            this.writer.Write((short)ArchiveHeader.kVersion);
+            this.writer.Write((short)this.fileEntries.Count);
+
+            // Calculate the data start offset based on the new number of files.
+            int dataStart = ArchiveHeader.kSizeOf + (this.fileEntries.Count * ArchiveFileEntry.kSizeOf);
+            if (dataStart % 0x8000 != 0)
+                dataStart += 0x8000 - (dataStart % 0x8000);
+
+            // Loop and write all the file entries.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Write the file entry.
+                string fileName = this.fileEntries[i].GetFileNameNoExtension();
+                this.writer.Write(fileName.ToCharArray());
+                this.writer.Write(new byte[ArchiveFileEntry.kMaxFileNameLength - fileName.Length]);
+
+                // If we know the file type for this file get the file type id.
+                if (GameResource.KnownResourceTypesReverse.ContainsKey(this.fileEntries[i].FileType) == true)
+                    this.writer.Write(GameResource.KnownResourceTypesReverse[this.fileEntries[i].FileType]);
+                else
+                    this.writer.Write((int)this.fileEntries[i].FileType);
+
+                this.writer.Write(this.fileEntries[i].CompressedSize);
+                this.writer.Write(this.fileEntries[i].DecompressedSize);
+                this.writer.Write(dataStart + fileOffsets[i]);
+
+                // Update the file offset.
+                this.fileEntries[i].DataOffset = dataStart + fileOffsets[i];
+            }
+
+            // Fill the rest with padding.
+            this.writer.Write(new byte[dataStart - (int)this.writer.BaseStream.Position]);
+
+            // Write the data stream and calculate the new file size.
+            this.writer.Write(dataStream.ToArray(), 0, (int)dataStream.Length);
+            this.fileStream.SetLength(this.writer.BaseStream.Position);
+
+            // Close the archive.
+            CloseArchive();
+            return true;
+        }
+
+        /// <summary>
+        /// Adds a new file to the archive using the file path and data specified
+        /// </summary>
+        /// <param name="filePath">File path of the file to add (including extension)</param>
+        /// <param name="data">File data</param>
+        /// <param name="datum">Unique datum assigned to the file</param>
+        /// <returns></returns>
+        public bool AddFile(string filePath, byte[] data, out DatumIndex datum)
+        {
+            datum = new DatumIndex(DatumIndex.Unassigned);
+
+            // Open the archive for writing.
+            if (OpenArchive(true) == false)
+            {
+                // Failed to open the archive for writing.
+                return false;
+            }
+
+            // Create a new memory stream to hold compressed file data.
+            List<int> fileOffsets = new List<int>();
+            MemoryStream dataStream = new MemoryStream((int)this.reader.BaseStream.Length);
+
+            // Loop through all the files in the archive and read each one into the memory stream.
+            for (int i = 0; i < this.fileEntries.Count; i++)
+            {
+                // Seek to the data offset.
+                this.reader.BaseStream.Position = this.fileEntries[i].DataOffset;
+
+                // Read the compressed file data.
+                byte[] fileData = this.reader.ReadBytes(this.fileEntries[i].CompressedSize);
+
+                // Save the data offset and write the compressed data to the memory stream.
+                fileOffsets.Add((int)dataStream.Position);
+                dataStream.Write(fileData, 0, fileData.Length);
+            }
+
+            // Compress the file data.
+            byte[] compressedData = ZlibUtilities.CompressData(data);
+
+            // Get the resource type from the file extension.
+            ResourceType fileType = (ResourceType)Enum.Parse(typeof(ResourceType), filePath.Substring(filePath.LastIndexOf('.') + 1), true);
+
+            // Create a new file entry for the file.
+            ArchiveFileEntry newFileEntry = new ArchiveFileEntry();
+            newFileEntry.FileName = filePath;
+            newFileEntry.CompressedSize = compressedData.Length;
+            newFileEntry.DecompressedSize = data.Length;
+            newFileEntry.FileId = this.nextFileId++;
+            newFileEntry.FileType = fileType;
+
+            // Assign the file a unique datum.
+            datum = new DatumIndex(this.ArchiveId, newFileEntry.FileId);
+
+            // Add the file entry to the list and create a reverse lookup entry.
+            this.fileEntryLookupDictionary.Add(newFileEntry.FileId, this.fileEntries.Count);
+            this.fileEntries.Add(newFileEntry);
+
+            // Add the data offset to the list and write the compressed data to the data stream.
+            fileOffsets.Add((int)dataStream.Position);
+            dataStream.Write(compressedData, 0, compressedData.Length);
 
             // Update the header for the new file count.
             this.writer.BaseStream.Position = 0;

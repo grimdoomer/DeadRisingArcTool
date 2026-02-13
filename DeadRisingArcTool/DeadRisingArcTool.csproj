@@ -187,6 +187,7 @@
     <Compile Include="FileFormats\Geometry\Vertex\InputSemanticAttribute.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexHelper.cs" />
     <Compile Include="FileFormats\Geometry\Vertex\VertexDeclaration.cs" />
+    <Compile Include="FileFormats\Importers\ModelImporter.cs" />
     <Compile Include="FileFormats\Spawnable\GameItems.cs" />
     <Compile Include="FileFormats\Spawnable\rAreaHitLayout.cs" />
     <Compile Include="FileFormats\Spawnable\rItemLayout.cs" />
@@ -434,6 +435,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Blender\DRExport.py" />
     <Content Include="FileFormats\Geometry\Shaders\ImGuiShader.fx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -472,6 +474,10 @@
     <ProjectReference Include="..\IO\IO.csproj">
       <Project>{13a4ce71-96c0-4553-b899-af6c524fd3c9}</Project>
       <Name>IO</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\rmiceli\Downloads\NvTriStrip.Net-master\NvTriStrip.Net-master\NvTriStripDotNet\NvTriStripDotNet.csproj">
+      <Project>{66b926ee-ff73-42be-a27e-cbcb333a4c07}</Project>
+      <Name>NvTriStripDotNet</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -86,7 +86,10 @@ namespace DeadRisingArcTool.FileFormats
         rUBCell,
         rUBCellList,
         rUBCellXml,
-        rUBMembershipSpaceList
+        rUBMembershipSpaceList,
+
+        // Custom DREX file types:
+        rDrexVehicle
     }
 
     public abstract class GameResource : IRenderable
@@ -167,7 +170,10 @@ namespace DeadRisingArcTool.FileFormats
             { 0x044BB32E, ResourceType.rUBCell },
             { 0x1189D435, ResourceType.rUBCellList },
             { 0x0596DDE7, ResourceType.rUBCellXml },
-            { 0x42000343, ResourceType.rUBMembershipSpaceList }
+            { 0x42000343, ResourceType.rUBMembershipSpaceList },
+
+            // Custom DREX file types:
+            { 0x76656869, ResourceType.rDrexVehicle }
         };
 
         /// <summary>
@@ -244,7 +250,10 @@ namespace DeadRisingArcTool.FileFormats
             { ResourceType.rUBCell, 0x044BB32E },
             { ResourceType.rUBCellList, 0x1189D435 },
             { ResourceType.rUBCellXml, 0x0596DDE7 },
-            { ResourceType.rUBMembershipSpaceList, 0x42000343 }
+            { ResourceType.rUBMembershipSpaceList, 0x42000343 },
+
+            // Custom DREX file types:
+            { ResourceType.rDrexVehicle, 0x76656869 }
         };
 
         #endregion

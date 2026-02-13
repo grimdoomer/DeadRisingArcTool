@@ -89,6 +89,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry
     {
         [Hex]
         /* 0x00 */ public int Flags;            // Upper 5 bits are vertex declaration type (0x14064F550)
+        [Hex]
 	    /* 0x04 */ public int Unk4;             // Flags for what bitmaps are used/how they are used (0x1406B2167)
 	    /* 0x08 */ public ShaderTechnique ShaderTechnique;     // Gets set to shader technique index at runtime
         /* 0x0C */ public int Unk5;             // Never read, set on init to shader set index
@@ -323,7 +324,9 @@ namespace DeadRisingArcTool.FileFormats.Geometry
             model.header.BoundingBoxMin = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), 0.0f);
             reader.BaseStream.Position += 4;
             model.header.BoundingBoxMax = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), 0.0f);
-            reader.BaseStream.Position += 8;
+            reader.BaseStream.Position += 4;
+            model.header.MidDist = reader.ReadInt32();
+            model.header.LowDist = reader.ReadInt32();
             model.header.LightGroup = reader.ReadInt32();
             reader.BaseStream.Position = rModelHeader.kSizeOf;
 
@@ -1141,12 +1144,19 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     desc.SampleDescription.Count = 1;
                     desc.ArraySize = this.gameTextures[i].FaceCount;
 
-                    // Create the texture using the description and resource data we setup.
-                    this.dxTextures[i] = new Texture2D(manager.Device, desc);
-                    manager.Device.ImmediateContext.UpdateSubresource(this.gameTextures[i].SubResources[0], this.dxTextures[i]);
+                    try
+                    {
+                        // Create the texture using the description and resource data we setup.
+                        this.dxTextures[i] = new Texture2D(manager.Device, desc);
+                        manager.Device.ImmediateContext.UpdateSubresource(this.gameTextures[i].SubResources[0], this.dxTextures[i]);
 
-                    // Create the shader resource that will be use this texture.
-                    this.shaderResources[i] = new ShaderResourceView(manager.Device, this.dxTextures[i]);
+                        // Create the shader resource that will be use this texture.
+                        this.shaderResources[i] = new ShaderResourceView(manager.Device, this.dxTextures[i]);
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
                 }
             }
 

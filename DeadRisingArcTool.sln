@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30621.155
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeadRisingArcTool", "DeadRisingArcTool\DeadRisingArcTool.csproj", "{38869C5B-3F05-4C34-ADFC-80727013170A}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -11,6 +11,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IO", "IO\IO.csproj", "{13A4CE71-96C0-4553-B899-AF6C524FD3C9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.csproj", "{30C860E8-04C2-48B3-96AA-FB83BFC4E19A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NvTriStripDotNet", "C:\Users\rmiceli\Downloads\NvTriStrip.Net-master\NvTriStrip.Net-master\NvTriStripDotNet\NvTriStripDotNet.csproj", "{66B926EE-FF73-42BE-A27E-CBCB333A4C07}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -100,6 +102,30 @@ Global
 		{30C860E8-04C2-48B3-96AA-FB83BFC4E19A}.Release|x64.Build.0 = Release|Any CPU
 		{30C860E8-04C2-48B3-96AA-FB83BFC4E19A}.Release|x86.ActiveCfg = Release|Any CPU
 		{30C860E8-04C2-48B3-96AA-FB83BFC4E19A}.Release|x86.Build.0 = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug_Update|Any CPU.ActiveCfg = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug_Update|Any CPU.Build.0 = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug_Update|x64.ActiveCfg = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug_Update|x64.Build.0 = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug_Update|x86.ActiveCfg = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug_Update|x86.Build.0 = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug|x64.Build.0 = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Debug|x86.Build.0 = Debug|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release_Update|Any CPU.ActiveCfg = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release_Update|Any CPU.Build.0 = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release_Update|x64.ActiveCfg = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release_Update|x64.Build.0 = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release_Update|x86.ActiveCfg = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release_Update|x86.Build.0 = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release|x64.ActiveCfg = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release|x64.Build.0 = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release|x86.ActiveCfg = Release|Any CPU
+		{66B926EE-FF73-42BE-A27E-CBCB333A4C07}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
