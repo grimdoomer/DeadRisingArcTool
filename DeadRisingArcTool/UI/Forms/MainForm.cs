@@ -1551,7 +1551,7 @@ namespace DeadRisingArcTool
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 // Delete the old archive file.
-                string archivePath = "K:\\_SteamLibrary\\steamapps\\common\\Dead Rising\\nativeWin64\\Mods\\hotdog_cart.arc";
+                string archivePath = "K:\\_SteamLibrary\\steamapps\\common\\Dead Rising\\nativeWin64\\Mods\\warthog.arc";
                 if (File.Exists(archivePath) == true)
                     File.Delete(archivePath);
 
@@ -1580,7 +1580,7 @@ namespace DeadRisingArcTool
                     Material 8: glass!%=
                 */
 
-                /*
+                
                 // Update the material mappings.
                 importer.Materials[0].BaseMap = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\H2EK\\data\\!extracted\\warthog\\bitmaps\\tirestires_00_00.dds";
                 importer.Materials[0].BaseMapRemapPath = "textures\\tires.rTexture";
@@ -1602,25 +1602,25 @@ namespace DeadRisingArcTool
                 importer.Materials[3].NormalMapRemapPath = "textures\\warthog_standard_bump.rTexture";
                 importer.Materials[3].MetalicMap = "X:\\Dead Rising\\Model Injection\\Warthog\\Export\\om0099_MM-01.dds";
                 importer.Materials[3].MetalicMapRemapPath = "textures\\warthog_standard_mm.rTexture";
-                */
+                importer.FilePath = "warthog.rModel";
 
                 //importer.Materials[0].BaseMap = "X:\\Dead Rising\\Model Injection\\Hotdog\\hotdog.osm\\textures\\Hotdog.dds";
                 //importer.Materials[0].BaseMapRemapPath = "textures\\hotdog.rTexture";
                 //importer.Materials[1].BaseMap = "X:\\Dead Rising\\Model Injection\\Hotdog\\hotdog.osm\\textures\\bun.dds";
                 //importer.Materials[1].BaseMapRemapPath = "textures\\bun.rTexture";
 
-                for (int i = 0; i < importer.Materials.Length; i++)
-                {
-                    importer.Materials[i].BaseMap = $"X:\\Dead Rising\\Model Injection\\Hotdog Cart\\hotdog.osm\\textures\\{importer.Materials[i].Name}.dds";
-                    importer.Materials[i].BaseMapRemapPath = $"textures\\{importer.Materials[i].Name}.rTexture";
-                    importer.Materials[i].NormalMap = "X:\\Dead Rising\\Model Injection\\Hotdog Cart\\hotdog.osm\\textures\\normal.dds";
-                    importer.Materials[i].NormalMapRemapPath = "textures\\normal.rTexture";
-                    importer.Materials[i].MetalicMap = "X:\\Dead Rising\\Model Injection\\Warthog\\Export\\om0099_MM-01.dds";
-                    importer.Materials[i].MetalicMapRemapPath = "textures\\tires_mm.rTexture";
-                }
+                //importer.FilePath = "model\\om\\om0001\\om0001.rModel";
+                //for (int i = 0; i < importer.Materials.Length; i++)
+                //{
+                //    importer.Materials[i].BaseMap = $"X:\\Dead Rising\\Model Injection\\Hotdog Cart\\hotdog.osm\\textures\\{importer.Materials[i].Name}.dds";
+                //    importer.Materials[i].BaseMapRemapPath = $"textures\\{importer.Materials[i].Name}.rTexture";
+                //    importer.Materials[i].NormalMap = "X:\\Dead Rising\\Model Injection\\Hotdog Cart\\hotdog.osm\\textures\\normal.dds";
+                //    importer.Materials[i].NormalMapRemapPath = "textures\\normal.rTexture";
+                //    importer.Materials[i].MetalicMap = "X:\\Dead Rising\\Model Injection\\Warthog\\Export\\om0099_MM-01.dds";
+                //    importer.Materials[i].MetalicMapRemapPath = "textures\\tires_mm.rTexture";
+                //}
 
                 // Import the model.
-                importer.FilePath = "model\\om\\om0001\\om0001.rModel";
                 if (importer.ImportModel(archive) == false)
                 {
 

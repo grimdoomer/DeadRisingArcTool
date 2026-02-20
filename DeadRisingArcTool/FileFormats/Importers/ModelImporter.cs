@@ -17,9 +17,8 @@ namespace DeadRisingArcTool.FileFormats.Importers
     public struct DRModelHeader
     {
         /* 0x00 */ public int Version;
-        /* 0x04 */ public int MaterialCount;
-        /* 0x08 */ public int FaceCount;
-        /* 0x0C */ public int VertexCount;
+        /* 0x04 */ public int ObjectCount;
+        /* 0x08 */ public int MaterialCount;
     }
 
     public struct DRModelMaterial
@@ -35,6 +34,7 @@ namespace DeadRisingArcTool.FileFormats.Importers
 
     public struct DRModelFace
     {
+        public int ObjectIndex;
         /* 0x00 */ public int MaterialIndex;
         /* 0x04 */ public int Vertex0;
         /* 0x08 */ public int Vertex1;
@@ -54,13 +54,28 @@ namespace DeadRisingArcTool.FileFormats.Importers
         public int[] BoneIndices;
     }
 
+    public struct DRModelObject
+    {
+        public string Name;
+        public int TriangleCount;
+        public int VertexCount;
+
+        public DRModelFace[] Triangles;
+        public DRModelVertex[] Vertices;
+    }
+
     public struct DRModelPrimitive
     {
         public int GroupID;
         public int MaterialIndex;
 
+        public int BaseVertexIndex;
+
         public List<DRModelVertex> Vertices;
         public List<ushort> Indices;
+
+        public Vector3 MinExtents;
+        public Vector3 MaxExtents;
     }
 
     public class ModelImporter
@@ -74,9 +89,10 @@ namespace DeadRisingArcTool.FileFormats.Importers
         /// </summary>
         public string FilePath { get; set; }
         public DRModelHeader Header;
+        public DRModelObject[] Objects;
         public DRModelMaterial[] Materials;
-        public DRModelFace[] Faces;
-        public DRModelVertex[] Vertices;
+        //public DRModelFace[] Faces;
+        //public DRModelVertex[] Vertices;
 
         public ModelImporter(string sourceFilePath)
         {
@@ -92,9 +108,8 @@ namespace DeadRisingArcTool.FileFormats.Importers
                 // Parse the header.
                 this.Header = new DRModelHeader();
                 this.Header.Version = reader.ReadInt32();
+                this.Header.ObjectCount = reader.ReadInt32();
                 this.Header.MaterialCount = reader.ReadInt32();
-                this.Header.FaceCount = reader.ReadInt32();
-                this.Header.VertexCount = reader.ReadInt32();
 
                 // Check the version is supported.
                 if (this.Header.Version != 1)
@@ -110,31 +125,41 @@ namespace DeadRisingArcTool.FileFormats.Importers
                     this.Materials[i].NormalMap = reader.ReadNullTerminatedString();
                 }
 
-                // Parse faces:
-                this.Faces = new DRModelFace[this.Header.FaceCount];
-                for (int i = 0; i < this.Header.FaceCount; i++)
+                // Parse objects:
+                this.Objects = new DRModelObject[this.Header.ObjectCount];
+                for (int i = 0; i < this.Header.ObjectCount; i++)
                 {
-                    this.Faces[i] = new DRModelFace();
-                    this.Faces[i].MaterialIndex = reader.ReadInt32();
-                    this.Faces[i].Vertex0 = reader.ReadInt32();
-                    this.Faces[i].Vertex1 = reader.ReadInt32();
-                    this.Faces[i].Vertex2 = reader.ReadInt32();
-                }
+                    this.Objects[i] = new DRModelObject();
+                    this.Objects[i].Name = reader.ReadNullTerminatedString();
+                    this.Objects[i].TriangleCount = reader.ReadInt32();
+                    this.Objects[i].VertexCount = reader.ReadInt32();
 
-                // Parse vertices:
-                this.Vertices = new DRModelVertex[this.Header.VertexCount];
-                for (int i = 0; i < this.Header.VertexCount; i++)
-                {
-                    this.Vertices[i] = new DRModelVertex();
-                    this.Vertices[i].Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].Normal = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].Tangent = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].Texcoord0 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].Texcoord1 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].Texcoord2 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].Texcoord3 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].BoneWeights = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-                    this.Vertices[i].BoneIndices = new int[4] { reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32() };
+                    // Triangles:
+                    this.Objects[i].Triangles = new DRModelFace[this.Objects[i].TriangleCount];
+                    for (int x = 0; x < this.Objects[i].TriangleCount; x++)
+                    {
+                        this.Objects[i].Triangles[x] = new DRModelFace();
+                        this.Objects[i].Triangles[x].MaterialIndex = reader.ReadInt32();
+                        this.Objects[i].Triangles[x].Vertex0 = reader.ReadInt32();
+                        this.Objects[i].Triangles[x].Vertex1 = reader.ReadInt32();
+                        this.Objects[i].Triangles[x].Vertex2 = reader.ReadInt32();
+                    }
+
+                    // Vertices:
+                    this.Objects[i].Vertices = new DRModelVertex[this.Objects[i].VertexCount];
+                    for (int x = 0; x < this.Objects[i].VertexCount; x++)
+                    {
+                        this.Objects[i].Vertices[x] = new DRModelVertex();
+                        this.Objects[i].Vertices[x].Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].Normal = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].Tangent = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].Texcoord0 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].Texcoord1 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].Texcoord2 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].Texcoord3 = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].BoneWeights = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                        this.Objects[i].Vertices[x].BoneIndices = new int[4] { reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32() };
+                    }
                 }
             }
 
@@ -197,9 +222,9 @@ namespace DeadRisingArcTool.FileFormats.Importers
                 //newMaterials[i].Flags |= (1 << 27) | 0x41;
 
                 // Disable alpha clipping.
-                //newMaterials[i].Flags |= 0x40;
+                newMaterials[i].Flags |= 0x40;
                 //newMaterials[i].Flags |= 0x28001;
-                newMaterials[i].Flags = 0x100C1;
+                //newMaterials[i].Flags = 0x100C1;
 
                 newMaterials[i].Unk4 = 0x44C3;
                 newMaterials[i].Unk5 = 143;
@@ -241,25 +266,67 @@ namespace DeadRisingArcTool.FileFormats.Importers
                 primitives[i].Indices = new List<ushort>();
             }
 
-            // Loop through all the faces and create primitives based on material type.
-            for (int i = 0; i < this.Faces.Length; i++)
+            Dictionary<int, DRModelPrimitive> primitiveDictionary = new Dictionary<int, DRModelPrimitive>();
+
+            // Loop through all the mesh objects and create primitives based on material type.
+            for (int i = 0; i < this.Objects.Length; i++)
             {
-                // If the face has no material skip it.
-                if (this.Faces[i].MaterialIndex == -1)
-                    continue;
+                for (int x = 0; x < this.Objects[i].Triangles.Length; x++)
+                {
+                    if (this.Objects[i].Triangles[x].MaterialIndex == -1)
+                        continue;
 
-                // Setup indices for the triangle.
-                int primIndex = this.Faces[i].MaterialIndex;
-                int vertexIndex = primitives[primIndex].Vertices.Count;
-                primitives[primIndex].Indices.Add((ushort)(vertexIndex + 0));
-                primitives[primIndex].Indices.Add((ushort)(vertexIndex + 1));
-                primitives[primIndex].Indices.Add((ushort)(vertexIndex + 2));
+                    int primitiveKey = (i << 16) | (this.Objects[i].Triangles[x].MaterialIndex & 0xFFFF);
+                    if (primitiveDictionary.ContainsKey(primitiveKey) == false)
+                    {
+                        DRModelPrimitive primitive = new DRModelPrimitive();
+                        primitive.GroupID = 0; // (i << 5) | (this.Objects[i].Triangles[x].MaterialIndex & 0x1F);
+                        primitive.MaterialIndex = this.Objects[i].Triangles[x].MaterialIndex;
+                        primitive.Vertices = new List<DRModelVertex>();
+                        primitive.Indices = new List<ushort>();
+                        primitiveDictionary.Add(primitiveKey, primitive);
+                    }
 
-                // Add vertices.
-                primitives[primIndex].Vertices.Add(this.Vertices[this.Faces[i].Vertex0]);
-                primitives[primIndex].Vertices.Add(this.Vertices[this.Faces[i].Vertex1]);
-                primitives[primIndex].Vertices.Add(this.Vertices[this.Faces[i].Vertex2]);
+                    // Setup indices for the triangle.
+                    int vertexIndex = primitiveDictionary[primitiveKey].Vertices.Count;
+                    primitiveDictionary[primitiveKey].Indices.Add((ushort)(vertexIndex + 0));
+                    primitiveDictionary[primitiveKey].Indices.Add((ushort)(vertexIndex + 1));
+                    primitiveDictionary[primitiveKey].Indices.Add((ushort)(vertexIndex + 2));
+
+                    // Add vertices.
+                    primitiveDictionary[primitiveKey].Vertices.Add(this.Objects[i].Vertices[this.Objects[i].Triangles[x].Vertex0]);
+                    primitiveDictionary[primitiveKey].Vertices.Add(this.Objects[i].Vertices[this.Objects[i].Triangles[x].Vertex1]);
+                    primitiveDictionary[primitiveKey].Vertices.Add(this.Objects[i].Vertices[this.Objects[i].Triangles[x].Vertex2]);
+                }
             }
+
+            primitives = primitiveDictionary.Values.ToArray();
+
+            // Loop and find the min/max extents of each primitive.
+            for (int i = 0; i < primitives.Length; i++)
+            {
+                primitives[i].MinExtents = VectorMinimums(primitives[i].Vertices.Select(v => v.Position).ToArray());
+                primitives[i].MaxExtents = VectorMaximums(primitives[i].Vertices.Select(v => v.Position).ToArray());
+            }
+
+            //for (int i = 0; i < this.Faces.Length; i++)
+            //{
+            //    // If the face has no material skip it.
+            //    if (this.Faces[i].MaterialIndex == -1)
+            //        continue;
+
+            //    // Setup indices for the triangle.
+            //    int primIndex = this.Faces[i].MaterialIndex;
+            //    int vertexIndex = primitives[primIndex].Vertices.Count;
+            //    primitives[primIndex].Indices.Add((ushort)(vertexIndex + 0));
+            //    primitives[primIndex].Indices.Add((ushort)(vertexIndex + 1));
+            //    primitives[primIndex].Indices.Add((ushort)(vertexIndex + 2));
+
+            //    // Add vertices.
+            //    primitives[primIndex].Vertices.Add(this.Vertices[this.Faces[i].Vertex0]);
+            //    primitives[primIndex].Vertices.Add(this.Vertices[this.Faces[i].Vertex1]);
+            //    primitives[primIndex].Vertices.Add(this.Vertices[this.Faces[i].Vertex2]);
+            //}
 
             // Create a memory stream to write the model data to.
             MemoryStream modelStream = new MemoryStream();
@@ -277,15 +344,15 @@ namespace DeadRisingArcTool.FileFormats.Importers
             header.JointCount = 18;
             header.PrimitiveCount = (short)primitives.Length;
             header.MaterialCount = (short)this.Materials.Length;
-            header.PolygonCount = this.Faces.Length;
+            header.PolygonCount = this.Objects.Sum(m => m.TriangleCount);
             header.NumberOfTextures = textures.Count;
             header.MidDist = 1000;
             header.LowDist = 3000;
             header.LightGroup = 2;
 
             // Calculate the min/max extents of the mesh.
-            header.BoundingBoxMin = new Vector4(VectorMinimums(this.Vertices.Select(v => v.Position).ToArray()), 0f);
-            header.BoundingBoxMax = new Vector4(VectorMaximums(this.Vertices.Select(v => v.Position).ToArray()), 0f);
+            header.BoundingBoxMin = new Vector4(VectorMinimums(primitives.Select(p => p.MinExtents).ToArray()), 0f);
+            header.BoundingBoxMax = new Vector4(VectorMaximums(primitives.Select(p => p.MaxExtents).ToArray()), 0f);
 
             // Write an empty header for now.
             writer.Write(new byte[rModelHeader.kSizeOf]);
@@ -393,12 +460,8 @@ namespace DeadRisingArcTool.FileFormats.Importers
             header.PrimitiveDataOffset = (int)writer.BaseStream.Position;
             for (int i = 0; i < primitives.Length; i++)
             {
-                // Add a degenerate triangle to break off the strip.
-                primitives[i].Indices.Add(primitives[i].Indices.Last());
-                if (i == primitives.Length - 1)
-                    primitives[i].Indices.Add(primitives[i].Indices.Last());
-                else
-                    primitives[i].Indices.Add(primitives[i].Indices.First());
+                // Save the base vertex index for later so we can adjust indices.
+                primitives[i].BaseVertexIndex = header.VerticeCount;
 
                 // Determine vertex format and stride.
                 ShaderTechnique shaderTech = newMaterials[primitives[i].MaterialIndex].ShaderTechnique;
@@ -433,7 +496,7 @@ namespace DeadRisingArcTool.FileFormats.Importers
                 writer.Write((short)primitives[i].GroupID);
                 writer.Write((short)primitives[i].MaterialIndex);
                 writer.Write((byte)1);
-                writer.Write((byte)15);
+                writer.Write((byte)0xF);
                 writer.Write((byte)0);
                 writer.Write((byte)1);      // mb 1?
                 writer.Write((byte)vertexStride1);
@@ -442,10 +505,10 @@ namespace DeadRisingArcTool.FileFormats.Importers
                 writer.Write((byte)0);
                 writer.Write(primitives[i].Vertices.Count);
                 writer.Write(0);
-                writer.Write((int)vertexDataStream1.Position);
-                writer.Write((int)vertexDataStream2.Position);
+                writer.Write(0);
+                writer.Write(0);
                 writer.Write(header.IndiceCount);
-                writer.Write(primitives[i].Indices.Count - 2);
+                writer.Write(primitives[i].Indices.Count);
                 writer.Write(0);
                 writer.Write(0);
                 writer.Write(0);
@@ -559,9 +622,17 @@ namespace DeadRisingArcTool.FileFormats.Importers
                     }
                 }
 
-                // Update total vertex/index counts.
+                // Update total vertex/index counts. Every strip gets 2 extra indices for degenerate triangles to connect the next strip.
+                // If the winding order of the next strip will be inverted by the extra indices then add an additional indice to correct
+                // the winding order.
                 header.VerticeCount += primitives[i].Vertices.Count;
-                header.IndiceCount += primitives[i].Indices.Count;
+                header.IndiceCount += primitives[i].Indices.Count + 2;
+                if (i < primitives.Length - 1 && header.IndiceCount % 2 == 1)
+                {
+                    // Make sure the next strip doesn't start with a duplicate triangle, if so skip it.
+                    if (primitives[i + 1].Indices[0] != primitives[i + 1].Indices[1])
+                        header.IndiceCount++;
+                }
             }
             writer.AlignToBoundary(16, 0xCD);
 
@@ -578,11 +649,35 @@ namespace DeadRisingArcTool.FileFormats.Importers
             writer.AlignToBoundary(16, 0xCD);
 
             // Loop and write indice data.
+            int indiceCount = 0;
             header.IndiceDataOffset = (int)writer.BaseStream.Position;
             for (int i = 0; i < primitives.Length; i++)
             {
+                // Write the indices to file.
                 for (int x = 0; x < primitives[i].Indices.Count; x++)
-                    writer.Write(primitives[i].Indices[x]);
+                    writer.Write((ushort)(primitives[i].Indices[x] + primitives[i].BaseVertexIndex));
+
+                // Duplicate the last vertex of this strip and the first vertex of the next strip to create degenerate triangles
+                // that connect the strips together.
+                writer.Write((ushort)(primitives[i].Indices.Last() + primitives[i].BaseVertexIndex));
+                if (i == primitives.Length - 1)
+                    writer.Write((ushort)(primitives[i].Indices.Last() + primitives[i].BaseVertexIndex));
+                else
+                    writer.Write((ushort)(primitives[i + 1].Indices.First() + primitives[i + 1].BaseVertexIndex));
+
+                indiceCount += primitives[i].Indices.Count + 2;
+
+                // Check to see if the winding of the next strip will be inverted by the indices we added. If so, duplicate the
+                // first index of the next strip to correct the winding order.
+                if (i < primitives.Length - 1 && indiceCount % 2 == 1)
+                {
+                    // Make sure the next strip doesn't start with a duplicate triangle, if so skip it.
+                    if (primitives[i + 1].Indices[0] != primitives[i + 1].Indices[1])
+                    {
+                        writer.Write((ushort)(primitives[i + 1].Indices.First() + primitives[i + 1].BaseVertexIndex));
+                        indiceCount++;
+                    }
+                }
             }
             writer.AlignToBoundary(16, 0xCD);
 
