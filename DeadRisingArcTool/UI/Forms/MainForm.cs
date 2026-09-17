@@ -1629,5 +1629,47 @@ namespace DeadRisingArcTool
                 MessageBox.Show("Done!");
             }
         }
+
+        private void selectedFileTypeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Check if the selected node is valid and has a the tag property set.
+            if (this.treeView1.SelectedNode == null || this.treeView1.SelectedNode.Tag == null)
+            {
+                return;
+            }
+
+            // Get the resource type from the treeview node text.
+            if (Enum.TryParse<ResourceType>(this.treeView1.SelectedNode.Text, false, out ResourceType resourceType) == false)
+                return;
+
+            // Prompt for a folder to save to.
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                // Disable the form while we extract the file.
+                this.Enabled = false;
+
+                // Loop and extract all files of the specified type.
+                DatumIndex[] fileDatums = ArchiveCollection.Instance.GetFilesByType(resourceType);
+                for (int i = 0; i < fileDatums.Length; i++)
+                {
+                    // Skip any files for patch archives.
+                    ArchiveCollection.Instance.GetArchiveFileEntryFromDatum(fileDatums[i], out Archive archive, out ArchiveFileEntry fileEntry);
+                    if (archive.IsPatchFile == true)
+                        continue;
+
+                    // Extract the file.
+                    string filePath = Path.Combine(fbd.SelectedPath, fileEntry.FileName);
+                    Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                    archive.ExtractFile(fileDatums[i].FileId, filePath);
+                }
+
+                // Re-enable the form.
+                this.Enabled = true;
+
+                // File extracted successfully.
+                MessageBox.Show("Done!");
+            }
+        }
     }
 }

@@ -27,6 +27,16 @@ namespace DeadRisingArcTool.FileFormats.Text
         /* 0x1E */ public byte TerminatorChar;
     }
 
+    public enum rMessageSpecialCharacter : short
+    {
+        NewLine = 3,
+        Image = 26,
+        ColorStart = 32,
+        ColorEnd = 33,
+
+        //49/50 are start/end pair
+    }
+
     public struct CharEntry
     {
         public const int kSizeOf = 6;
@@ -66,7 +76,44 @@ namespace DeadRisingArcTool.FileFormats.Text
 
         public override byte[] ToBuffer()
         {
-            throw new NotImplementedException();
+            // Create a new memory stream to back our file with.
+            MemoryStream ms = new MemoryStream();
+            EndianWriter writer = new EndianWriter(this.IsBigEndian == true ? Endianness.Big : Endianness.Little, ms);
+
+            // Write the header fields.
+            writer.Write(this.header.Magic);
+            writer.Write(this.header.DataOffset);
+            writer.Write(0);
+            writer.Write(this.header.Unk1);
+            writer.Write(this.header.SpriteMapWidth);
+            writer.Write(this.header.SpriteMapHeight);
+            writer.Write(this.header.SpriteStrideX);
+            writer.Write(this.header.SpriteStrideY);
+            writer.Write(this.header.Unk2);
+            writer.Write((short)this.strings.Length);
+            writer.Write(this.header.TerminatorChar);
+            writer.Write(new byte[this.header.DataOffset - (int)writer.BaseStream.Position]);
+
+            // Loop and write string data.
+            for (int i = 0; i < this.strings.Length; i++)
+            {
+                for (int x = 0; x < this.strings[i].Length; x++)
+                {
+                    writer.Write((short)this.strings[i][x].Character);
+                    writer.Write(this.strings[i][x].SpriteId);
+                    writer.Write(this.strings[i][x].Width);
+                    writer.Write(this.strings[i][x].Flags);
+                }
+            }
+
+            // Update the size of the file.
+            writer.BaseStream.Position = 8;
+            writer.Write((int)writer.BaseStream.Length);
+
+            // Close the binary writer and return the memory stream as a byte array.
+            writer.Close();
+            //File.WriteAllBytes("X:\\Dead Rising\\Extract\\rMessage\\todo_u16_usa.rMessage_mod", ms.ToArray());
+            return ms.ToArray();
         }
 
         public static rMessage FromGameResource(byte[] buffer, string fileName, DatumIndex datum, ResourceType fileType, bool isBigEndian)

@@ -40,6 +40,7 @@
             this.texturesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.findDuplicateFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.buildRMessageSpriteReportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importModelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.treeViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.addToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -71,7 +72,7 @@
             this.lblOffset = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.importModelToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.selectedFileTypeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.treeViewContextMenu.SuspendLayout();
             this.FileInfoBox.SuspendLayout();
@@ -143,7 +144,8 @@
             // batchExtractToolStripMenuItem
             // 
             this.batchExtractToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.texturesToolStripMenuItem});
+            this.texturesToolStripMenuItem,
+            this.selectedFileTypeToolStripMenuItem});
             this.batchExtractToolStripMenuItem.Name = "batchExtractToolStripMenuItem";
             this.batchExtractToolStripMenuItem.Size = new System.Drawing.Size(221, 22);
             this.batchExtractToolStripMenuItem.Text = "Batch Extract";
@@ -151,7 +153,7 @@
             // texturesToolStripMenuItem
             // 
             this.texturesToolStripMenuItem.Name = "texturesToolStripMenuItem";
-            this.texturesToolStripMenuItem.Size = new System.Drawing.Size(117, 22);
+            this.texturesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.texturesToolStripMenuItem.Text = "Textures";
             this.texturesToolStripMenuItem.Click += new System.EventHandler(this.texturesToolStripMenuItem_Click);
             // 
@@ -168,6 +170,13 @@
             this.buildRMessageSpriteReportToolStripMenuItem.Size = new System.Drawing.Size(221, 22);
             this.buildRMessageSpriteReportToolStripMenuItem.Text = "Build rMessage sprite report";
             this.buildRMessageSpriteReportToolStripMenuItem.Click += new System.EventHandler(this.buildRMessageSpriteReportToolStripMenuItem_Click);
+            // 
+            // importModelToolStripMenuItem
+            // 
+            this.importModelToolStripMenuItem.Name = "importModelToolStripMenuItem";
+            this.importModelToolStripMenuItem.Size = new System.Drawing.Size(221, 22);
+            this.importModelToolStripMenuItem.Text = "Import Model";
+            this.importModelToolStripMenuItem.Click += new System.EventHandler(this.importModelToolStripMenuItem_Click);
             // 
             // treeView1
             // 
@@ -448,12 +457,12 @@
             this.splitContainer1.SplitterDistance = 297;
             this.splitContainer1.TabIndex = 3;
             // 
-            // importModelToolStripMenuItem
+            // selectedFileTypeToolStripMenuItem
             // 
-            this.importModelToolStripMenuItem.Name = "importModelToolStripMenuItem";
-            this.importModelToolStripMenuItem.Size = new System.Drawing.Size(221, 22);
-            this.importModelToolStripMenuItem.Text = "Import Model";
-            this.importModelToolStripMenuItem.Click += new System.EventHandler(this.importModelToolStripMenuItem_Click);
+            this.selectedFileTypeToolStripMenuItem.Name = "selectedFileTypeToolStripMenuItem";
+            this.selectedFileTypeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.selectedFileTypeToolStripMenuItem.Text = "Selected File Type";
+            this.selectedFileTypeToolStripMenuItem.Click += new System.EventHandler(this.selectedFileTypeToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -526,6 +535,7 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripMenuItem buildRMessageSpriteReportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importModelToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem selectedFileTypeToolStripMenuItem;
     }
 }
 

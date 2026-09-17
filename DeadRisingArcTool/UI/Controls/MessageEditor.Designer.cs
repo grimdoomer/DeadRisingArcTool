@@ -56,6 +56,7 @@
             this.fastColoredTextBox1.CharWidth = 8;
             this.fastColoredTextBox1.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.fastColoredTextBox1.DisabledColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))));
+            this.fastColoredTextBox1.Font = new System.Drawing.Font("Courier New", 9.75F);
             this.fastColoredTextBox1.IsReplaceMode = false;
             this.fastColoredTextBox1.Location = new System.Drawing.Point(3, 3);
             this.fastColoredTextBox1.Name = "fastColoredTextBox1";
@@ -65,6 +66,7 @@
             this.fastColoredTextBox1.Size = new System.Drawing.Size(436, 278);
             this.fastColoredTextBox1.TabIndex = 0;
             this.fastColoredTextBox1.Zoom = 100;
+            this.fastColoredTextBox1.TextChanged += new System.EventHandler<FastColoredTextBoxNS.TextChangedEventArgs>(this.textbox_TextChanged);
             // 
             // MessageEditor
             // 
