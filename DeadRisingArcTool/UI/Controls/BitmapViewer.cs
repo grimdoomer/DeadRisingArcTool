@@ -93,13 +93,13 @@ namespace DeadRisingArcTool.Controls
             }
 
             // Check if we need to set the background color.
-            if (this.Bitmap.header.Flags.HasFlag(TextureFlags.HasD3DClearColor) == true)
+            if (this.Bitmap.header.Flags.HasFlag(TextureFlags.ExplicitRange) == true)
             {
                 // Convert the background color to integers (RGBA order?).
-                int b = 255 * (int)this.Bitmap.BackgroundColor[0];
-                int g = 255 * (int)this.Bitmap.BackgroundColor[1];
-                int r = 255 * (int)this.Bitmap.BackgroundColor[2];
-                int a = 255 * (int)this.Bitmap.BackgroundColor[3];
+                int b = 255 * (int)this.Bitmap.TextureRange[0];
+                int g = 255 * (int)this.Bitmap.TextureRange[1];
+                int r = 255 * (int)this.Bitmap.TextureRange[2];
+                int a = 255 * (int)this.Bitmap.TextureRange[3];
 
                 // Set the background color to the inverse of the values?
                 this.pictureBox1.BackColor = System.Drawing.Color.FromArgb(255 - a, 255 - r, 255 - g, 255 - b);
@@ -232,11 +232,11 @@ namespace DeadRisingArcTool.Controls
             }
 
             // Check if the old texture has a background color, and if so copy it.
-            if (this.Bitmap.Flags.HasFlag(TextureFlags.HasD3DClearColor) == true)
+            if (this.Bitmap.Flags.HasFlag(TextureFlags.ExplicitRange) == true)
             {
                 // Copy the background color.
-                newTexture.header.Flags |= TextureFlags.HasD3DClearColor;
-                newTexture.BackgroundColor = this.Bitmap.BackgroundColor;
+                newTexture.header.Flags |= TextureFlags.ExplicitRange;
+                newTexture.TextureRange = this.Bitmap.TextureRange;
             }
 
             // Write the texture to a buffer we can use to update all the files for this texture.

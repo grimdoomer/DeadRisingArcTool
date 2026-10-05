@@ -1,11 +1,14 @@
-﻿using System;
+﻿using SharpDX.D3DCompiler;
+using SharpDX.Direct3D;
+using SharpDX.Direct3D11;
+using SharpDX.DXGI;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using SharpDX.Direct3D11;
-using SharpDX.D3DCompiler;
-using SharpDX.DXGI;
 using Device = SharpDX.Direct3D11.Device;
 
 namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
@@ -30,11 +33,24 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX.Shaders
 
         public override bool InitializeGraphics(RenderManager manager)
         {
+            // Get the application directory path.
+            string applicationPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            // Setup the shader include resolver.
+            ShaderIncludeResolver includeResolver = new ShaderIncludeResolver(applicationPath + "\\FileFormats\\Geometry\\Shaders");
+
+            ShaderMacro[] preprocessor = new ShaderMacro[]
+            {
+                new ShaderMacro("LEVEL_SHADER", 1),
+                new ShaderMacro("FUNC_SKIN", 0)
+            };
+
             // Compile our vertex and pixel shaders.
-            ShaderBytecode vertexByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfLevelMesh.vs");
+            byte[] shaderSourceData = File.ReadAllBytes(Path.Combine(applicationPath, "FileFormats\\Geometry\\Shaders\\XfMaterialStandard.fx"));
+            ShaderBytecode vertexByteCode = ShaderBytecode.Compile(shaderSourceData, "XfStandardVS", "vs_4_0", ShaderFlags.Debug, EffectFlags.None, preprocessor, includeResolver, "XfMaterialStandard");
             this.VertexShader = new VertexShader(manager.Device, vertexByteCode);
 
-            ShaderBytecode pixelByteCode = ShaderBytecode.FromFile(System.Windows.Forms.Application.StartupPath + "\\FileFormats\\Geometry\\Shaders\\XfLevelMesh.ps");
+            ShaderBytecode pixelByteCode = ShaderBytecode.Compile(shaderSourceData, "XfStandardPS", "ps_4_0", ShaderFlags.Debug, EffectFlags.None, preprocessor, includeResolver, "XfMaterialStandard");
             this.PixelShader = new PixelShader(manager.Device, pixelByteCode);
 
             // Setup the sampler states for the vertex shader.

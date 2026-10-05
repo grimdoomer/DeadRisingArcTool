@@ -63,7 +63,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
     [StructLayout(LayoutKind.Sequential)]
     public struct ShaderConstants
     {
-        public const int kSizeOf = (4 * 4 * 4) + (4 * 4) + (4 * 4) + (4 * 4) + (4 * 4) + 4;
+        public const int kSizeOf = (4 * 4 * 4) + (4 * 4) + (4 * 4) + (4 * 4) + (4 * 4) + 4 + 4 + 12 + 12;
 
         public Matrix gXfViewProj;
         public Vector4 gXfMatrixMapFactor;
@@ -75,6 +75,31 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
         public int gXfEnableAlphaTest;          // Enables alpha testing
         public float gXfAlphaThreshold;         // Alpha clip threshold
         public float gXfBlendFactor;
+        public float gXfLightMapLerps;
+        public Vector3 gXfLightMapScale;
+        public Vector3 gXfLightMapScale2;
+    }
+
+    public enum GameTimePeriod
+    {
+        DayTime,
+        SunDown,
+        NightTime,
+        Count
+    }
+
+    public class DayNightCycle
+    {
+        public GameTimePeriod Period;
+        public int StartTick;
+        public int EndTick;
+
+        public DayNightCycle(GameTimePeriod period, int startTick, int endTick)
+        {
+            this.Period = period;
+            this.StartTick = startTick;
+            this.EndTick = endTick;
+        }
     }
 
     public class RenderManager
@@ -190,6 +215,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
         protected HashSet<IPickableObject> selectedObjects = new HashSet<IPickableObject>();
         public IPickableObject[] SelectedObjects { get { return this.selectedObjects.ToArray(); } }
+
+        protected long simulatedGameTickCount = 0;
+        public bool gameTimePaused = false;
+
+        public static readonly DayNightCycle[] DayNightTimeTable = new DayNightCycle[]
+        {
+            new DayNightCycle(GameTimePeriod.NightTime, 540000, 1080000),
+            new DayNightCycle(GameTimePeriod.DayTime, 1620000, 1782000),
+            new DayNightCycle(GameTimePeriod.SunDown, 1890000, 2052000),
+            new DayNightCycle(GameTimePeriod.NightTime, 2376000, 2376180)
+        };
 
         public RenderManager(IntPtr formHandle, Size viewSize, RenderViewType viewType, params DatumIndex[] datumsToRender)
         {
@@ -498,6 +534,17 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
 
         #endregion
 
+        public int GetSimulatedTickCount()
+        {
+            long gameTime = (this.simulatedGameTickCount / TimeSpan.TicksPerSecond) * 30 + (this.simulatedGameTickCount % TimeSpan.TicksPerSecond) * 30 / TimeSpan.TicksPerSecond;
+            return (int)(gameTime % 2592000);
+        }
+
+        public void SetSimulatedTickCount(int gameTime)
+        {
+            this.simulatedGameTickCount = (gameTime / 30) * TimeSpan.TicksPerSecond + ((gameTime % 30) * TimeSpan.TicksPerSecond + 29) / 30;
+        }
+
         #region Rendering
 
         public void DrawFrame(bool isFocused)
@@ -506,6 +553,12 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             this.RenderTime.LastTickCount = this.RenderTime.CurrentTickCount;
             this.RenderTime.CurrentTickCount = DateTime.Now.Ticks;
             this.RenderTime.TimeDelta = (float)(this.RenderTime.CurrentTickCount - this.RenderTime.LastTickCount) / (float)TimeSpan.TicksPerSecond;
+
+            // Update game time.
+            if (this.gameTimePaused == false)
+            {
+                this.simulatedGameTickCount += (int)(this.RenderTime.CurrentTickCount - this.RenderTime.LastTickCount);
+            }
 
             // Render ImGui before polling for input so we can block out updating the view camera.
             RenderGuiLayer(isFocused);
@@ -749,6 +802,7 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
                 if (this.ViewType == RenderViewType.Level)
                 {
                     // Draw the resource select UI.
+                    DrawLevelProperties(ref nextWindowPos);
                     DrawResourceSelectUI(nextWindowPos);
                 }
 
@@ -760,6 +814,35 @@ namespace DeadRisingArcTool.FileFormats.Geometry.DirectX
             }
 
             ImGui.Render();
+        }
+
+        private void DrawLevelProperties(ref ImVector2 position)
+        {
+            ImGui.Begin("Level Properties");
+            {
+                // Set window size and position.
+                ImGui.SetWindowSize(new ImVector2((this.ViewSize.Width / 4) - 20 - 30, 0), ImGuiCond.Once);
+                ImGui.SetWindowPos(position, ImGuiCond.Once);
+
+                // Game time:
+                int tickCount = GetSimulatedTickCount();
+                DateTime gameTime = new DateTime(this.simulatedGameTickCount, DateTimeKind.Unspecified);
+                //int tickCount = GetSimulatedTickCount() * 12;
+                //int hour = tickCount / 108000;
+                //int minute = (tickCount % 108000) / 1800;
+                //int second = (tickCount % 1800);
+                ImGui.Text($"Game Time: {gameTime.Hour:D2}:{gameTime.Minute:D2}:{gameTime.Second:D2}");
+
+                float sliderValue = (float)tickCount / (float)2592000;
+                if (ImGui.SliderFloat("##time_slider", ref sliderValue, 0f, 1f) == true)
+                {
+                    SetSimulatedTickCount((int)MathUtil.Lerp(0, 2592000, sliderValue));
+                }
+
+                // Update position for next window.
+                position += new ImVector2(0, ImGui.GetWindowSize().Y + 20);
+            }
+            ImGui.End();
         }
 
         private void DrawResourceSelectUI(ImVector2 position)

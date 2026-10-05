@@ -28,12 +28,16 @@ const dword gXfEnableHighlighting;
 const int gXfEnableAlphaTest;
 const float gXfAlphaThreshold;
 const float gXfBlendFactor;
+const float gXfLightMapLerps;
+const float3 gXfLightMapScale;
+const float3 gXfLightMapScale2;
 
 //=============================================================================
 //=============================================================================
 shared Texture2D		XfAlbedoMap;
 shared Texture2D	    XfMatrixMap;
 shared Texture2D		XfLightMap;
+shared Texture2D		XfLightMap2;
 shared Texture2D		XfMaskMap;
 
 //-----------------------------------------------------------------------------

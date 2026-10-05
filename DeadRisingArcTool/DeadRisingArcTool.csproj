@@ -402,12 +402,6 @@
     <None Include="FileFormats\Geometry\Shaders\Wireframe.vs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="FileFormats\Geometry\Shaders\XfLevelMesh.ps">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="FileFormats\Geometry\Shaders\XfLevelMesh.vs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="FileFormats\Geometry\Shaders\XfMesh4W.ps">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -118,14 +118,19 @@ float4 XfStandardPS(VS_OUTPUT I) : SV_Target
 
 		float4 lightmap;
 		if (detail.x == 0 && detail.y == 0 && detail.z == 0)
-			lightmap = XfLightMap.Sample(XfSamplerLightMap, I.texCoord1);
+		{
+			float3 lightmapA = decodeRGBY(XfLightMap.Sample(XfSamplerLightMap, I.texCoord1)) * gXfLightMapScale;
+			float3 lightmapB = decodeRGBY(XfLightMap.Sample(XfSamplerLightMap2, I.texCoord1)) * gXfLightMapScale2;
+			lightmap.xyz = lerp(lightmapA, lightmapB, gXfLightMapLerps);
+		}
 		else
-			lightmap = XfLightMap.Sample(XfSamplerLightMap, I.texCoord2);
+			lightmap.xyz = decodeRGBY(XfLightMap.Sample(XfSamplerLightMap, I.texCoord2));
 
 		if (lightmap.x == 0 && lightmap.y == 0 && lightmap.z == 0)
 			return albedo;
 
-		albedo.xyz = (2 * albedo.xyz) * decodeRGBY(lightmap);
+		//albedo.xyz = (2 * albedo.xyz) * lightmap;
+		albedo.xyz += lightmap.xyz;
 #else
 		float4 albedo = XfAlbedoMap.Sample(XfSamplerAlbedoMap, I.texCoordBase);
 		//clip(albedo.a * I.texCoordBase.z - 1.0 / 255.0);

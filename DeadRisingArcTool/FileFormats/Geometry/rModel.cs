@@ -1442,9 +1442,51 @@ namespace DeadRisingArcTool.FileFormats.Geometry
                     case 1: this.shaders[0].DrawFrame(manager); break;
                     case 2:
                         {
+                            int simulatedTickCount = manager.GetSimulatedTickCount();
+
+                            // Calculate lighting time index based on simulated game time.
+                            int timeSlot = 0;
+                            for (int x = 0; x < RenderManager.DayNightTimeTable.Length; x++)
+                            {
+                                // Simulated tick count must be [start, end) or use previous time slot.
+                                if (simulatedTickCount < RenderManager.DayNightTimeTable[x].StartTick ||
+                                    simulatedTickCount >= RenderManager.DayNightTimeTable[x].StartTick && simulatedTickCount < RenderManager.DayNightTimeTable[x].EndTick)
+                                    break;
+
+                                timeSlot++;
+                            }
+
+                            timeSlot = timeSlot % RenderManager.DayNightTimeTable.Length;
+
+                            // Clamp the simulated game time to the range specified by the time slot and calculate it's position [0, 1] within the range.
+                            int tickCount = MathUtil.Clamp(simulatedTickCount, RenderManager.DayNightTimeTable[timeSlot].StartTick, RenderManager.DayNightTimeTable[timeSlot].EndTick);
+                            manager.ShaderConstants.gXfLightMapLerps = (float)(tickCount - RenderManager.DayNightTimeTable[timeSlot].StartTick) / (float)(RenderManager.DayNightTimeTable[timeSlot].EndTick - RenderManager.DayNightTimeTable[timeSlot].StartTick);
+
+                            int lightmapTexA = (int)RenderManager.DayNightTimeTable[timeSlot].Period;
+                            int lightmapTexB = (lightmapTexA + 1) % (int)GameTimePeriod.Count;
+
                             // Set lightmap texture.
-                            manager.Device.ImmediateContext.PixelShader.SetShaderResource(1, this.shaderResources[material.LightmapTexture]);
-                            manager.Device.ImmediateContext.PixelShader.SetShaderResource(2, this.shaderResources[material.MaskMapTexture]);
+                            if (this.FileName.EndsWith("sky.rModel", StringComparison.OrdinalIgnoreCase) == true)
+                            {
+                                Vector3 baseScale = material.LightMapScale.ToVector3() * Vector3.One;
+                                manager.ShaderConstants.gXfLightMapScale = baseScale;
+                                if (this.gameTextures[lightmapTexA + 1].header.Flags.HasFlag(TextureFlags.ExplicitRange) == true)
+                                    manager.ShaderConstants.gXfLightMapScale *= new Vector3(this.gameTextures[lightmapTexA + 1].TextureRange[0], this.gameTextures[lightmapTexA + 1].TextureRange[1], this.gameTextures[lightmapTexA + 1].TextureRange[2]);
+
+                                manager.ShaderConstants.gXfLightMapScale2 = baseScale;
+                                if (this.gameTextures[lightmapTexB + 1].header.Flags.HasFlag(TextureFlags.ExplicitRange) == true)
+                                    manager.ShaderConstants.gXfLightMapScale2 *= new Vector3(this.gameTextures[lightmapTexB + 1].TextureRange[0], this.gameTextures[lightmapTexB + 1].TextureRange[1], this.gameTextures[lightmapTexB + 1].TextureRange[2]);
+
+                                
+                                manager.Device.ImmediateContext.PixelShader.SetShaderResource(1, this.shaderResources[material.MaskMapTexture]);
+                                manager.Device.ImmediateContext.PixelShader.SetShaderResource(2, this.shaderResources[lightmapTexA + 1]);
+                                manager.Device.ImmediateContext.PixelShader.SetShaderResource(3, this.shaderResources[lightmapTexB + 1]);
+                            }
+                            else
+                            {
+                                manager.Device.ImmediateContext.PixelShader.SetShaderResource(1, this.shaderResources[material.MaskMapTexture]);
+                                manager.Device.ImmediateContext.PixelShader.SetShaderResource(2, this.shaderResources[material.LightmapTexture]);
+                            }
 
                             this.shaders[2].DrawFrame(manager);
                             break;

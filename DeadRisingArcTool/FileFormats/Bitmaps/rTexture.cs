@@ -41,7 +41,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
     [Flags]
     public enum TextureFlags : byte
     {
-        HasD3DClearColor = 4,       // Texture has a R32G32B32A32_FLOAT color used to clear the scene with before rendering
+        ExplicitRange = 4,       // Texture specifies RGB range for lighting calculations
     }
 
     public struct rTextureHeader
@@ -68,7 +68,7 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
         public rTextureHeader header;
 
         // Background color used for loading screen images.
-        public float[] BackgroundColor = new float[4];
+        public float[] TextureRange = new float[4];
 
         // Unknown cubemap data, maybe vertices?
         private byte[] cubemapData;
@@ -284,13 +284,13 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             writer.Write(FourCCFromTextureFormat(this.header.Format, this.XboxFormat));
 
             // Check if we need to write the background color.
-            if (this.header.Flags.HasFlag(TextureFlags.HasD3DClearColor) == true)
+            if (this.header.Flags.HasFlag(TextureFlags.ExplicitRange) == true)
             {
                 // Write the background color.
-                writer.Write(this.BackgroundColor[0]);
-                writer.Write(this.BackgroundColor[1]);
-                writer.Write(this.BackgroundColor[2]);
-                writer.Write(this.BackgroundColor[3]);
+                writer.Write(this.TextureRange[0]);
+                writer.Write(this.TextureRange[1]);
+                writer.Write(this.TextureRange[2]);
+                writer.Write(this.TextureRange[3]);
             }
 
             // If this is a cubemap write the cubemap data.
@@ -395,13 +395,13 @@ namespace DeadRisingArcTool.FileFormats.Bitmaps
             }
 
             // Check if we need to read the background color.
-            if (texture.header.Flags.HasFlag(TextureFlags.HasD3DClearColor) == true)
+            if (texture.header.Flags.HasFlag(TextureFlags.ExplicitRange) == true)
             {
                 // Read the RGBA background color.
-                texture.BackgroundColor[0] = reader.ReadSingle();
-                texture.BackgroundColor[1] = reader.ReadSingle();
-                texture.BackgroundColor[2] = reader.ReadSingle();
-                texture.BackgroundColor[3] = reader.ReadSingle();
+                texture.TextureRange[0] = reader.ReadSingle();
+                texture.TextureRange[1] = reader.ReadSingle();
+                texture.TextureRange[2] = reader.ReadSingle();
+                texture.TextureRange[3] = reader.ReadSingle();
             }
 
             // Check for some unknown blob.
